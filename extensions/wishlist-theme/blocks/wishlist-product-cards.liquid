@@ -1,0 +1,59 @@
+{% liquid
+  assign customer_id = ''
+  if customer
+    assign customer_id = customer.id
+  endif
+%}
+
+<script type="application/json" data-wishlist-card-config>
+  {
+    "customerId": {{ customer_id | json }},
+    "configUrl": {{ "/apps/wishlist-proxy/wishlist/config" | json }},
+    "statusUrl": {{ "/apps/wishlist-proxy/wishlist/status" | json }},
+    "syncUrl": {{ "/apps/wishlist-proxy/wishlist/sync" | json }},
+    "toggleUrl": {{ "/apps/wishlist-proxy/wishlist/toggle" | json }},
+    "loginUrl": {{ routes.account_login_url | json }},
+    "addLabel": {{ block.settings.add_label | json }},
+    "addedLabel": {{ block.settings.added_label | json }},
+    "productCardSelector": {{ block.settings.product_card_selector | json }},
+    "productLinkSelector": {{ block.settings.product_link_selector | json }}
+  }
+</script>
+
+{% schema %}
+{
+  "name": "Wishlist product cards",
+  "target": "body",
+  "stylesheet": "wishlist.css",
+  "javascript": "wishlist-product-cards.js",
+  "enabled_on": {
+    "templates": ["collection", "search", "index", "product"]
+  },
+  "settings": [
+    {
+      "type": "text",
+      "id": "add_label",
+      "label": "Add label",
+      "default": "Wishlist"
+    },
+    {
+      "type": "text",
+      "id": "added_label",
+      "label": "Added label",
+      "default": "Saved"
+    },
+    {
+      "type": "text",
+      "id": "product_card_selector",
+      "label": "Product card selector",
+      "default": ".card-wrapper"
+    },
+    {
+      "type": "text",
+      "id": "product_link_selector",
+      "label": "Product link selector",
+      "default": "a[href*=\"/products/\"]"
+    }
+  ]
+}
+{% endschema %}

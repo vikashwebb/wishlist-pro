@@ -1,0 +1,70 @@
+{% liquid
+  assign customer_id = ''
+  if customer
+    assign customer_id = customer.id
+  endif
+%}
+
+<div
+  data-wishlist-pdp
+  data-wishlist-config='{
+    "productId": {{ product.admin_graphql_api_id | json }},
+    "productHandle": {{ product.handle | json }},
+    "customerId": {{ customer_id | json }},
+    "configUrl": {{ "/apps/wishlist-proxy/wishlist/config" | json }},
+    "statusUrl": {{ "/apps/wishlist-proxy/wishlist/status" | json }},
+    "syncUrl": {{ "/apps/wishlist-proxy/wishlist/sync" | json }},
+    "toggleUrl": {{ "/apps/wishlist-proxy/wishlist/toggle" | json }},
+    "loginUrl": {{ routes.account_login_url | json }},
+    "addLabel": {{ block.settings.add_label | json }},
+    "addedLabel": {{ block.settings.added_label | json }}
+  }'
+>
+  <button
+    type="button"
+    class="wishlist-pro-button"
+    data-wishlist-button
+    aria-pressed="false"
+  >
+    <span class="wishlist-pro-button__icon" aria-hidden="true">♥</span>
+    <span data-wishlist-label>{{ block.settings.add_label }}</span>
+  </button>
+
+  {% unless customer %}
+    <p class="wishlist-pro-login-note" data-wishlist-login-note hidden>
+      {{ block.settings.login_text }}
+    </p>
+  {% endunless %}
+</div>
+
+{% schema %}
+{
+  "name": "Wishlist button",
+  "target": "section",
+  "stylesheet": "wishlist.css",
+  "javascript": "wishlist-pdp.js",
+  "enabled_on": {
+    "templates": ["product"]
+  },
+  "settings": [
+    {
+      "type": "text",
+      "id": "add_label",
+      "label": "Add label",
+      "default": "Add to Wishlist"
+    },
+    {
+      "type": "text",
+      "id": "added_label",
+      "label": "Added label",
+      "default": "Added to Wishlist"
+    },
+    {
+      "type": "text",
+      "id": "login_text",
+      "label": "Logged out helper text",
+      "default": "Sign in to save this product."
+    }
+  ]
+}
+{% endschema %}

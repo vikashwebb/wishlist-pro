@@ -1,0 +1,102 @@
+{% liquid
+  assign customer_id = ''
+  if customer
+    assign customer_id = customer.id
+  endif
+%}
+
+<div
+  data-wishlist-page
+  data-wishlist-page-config='{
+    "customerId": {{ customer_id | json }},
+    "configUrl": {{ "/apps/wishlist-proxy/wishlist/config" | json }},
+    "itemsUrl": {{ "/apps/wishlist-proxy/wishlist/items" | json }},
+    "syncUrl": {{ "/apps/wishlist-proxy/wishlist/sync" | json }},
+    "toggleUrl": {{ "/apps/wishlist-proxy/wishlist/toggle" | json }},
+    "loginUrl": {{ routes.account_login_url | json }},
+    "heading": {{ block.settings.heading | json }},
+    "emptyTitle": {{ block.settings.empty_title | json }},
+    "emptyText": {{ block.settings.empty_text | json }},
+    "loginTitle": {{ block.settings.login_title | json }},
+    "loginText": {{ block.settings.login_text | json }},
+    "browseLabel": {{ block.settings.browse_label | json }},
+    "removeLabel": {{ block.settings.remove_label | json }}
+  }'
+>
+  <div class="wishlist-pro-page">
+    <div class="wishlist-pro-page__header">
+      <p class="wishlist-pro-page__eyebrow">Wishlist</p>
+      <h2 class="wishlist-pro-page__title">{{ block.settings.heading }}</h2>
+    </div>
+
+    <div class="wishlist-pro-page__status" data-wishlist-page-status>
+      Loading your wishlist.
+    </div>
+
+    <div class="wishlist-pro-page__empty" data-wishlist-page-empty hidden>
+      <h3 data-wishlist-empty-title>{{ block.settings.empty_title }}</h3>
+      <p data-wishlist-empty-text>{{ block.settings.empty_text }}</p>
+      <a class="wishlist-pro-page__cta" href="/collections/all" data-wishlist-empty-link>
+        {{ block.settings.browse_label }}
+      </a>
+    </div>
+
+    <div class="wishlist-pro-page__grid" data-wishlist-page-grid hidden></div>
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "Wishlist page",
+  "target": "section",
+  "stylesheet": "wishlist.css",
+  "javascript": "wishlist-page.js",
+  "enabled_on": {
+    "templates": ["page"]
+  },
+  "settings": [
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Heading",
+      "default": "Your wishlist"
+    },
+    {
+      "type": "text",
+      "id": "empty_title",
+      "label": "Empty state title",
+      "default": "Your wishlist is empty"
+    },
+    {
+      "type": "text",
+      "id": "empty_text",
+      "label": "Empty state text",
+      "default": "Save products to see them here."
+    },
+    {
+      "type": "text",
+      "id": "login_title",
+      "label": "Login state title",
+      "default": "Sign in to view your wishlist"
+    },
+    {
+      "type": "text",
+      "id": "login_text",
+      "label": "Login state text",
+      "default": "Your wishlist is available after you log in to your account."
+    },
+    {
+      "type": "text",
+      "id": "browse_label",
+      "label": "Browse button label",
+      "default": "Browse products"
+    },
+    {
+      "type": "text",
+      "id": "remove_label",
+      "label": "Remove button label",
+      "default": "Remove"
+    }
+  ]
+}
+{% endschema %}
