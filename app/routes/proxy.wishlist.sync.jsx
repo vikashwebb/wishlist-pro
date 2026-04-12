@@ -17,10 +17,22 @@ function parseGuestState(rawValue) {
   try {
     const parsed = JSON.parse(rawValue);
     const productIds = Array.isArray(parsed.productIds)
-      ? [...new Set(parsed.productIds.map((item) => item?.toString().trim()).filter(Boolean))]
+      ? [
+          ...new Set(
+            parsed.productIds
+              .map((item) => item?.toString().trim())
+              .filter(Boolean),
+          ),
+        ]
       : [];
     const handles = Array.isArray(parsed.handles)
-      ? [...new Set(parsed.handles.map((item) => item?.toString().trim()).filter(Boolean))]
+      ? [
+          ...new Set(
+            parsed.handles
+              .map((item) => item?.toString().trim())
+              .filter(Boolean),
+          ),
+        ]
       : [];
 
     return { productIds, handles };
@@ -56,17 +68,30 @@ export const action = async ({ request }) => {
       }
     });
 
-    for (const handle of guestState.handles) {
-      try {
-        const product = await resolveProduct(context.admin, { handle });
-        nextItems.add(product.id);
-      } catch (error) {
-        console.error("wishlist.proxy.sync.resolveHandle.error", {
+    const resolvedHandleProducts = await Promise.allSettled(
+      guestState.handles.map((handle) =>
+        resolveProduct(context.admin, { handle }).then((product) => ({
           handle,
-          error: error instanceof Error ? error.message : String(error),
-        });
+          product,
+        })),
+      ),
+    );
+
+    resolvedHandleProducts.forEach((result, index) => {
+      if (result.status === "fulfilled") {
+        nextItems.add(result.value.product.id);
+        return;
       }
-    }
+
+      const handle = guestState.handles[index] || "unknown";
+      console.error("wishlist.proxy.sync.resolveHandle.error", {
+        handle,
+        error:
+          result.reason instanceof Error
+            ? result.reason.message
+            : String(result.reason),
+      });
+    });
 
     const mergedItems = [...nextItems];
     if (mergedItems.length === current.items.length) {

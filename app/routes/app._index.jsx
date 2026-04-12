@@ -3,6 +3,7 @@ import { useFetcher, useLoaderData } from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { DEFINITION_NAME, KEY, NAMESPACE } from "../models/wishlist";
+import styles from "../styles/app-index.module.css";
 
 export const loader = async ({ request }) => {
   const [{ getShopSettings }, { authenticate }] = await Promise.all([
@@ -47,12 +48,14 @@ export const loader = async ({ request }) => {
       customers: responseJson.data?.customers?.nodes ?? [],
       products: responseJson.data?.products?.nodes ?? [],
       settings: await getShopSettings(session.shop),
+      shopDomain: session.shop,
       customerAccessBlocked: false,
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    const customerAccessBlocked =
-      message.includes("not approved to access the Customer object");
+    const customerAccessBlocked = message.includes(
+      "not approved to access the Customer object",
+    );
 
     if (!customerAccessBlocked) {
       throw error;
@@ -86,14 +89,21 @@ export const loader = async ({ request }) => {
       customers: [],
       products: fallbackJson.data?.products?.nodes ?? [],
       settings: await getShopSettings(session.shop),
+      shopDomain: session.shop,
       customerAccessBlocked: true,
     };
   }
 };
 
 export default function Index() {
-  const { accessScopes, customers, products, customerAccessBlocked, settings } =
-    useLoaderData();
+  const {
+    accessScopes,
+    customers,
+    products,
+    customerAccessBlocked,
+    settings,
+    shopDomain,
+  } = useLoaderData();
   const wishlistFetcher = useFetcher();
   const mutationFetcher = useFetcher();
   const diagnosticsFetcher = useFetcher();
@@ -205,14 +215,17 @@ export default function Index() {
   const diagnostics = diagnosticsFetcher.data;
   const productIsSaved = wishlistItems.includes(selectedProductId);
   const isMutating =
-    mutationFetcher.state === "loading" || mutationFetcher.state === "submitting";
+    mutationFetcher.state === "loading" ||
+    mutationFetcher.state === "submitting";
   const isCheckingMetafield =
     diagnosticsFetcher.state === "loading" ||
     diagnosticsFetcher.state === "submitting";
   const isReloadingWishlist =
-    wishlistFetcher.state === "loading" || wishlistFetcher.state === "submitting";
+    wishlistFetcher.state === "loading" ||
+    wishlistFetcher.state === "submitting";
   const isSavingSettings =
-    settingsFetcher.state === "loading" || settingsFetcher.state === "submitting";
+    settingsFetcher.state === "loading" ||
+    settingsFetcher.state === "submitting";
   const isCreatingWishlistPage =
     pageFetcher.state === "loading" || pageFetcher.state === "submitting";
   const metafieldExists = diagnostics?.checks?.definitionExists;
@@ -226,6 +239,10 @@ export default function Index() {
   const savedProductTitles = products
     .filter((product) => wishlistItems.includes(product.id))
     .map((product) => product.title);
+  const wishlistPageUrl =
+    shopDomain && wishlistPage?.handle
+      ? `https://${shopDomain}/pages/${wishlistPage.handle}`
+      : null;
 
   const handleToggleWishlist = () => {
     if (!selectedCustomerId || !selectedProductId) {
@@ -256,448 +273,544 @@ export default function Index() {
     diagnosticsFetcher.load(url);
   };
 
-  const statusCardStyle = {
-    border: "1px solid var(--p-color-border, #d9d9d9)",
-    borderRadius: "16px",
-    padding: "16px",
-    background: "#ffffff",
-  };
-
   const statusPill = (tone, text) => {
-    const palette = {
-      neutral: { background: "#f2f2f2", color: "#303030" },
-      success: { background: "#dff7e5", color: "#0c5132" },
-      warning: { background: "#fff1d6", color: "#8a6116" },
-      critical: { background: "#ffe0e0", color: "#8e1f0b" },
+    const toneClassNames = {
+      neutral: styles.pillNeutral,
+      success: styles.pillSuccess,
+      warning: styles.pillWarning,
+      critical: styles.pillCritical,
     };
-    const selected = palette[tone] ?? palette.neutral;
 
     return (
       <span
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          padding: "4px 10px",
-          borderRadius: "999px",
-          fontSize: "12px",
-          fontWeight: 600,
-          background: selected.background,
-          color: selected.color,
-        }}
+        className={`${styles.pill} ${toneClassNames[tone] ?? styles.pillNeutral}`}
       >
         {text}
       </span>
     );
   };
 
+  const summaryCards = [
+    {
+      label: "Customer data",
+      value: customerAccessBlocked
+        ? "Approval needed"
+        : diagnostics
+          ? protectedAccessApproved === true
+            ? "Ready"
+            : protectedAccessApproved === false
+              ? "Review"
+              : "Waiting"
+          : "Not checked",
+      hint: customerAccessBlocked
+        ? "Protected customer access is still blocked for this app."
+        : "Confirms whether customer wishlist data can be read and written.",
+      tone: customerAccessBlocked
+        ? "warning"
+        : diagnostics
+          ? protectedAccessApproved === true
+            ? "success"
+            : protectedAccessApproved === false
+              ? "warning"
+              : "neutral"
+          : "neutral",
+    },
+    {
+      label: "Wishlist page",
+      value: wishlistPage
+        ? `/pages/${wishlistPage.handle}`
+        : hasWriteOnlineStorePagesScope
+          ? "Ready to create"
+          : "Needs scope",
+      hint: wishlistPage
+        ? "Your storefront page already exists."
+        : hasWriteOnlineStorePagesScope
+          ? "Create the page in one click when you are ready."
+          : "Reinstall the app after adding page write scope.",
+      tone: wishlistPage
+        ? "success"
+        : hasWriteOnlineStorePagesScope
+          ? "neutral"
+          : "warning",
+    },
+    {
+      label: "Storefront mode",
+      value: wishlistRequiresLogin ? "Login required" : "Guests allowed",
+      hint: wishlistRequiresLogin
+        ? "Only signed-in customers can save products."
+        : "Shoppers can use wishlist before logging in.",
+      tone: wishlistRequiresLogin ? "warning" : "success",
+    },
+  ];
+
+  const setupCards = [
+    {
+      title: "Install on your dev store",
+      text: "Run `npm run dev`, open the Shopify preview, and install Wishlist Pro on the store you are testing.",
+    },
+    {
+      title: "Prepare test data",
+      text: "Create at least one customer and one product so you can verify the save and remove flow end to end.",
+    },
+    {
+      title: "Create the wishlist metafield",
+      text: `In Shopify Admin, create the customer metafield definition ${NAMESPACE}.${KEY} as JSON using the name ${DEFINITION_NAME}.`,
+    },
+  ];
+
   return (
-    <s-page heading="Wishlist Pro Setup">
-      <s-section heading="Storefront settings">
-        <div style={statusCardStyle}>
-          <div style={{ fontSize: "16px", fontWeight: 600, marginBottom: "8px" }}>
-            Login requirement
+    <s-page heading="Wishlist Pro">
+      <div className={styles.page}>
+        <section className={styles.hero}>
+          <div className={styles.heroCopy}>
+            <p className={styles.eyebrow}>Merchant workspace</p>
+            <h1 className={styles.heroTitle}>
+              A calmer setup flow for your storefront wishlist
+            </h1>
+            <p className={styles.heroText}>
+              Configure the storefront behavior, confirm the customer data
+              connection, and test the experience from one clear dashboard.
+            </p>
+            <div className={styles.heroActions}>
+              <s-button
+                onClick={runDiagnostics}
+                {...(isCheckingMetafield ? { loading: true } : {})}
+              >
+                Check setup health
+              </s-button>
+              {wishlistPageUrl ? (
+                <s-button
+                  variant="secondary"
+                  href={wishlistPageUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Open wishlist page
+                </s-button>
+              ) : null}
+            </div>
           </div>
-          <s-paragraph>
-            Control whether storefront wishlist actions work for guest shoppers
-            or only for logged-in customers.
-          </s-paragraph>
 
-          <label
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
-              margin: "12px 0 16px",
-            }}
-          >
-            <input
-              type="checkbox"
-              checked={wishlistRequiresLogin}
-              onChange={(event) =>
-                setWishlistRequiresLogin(event.currentTarget.checked)
-              }
-            />
-            <span>Require customer login before using wishlist</span>
-          </label>
-          <s-button
-            onClick={() =>
-              settingsFetcher.submit(
-                {
-                  wishlistRequiresLogin: wishlistRequiresLogin ? "true" : "false",
-                },
-                {
-                  action: "/app/api/settings",
-                  method: "post",
-                },
-              )
-            }
-            {...(isSavingSettings ? { loading: true } : {})}
-          >
-            Save storefront setting
-          </s-button>
-
-          <div style={{ marginTop: "12px" }}>
-            {wishlistRequiresLogin
-              ? statusPill("warning", "Login required on storefront")
-              : statusPill("success", "Guest wishlist enabled")}
+          <div className={styles.summaryGrid}>
+            {summaryCards.map((card) => (
+              <article key={card.label} className={styles.summaryCard}>
+                <div className={styles.summaryCardTop}>
+                  <span className={styles.summaryLabel}>{card.label}</span>
+                  {statusPill(card.tone, card.value)}
+                </div>
+                <p className={styles.summaryHint}>{card.hint}</p>
+              </article>
+            ))}
           </div>
-        </div>
-      </s-section>
+        </section>
 
-      <s-section heading="Wishlist page">
-        <div style={statusCardStyle}>
-          <div style={{ fontSize: "16px", fontWeight: 600, marginBottom: "8px" }}>
-            Create <code>/pages/wishlist</code>
+        <s-section heading="Storefront preferences">
+          <div className={styles.surface}>
+            <div className={styles.sectionHeader}>
+              <div>
+                <h2 className={styles.sectionTitle}>
+                  Choose how shoppers use wishlist
+                </h2>
+                <p className={styles.sectionText}>
+                  Decide whether wishlist is open to all visitors or reserved
+                  for signed-in customers.
+                </p>
+              </div>
+              {wishlistRequiresLogin
+                ? statusPill("warning", "Login required")
+                : statusPill("success", "Guests can save items")}
+            </div>
+
+            <label className={styles.checkboxRow}>
+              <input
+                type="checkbox"
+                checked={wishlistRequiresLogin}
+                onChange={(event) =>
+                  setWishlistRequiresLogin(event.currentTarget.checked)
+                }
+              />
+              <span>
+                Require customer login before shoppers can use wishlist
+              </span>
+            </label>
+
+            <div className={styles.actionRow}>
+              <s-button
+                onClick={() =>
+                  settingsFetcher.submit(
+                    {
+                      wishlistRequiresLogin: wishlistRequiresLogin
+                        ? "true"
+                        : "false",
+                    },
+                    {
+                      action: "/app/api/settings",
+                      method: "post",
+                    },
+                  )
+                }
+                {...(isSavingSettings ? { loading: true } : {})}
+              >
+                Save storefront preference
+              </s-button>
+            </div>
           </div>
-          <s-paragraph>
-            Use the Admin API to create a Shopify page with the handle
-            <code> wishlist</code>. After creation, you can connect it to the
-            wishlist storefront experience.
-          </s-paragraph>
+        </s-section>
 
-          {!hasWriteOnlineStorePagesScope ? (
-            <s-banner tone="warning">
-              This app needs the <code>write_online_store_pages</code> scope to
-              create <code>/pages/wishlist</code>. Update scopes, then reinstall
-              the app before creating the page.
-            </s-banner>
-          ) : null}
+        <s-section heading="Wishlist page">
+          <div className={styles.surface}>
+            <div className={styles.sectionHeader}>
+              <div>
+                <h2 className={styles.sectionTitle}>
+                  Create your storefront wishlist page
+                </h2>
+                <p className={styles.sectionText}>
+                  Generate the Shopify page at <code>/pages/wishlist</code> and
+                  connect it to your wishlist experience when you are ready.
+                </p>
+              </div>
+              {wishlistPage
+                ? statusPill("success", "Page created")
+                : hasWriteOnlineStorePagesScope
+                  ? statusPill("neutral", "Ready to create")
+                  : statusPill("warning", "Scope required")}
+            </div>
 
-          {wishlistPage ? (
-            <div style={{ margin: "12px 0" }}>
+            {!hasWriteOnlineStorePagesScope ? (
+              <s-banner tone="warning">
+                Add the <code>write_online_store_pages</code> scope, then
+                reinstall the app before creating <code>/pages/wishlist</code>.
+              </s-banner>
+            ) : null}
+
+            {wishlistPage ? (
               <s-banner tone="success">
-                Wishlist page created at <code>/pages/{wishlistPage.handle}</code>.
+                Wishlist page created at{" "}
+                <code>/pages/{wishlistPage.handle}</code>.
+              </s-banner>
+            ) : null}
+
+            <div className={styles.actionRow}>
+              <s-button
+                onClick={() =>
+                  pageFetcher.submit(
+                    {},
+                    {
+                      action: "/app/api/wishlist-page",
+                      method: "post",
+                    },
+                  )
+                }
+                {...(isCreatingWishlistPage ? { loading: true } : {})}
+                disabled={!hasWriteOnlineStorePagesScope}
+              >
+                Create wishlist page
+              </s-button>
+
+              {wishlistPageUrl ? (
+                <s-button
+                  variant="secondary"
+                  href={wishlistPageUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  View storefront page
+                </s-button>
+              ) : null}
+            </div>
+
+            <p className={styles.supportText}>
+              Next step: add the wishlist block or final storefront layout to
+              this page so shoppers can review saved items in one place.
+            </p>
+          </div>
+        </s-section>
+
+        <s-section heading="Setup checklist">
+          <div className={styles.checklistGrid}>
+            {setupCards.map((card) => (
+              <article key={card.title} className={styles.checklistCard}>
+                <span className={styles.checklistIndex}>Step</span>
+                <h2>{card.title}</h2>
+                <p>{card.text}</p>
+              </article>
+            ))}
+          </div>
+
+          {customerAccessBlocked ? (
+            <div className={styles.bannerWrap}>
+              <s-banner tone="warning">
+                Protected customer data access is still blocked. After approval
+                in Partner Dashboard, reinstall the app and run the setup check
+                again.
               </s-banner>
             </div>
           ) : null}
-
-          <s-stack direction="inline" gap="base" wrap>
-            <s-button
-              onClick={() =>
-                pageFetcher.submit(
-                  {},
-                  {
-                    action: "/app/api/wishlist-page",
-                    method: "post",
-                  },
-                )
-              }
-              {...(isCreatingWishlistPage ? { loading: true } : {})}
-              disabled={!hasWriteOnlineStorePagesScope}
-            >
-              Create wishlist page
-            </s-button>
-
-            {wishlistPage ? (
-              <s-button
-                variant="secondary"
-                href={`/pages/${wishlistPage.handle}`}
-                target="_blank"
-              >
-                Open storefront page
-              </s-button>
-            ) : null}
-          </s-stack>
-
-          <div style={{ marginTop: "12px", color: "#616161" }}>
-            Next step: add the wishlist storefront surface you want to this page,
-            or point this page at the final wishlist experience.
-          </div>
-        </div>
-      </s-section>
-
-      <s-section heading="Step 1 · Install and prepare">
-        <s-paragraph>
-          Start <code>Wishlist Pro</code> with <code>npm run dev</code>,
-          install it on your development store, then use this page to verify
-          whether the customer metafield <code>{NAMESPACE}.{KEY}</code> is
-          available before testing the wishlist flow.
-        </s-paragraph>
-        <s-unordered-list>
-          <s-list-item>
-            Install <code>Wishlist Pro</code> on the dev store from Shopify
-            CLI.
-          </s-list-item>
-          <s-list-item>Create at least one customer in the dev store.</s-list-item>
-          <s-list-item>Create at least one product for wishlist testing.</s-list-item>
-          <s-list-item>
-            In Shopify Admin, go to <code>Settings</code> &gt;{" "}
-            <code>Custom data</code> &gt; <code>Customers</code> and create a
-            metafield definition named <code>{DEFINITION_NAME}</code> with
-            namespace and key <code>{NAMESPACE}.{KEY}</code> and type{" "}
-            <code>JSON</code>.
-          </s-list-item>
-          <s-list-item>
-            If customer access is blocked, request protected customer data
-            approval in Partner Dashboard.
-          </s-list-item>
-        </s-unordered-list>
-      </s-section>
-
-      {customerAccessBlocked ? (
-        <s-section heading="Install status">
-          <s-banner tone="warning">
-            Wishlist Pro is not approved for the Shopify Admin Customer object
-            yet. Admin API reads and writes on customer metafields are blocked
-            until protected customer data access is approved in your Partner
-            app.
-          </s-banner>
-          <s-paragraph>
-            After approval, reinstall the app so the updated customer scopes are
-            granted, then test the wishlist flow again.
-          </s-paragraph>
         </s-section>
-      ) : null}
 
-      <s-section heading="Step 2 · Check the metafield">
-        {customers.length === 0 ? (
-          <s-banner tone="warning">
-            No customers found in the development store. Create a customer in
-            the Shopify admin before testing customer metafields.
-          </s-banner>
-        ) : null}
+        <s-section heading="Connection health">
+          {customers.length === 0 ? (
+            <s-banner tone="warning">
+              No customers found yet. Create one in Shopify Admin before testing
+              wishlist data.
+            </s-banner>
+          ) : null}
 
-        {products.length === 0 ? (
-          <s-banner tone="warning">
-            No products found in the development store. Create a product before
-            testing wishlist items.
-          </s-banner>
-        ) : null}
+          {products.length === 0 ? (
+            <s-banner tone="warning">
+              No products found yet. Add a product before testing wishlist
+              actions.
+            </s-banner>
+          ) : null}
 
-        <s-stack direction="block" gap="base">
-          <s-select
-            label="Customer to inspect"
-            value={selectedCustomerId}
-            onChange={(event) => setSelectedCustomerId(event.currentTarget.value)}
-          >
-            {customers.map((customer) => (
-              <option key={customer.id} value={customer.id}>
-                {customer.displayName || customer.email || customer.id}
-              </option>
-            ))}
-          </s-select>
-
-          <s-stack direction="inline" gap="base" wrap>
-            <s-button
-              variant="secondary"
-              onClick={runDiagnostics}
-              {...(isCheckingMetafield ? { loading: true } : {})}
-            >
-              Check metafield
-            </s-button>
-            <s-button
-              variant="secondary"
-              {...(isReloadingWishlist ? { loading: true } : {})}
-              onClick={() => {
-                if (!selectedCustomerId) return;
-                wishlistFetcher.load(
-                  `/app/api/wishlist?customerId=${encodeURIComponent(
-                    selectedCustomerId,
-                  )}`,
-                );
-              }}
-            >
-              Reload current wishlist
-            </s-button>
-          </s-stack>
-
-          <div style={statusCardStyle}>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                gap: "12px",
-                flexWrap: "wrap",
-                marginBottom: "12px",
-              }}
-            >
+          <div className={styles.surface}>
+            <div className={styles.sectionHeader}>
               <div>
-                <div style={{ fontSize: "16px", fontWeight: 600 }}>
-                  Wishlist Pro metafield status
-                </div>
-                <div style={{ color: "#616161", marginTop: "4px" }}>
-                  Checks the customer metafield definition
-                  <code> {NAMESPACE}.{KEY} </code>
-                  and whether it can be used by this app.
-                </div>
+                <h2 className={styles.sectionTitle}>
+                  Check the customer wishlist connection
+                </h2>
+                <p className={styles.sectionText}>
+                  Confirm the metafield definition, access approval, and whether
+                  the selected customer already has wishlist data.
+                </p>
               </div>
               {isCheckingMetafield
-                ? statusPill("warning", "Checking")
+                ? statusPill("warning", "Checking now")
                 : diagnostics
                   ? metafieldExists
-                    ? statusPill("success", "Metafield found")
-                    : statusPill("critical", "Metafield missing")
+                    ? statusPill("success", "Definition found")
+                    : statusPill("critical", "Definition missing")
                   : statusPill("neutral", "Not checked")}
+            </div>
+
+            <div className={styles.formRow}>
+              <s-select
+                label="Customer to inspect"
+                value={selectedCustomerId}
+                onChange={(event) =>
+                  setSelectedCustomerId(event.currentTarget.value)
+                }
+              >
+                {customers.map((customer) => (
+                  <option key={customer.id} value={customer.id}>
+                    {customer.displayName || customer.email || customer.id}
+                  </option>
+                ))}
+              </s-select>
+            </div>
+
+            <div className={styles.actionRow}>
+              <s-button
+                variant="secondary"
+                onClick={runDiagnostics}
+                {...(isCheckingMetafield ? { loading: true } : {})}
+              >
+                Run setup check
+              </s-button>
+              <s-button
+                variant="secondary"
+                {...(isReloadingWishlist ? { loading: true } : {})}
+                onClick={() => {
+                  if (!selectedCustomerId) return;
+                  wishlistFetcher.load(
+                    `/app/api/wishlist?customerId=${encodeURIComponent(
+                      selectedCustomerId,
+                    )}`,
+                  );
+                }}
+              >
+                Refresh wishlist data
+              </s-button>
             </div>
 
             {isCheckingMetafield ? (
               <s-banner tone="info">
-                Checking the Wishlist Pro customer metafield now.
+                Checking whether{" "}
+                <code>
+                  {NAMESPACE}.{KEY}
+                </code>{" "}
+                is ready for this customer.
               </s-banner>
             ) : null}
 
             {!isCheckingMetafield && !diagnostics ? (
               <s-banner tone="info">
-                Click <strong>Check metafield</strong> to verify whether
-                <code> {NAMESPACE}.{KEY} </code> exists for customers.
+                Run the setup check to verify the customer metafield and access
+                status before testing.
               </s-banner>
             ) : null}
 
             {!isCheckingMetafield && diagnostics ? (
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-                  gap: "12px",
-                  marginTop: "12px",
-                }}
-              >
-                <div style={statusCardStyle}>
-                  <div style={{ fontSize: "12px", color: "#616161" }}>
-                    Metafield definition
-                  </div>
-                  <div style={{ fontSize: "18px", fontWeight: 600, marginTop: "6px" }}>
+              <div className={styles.statusGrid}>
+                <article className={styles.statusCard}>
+                  <span className={styles.statusLabel}>
+                    Wishlist definition
+                  </span>
+                  <strong className={styles.statusValue}>
                     {metafieldExists ? DEFINITION_NAME : "Not found"}
-                  </div>
-                  <div style={{ color: "#616161", marginTop: "6px" }}>
-                    Expected: <code>{NAMESPACE}.{KEY}</code>
-                  </div>
-                  <div style={{ marginTop: "8px" }}>
-                    {metafieldExists
-                      ? statusPill("success", `${DEFINITION_NAME} exists`)
-                      : statusPill("critical", `Create ${DEFINITION_NAME}`)}
-                  </div>
-                </div>
+                  </strong>
+                  <p className={styles.statusText}>
+                    Expected definition:{" "}
+                    <code>
+                      {NAMESPACE}.{KEY}
+                    </code>
+                  </p>
+                  {metafieldExists
+                    ? statusPill("success", "Definition is ready")
+                    : statusPill("critical", `Create ${DEFINITION_NAME}`)}
+                </article>
 
-                <div style={statusCardStyle}>
-                  <div style={{ fontSize: "12px", color: "#616161" }}>
-                    Protected customer access
-                  </div>
-                  <div style={{ fontSize: "18px", fontWeight: 600, marginTop: "6px" }}>
+                <article className={styles.statusCard}>
+                  <span className={styles.statusLabel}>Customer access</span>
+                  <strong className={styles.statusValue}>
                     {protectedAccessApproved === true
                       ? "Approved"
                       : protectedAccessApproved === false
-                        ? "Blocked"
-                        : "Pending check"}
-                  </div>
-                  <div style={{ marginTop: "8px" }}>
-                    {protectedAccessApproved === true
-                      ? statusPill("success", "Customer access ready")
-                      : protectedAccessApproved === false
-                        ? statusPill("warning", "Approval required")
-                        : statusPill("neutral", "Run check")}
-                  </div>
-                </div>
+                        ? "Approval needed"
+                        : "Waiting for check"}
+                  </strong>
+                  <p className={styles.statusText}>
+                    Protected customer data must be approved before Admin API
+                    customer reads and writes can work.
+                  </p>
+                  {protectedAccessApproved === true
+                    ? statusPill("success", "Customer access ready")
+                    : protectedAccessApproved === false
+                      ? statusPill("warning", "Request approval")
+                      : statusPill("neutral", "Run the check")}
+                </article>
 
-                <div style={statusCardStyle}>
-                  <div style={{ fontSize: "12px", color: "#616161" }}>
-                    Customer metafield value
-                  </div>
-                  <div style={{ fontSize: "18px", fontWeight: 600, marginTop: "6px" }}>
+                <article className={styles.statusCard}>
+                  <span className={styles.statusLabel}>
+                    Customer wishlist value
+                  </span>
+                  <strong className={styles.statusValue}>
                     {customerValueExists ? "Present" : "Not created yet"}
-                  </div>
-                  <div style={{ marginTop: "8px" }}>
-                    {customerValueExists
-                      ? statusPill("success", "Customer has wishlist data")
-                      : statusPill("neutral", "No customer value yet")}
-                  </div>
-                </div>
+                  </strong>
+                  <p className={styles.statusText}>
+                    This shows whether the selected customer already has saved
+                    wishlist data.
+                  </p>
+                  {customerValueExists
+                    ? statusPill("success", "Customer has wishlist data")
+                    : statusPill("neutral", "No saved value yet")}
+                </article>
               </div>
             ) : null}
 
             {!isCheckingMetafield && diagnostics?.errors?.length ? (
-              <div style={{ marginTop: "12px" }}>
+              <div className={styles.bannerWrap}>
                 <s-banner tone="warning">{diagnostics.errors[0]}</s-banner>
               </div>
             ) : null}
           </div>
-        </s-stack>
-      </s-section>
+        </s-section>
 
-      <s-section heading="Step 3 · Test add and remove">
-        <s-stack direction="block" gap="base">
-          <s-select
-            label="Product to test"
-            value={selectedProductId}
-            onChange={(event) => setSelectedProductId(event.currentTarget.value)}
-          >
-            {products.map((product) => (
-              <option key={product.id} value={product.id}>
-                {product.title}
-              </option>
-            ))}
-          </s-select>
-
-          <s-stack direction="inline" gap="base" wrap>
-            <s-button
-              onClick={handleToggleWishlist}
-              {...(isMutating ? { loading: true } : {})}
-            >
-              {productIsSaved ? "Remove from Wishlist" : "Add to Wishlist"}
-            </s-button>
-          </s-stack>
-        </s-stack>
-      </s-section>
-
-      <s-section heading="Current wishlist state">
-        <s-stack direction="block" gap="base">
-          <s-paragraph>
-            Customer:{" "}
-            <strong>
-              {selectedCustomer?.displayName ||
-                selectedCustomer?.email ||
-                "Not selected"}
-            </strong>
-          </s-paragraph>
-          <s-paragraph>
-            Product: <strong>{selectedProduct?.title || "Not selected"}</strong>
-          </s-paragraph>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-              gap: "12px",
-            }}
-          >
-            <div style={statusCardStyle}>
-              <div style={{ fontSize: "12px", color: "#616161" }}>
-                Saved wishlist items
+        <s-section heading="Wishlist test">
+          <div className={styles.surface}>
+            <div className={styles.sectionHeader}>
+              <div>
+                <h2 className={styles.sectionTitle}>
+                  Try the add and remove flow
+                </h2>
+                <p className={styles.sectionText}>
+                  Select a product and simulate the same save action a shopper
+                  would take on the storefront.
+                </p>
               </div>
-              <div style={{ fontSize: "28px", fontWeight: 700, marginTop: "6px" }}>
-                {wishlistCount}
-              </div>
+              {productIsSaved
+                ? statusPill("success", "Selected product saved")
+                : statusPill("neutral", "Selected product not saved")}
             </div>
-            <div style={statusCardStyle}>
-              <div style={{ fontSize: "12px", color: "#616161" }}>
-                Selected product status
-              </div>
-              <div style={{ marginTop: "10px" }}>
-                {productIsSaved
-                  ? statusPill("success", "Already in wishlist")
-                  : statusPill("neutral", "Not in wishlist")}
-              </div>
-            </div>
-          </div>
 
-          <div style={statusCardStyle}>
-            <div style={{ fontSize: "16px", fontWeight: 600, marginBottom: "10px" }}>
-              Saved products
-            </div>
-            {savedProductTitles.length > 0 ? (
-              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                {savedProductTitles.map((title) => (
-                  <span key={title}>{statusPill("success", title)}</span>
+            <div className={styles.formRow}>
+              <s-select
+                label="Product to test"
+                value={selectedProductId}
+                onChange={(event) =>
+                  setSelectedProductId(event.currentTarget.value)
+                }
+              >
+                {products.map((product) => (
+                  <option key={product.id} value={product.id}>
+                    {product.title}
+                  </option>
                 ))}
-              </div>
-            ) : (
-              <s-paragraph>
-                No products are saved for this customer yet.
-              </s-paragraph>
-            )}
+              </s-select>
+            </div>
+
+            <div className={styles.actionRow}>
+              <s-button
+                onClick={handleToggleWishlist}
+                {...(isMutating ? { loading: true } : {})}
+              >
+                {productIsSaved ? "Remove from wishlist" : "Add to wishlist"}
+              </s-button>
+            </div>
           </div>
-        </s-stack>
-      </s-section>
+        </s-section>
+
+        <s-section heading="Current snapshot">
+          <div className={styles.surface}>
+            <div className={styles.sectionHeader}>
+              <div>
+                <h2 className={styles.sectionTitle}>
+                  See the current wishlist state
+                </h2>
+                <p className={styles.sectionText}>
+                  Review the selected customer, the product under test, and the
+                  items currently stored in the wishlist.
+                </p>
+              </div>
+            </div>
+
+            <div className={styles.snapshotGrid}>
+              <article className={styles.statusCard}>
+                <span className={styles.statusLabel}>Selected customer</span>
+                <strong className={styles.statusValue}>
+                  {selectedCustomer?.displayName ||
+                    selectedCustomer?.email ||
+                    "Not selected"}
+                </strong>
+              </article>
+
+              <article className={styles.statusCard}>
+                <span className={styles.statusLabel}>Selected product</span>
+                <strong className={styles.statusValue}>
+                  {selectedProduct?.title || "Not selected"}
+                </strong>
+              </article>
+
+              <article className={styles.statusCard}>
+                <span className={styles.statusLabel}>Saved wishlist items</span>
+                <strong className={styles.statusValue}>{wishlistCount}</strong>
+                <p className={styles.statusText}>
+                  {productIsSaved
+                    ? "The selected product is already in this wishlist."
+                    : "The selected product has not been saved yet."}
+                </p>
+              </article>
+            </div>
+
+            <article className={styles.statusCard}>
+              <span className={styles.statusLabel}>Saved products</span>
+              <strong className={styles.statusValue}>Wishlist contents</strong>
+
+              {savedProductTitles.length > 0 ? (
+                <div className={styles.savedList}>
+                  {savedProductTitles.map((title) => (
+                    <span key={title}>{statusPill("success", title)}</span>
+                  ))}
+                </div>
+              ) : (
+                <p className={styles.statusText}>
+                  No products are saved for this customer yet.
+                </p>
+              )}
+            </article>
+          </div>
+        </s-section>
+      </div>
     </s-page>
   );
 }

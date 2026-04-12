@@ -74,7 +74,10 @@
     var storageKey = key(customerId);
     if (!storageKey) return;
 
-    if (!hasEntries(state.itemsByProductId) && !hasEntries(state.statusByHandle)) {
+    if (
+      !hasEntries(state.itemsByProductId) &&
+      !hasEntries(state.statusByHandle)
+    ) {
       window.localStorage.removeItem(storageKey);
       return;
     }
@@ -105,7 +108,10 @@
       delete state.statusByHandle[productHandle];
     }
 
-    if (!hasEntries(state.itemsByProductId) && !hasEntries(state.statusByHandle)) {
+    if (
+      !hasEntries(state.itemsByProductId) &&
+      !hasEntries(state.statusByHandle)
+    ) {
       clearGuestState();
       return;
     }
@@ -117,7 +123,10 @@
     if (!customerId) return;
 
     var guestState = readGuestState();
-    if (!hasEntries(guestState.itemsByProductId) && !hasEntries(guestState.statusByHandle)) {
+    if (
+      !hasEntries(guestState.itemsByProductId) &&
+      !hasEntries(guestState.statusByHandle)
+    ) {
       return;
     }
 
@@ -186,10 +195,12 @@
         });
     }
 
-    return window.__wishlistConfigPromises[config.configUrl].then(function (payload) {
-      config.requireLogin = !!payload.requireLogin;
-      return config;
-    });
+    return window.__wishlistConfigPromises[config.configUrl].then(
+      function (payload) {
+        config.requireLogin = !!payload.requireLogin;
+        return config;
+      },
+    );
   }
 
   function fetchStatus(config) {
@@ -252,10 +263,12 @@
       .then(function (responsePayload) {
         if (responsePayload.localOnly) {
           mergeGuestStateIntoCustomerState(config.customerId);
+          delete window.__wishlistGuestSyncPromises[config.customerId];
           return responsePayload;
         }
 
         clearGuestState();
+        delete window.__wishlistGuestSyncPromises[config.customerId];
         return responsePayload;
       })
       .catch(function (error) {
@@ -295,13 +308,21 @@
     }
 
     if (isActive(config, payload)) {
-      pruneLegacyState(config.customerId, config.productId, config.productHandle);
+      pruneLegacyState(
+        config.customerId,
+        config.productId,
+        config.productHandle,
+      );
       return Promise.resolve(payload);
     }
 
     return toggleRemote(config, "add")
       .then(function (nextPayload) {
-        pruneLegacyState(config.customerId, config.productId, config.productHandle);
+        pruneLegacyState(
+          config.customerId,
+          config.productId,
+          config.productHandle,
+        );
         return nextPayload;
       })
       .catch(function (error) {
@@ -409,7 +430,14 @@
 
             syncLegacyState(config, payload).then(
               function (nextPayload) {
-                setState(button, isActive(config, nextPayload), labels);
+                var active = isActive(config, nextPayload);
+                setLocalState(
+                  config.customerId,
+                  config.productId,
+                  config.productHandle,
+                  active,
+                );
+                setState(button, active, labels);
                 button.disabled = false;
               },
               function () {
@@ -436,6 +464,7 @@
     button.addEventListener("click", function () {
       if (button.disabled) return;
 
+      var previousActive = button.getAttribute("aria-pressed") === "true";
       var nextActive = button.getAttribute("aria-pressed") !== "true";
       if (localOnly) {
         setLocalState(
@@ -448,6 +477,13 @@
         return;
       }
 
+      setLocalState(
+        config.customerId,
+        config.productId,
+        config.productHandle,
+        nextActive,
+      );
+      setState(button, nextActive, labels);
       button.disabled = true;
       toggleRemote(config, nextActive ? "add" : "remove").then(
         function (payload) {
@@ -464,12 +500,29 @@
             return;
           }
 
-          pruneLegacyState(config.customerId, config.productId, config.productHandle);
+          pruneLegacyState(
+            config.customerId,
+            config.productId,
+            config.productHandle,
+          );
+          setLocalState(
+            config.customerId,
+            config.productId,
+            config.productHandle,
+            !!payload.active,
+          );
           setState(button, isActive(config, payload), labels);
           button.disabled = false;
         },
         function (error) {
           console.error("wishlist.pdp.toggle.error", error);
+          setLocalState(
+            config.customerId,
+            config.productId,
+            config.productHandle,
+            previousActive,
+          );
+          setState(button, previousActive, labels);
           button.disabled = false;
         },
       );

@@ -86,7 +86,10 @@
     var storageKey = key(customerId);
     if (!storageKey) return;
 
-    if (!hasEntries(state.itemsByProductId) && !hasEntries(state.statusByHandle)) {
+    if (
+      !hasEntries(state.itemsByProductId) &&
+      !hasEntries(state.statusByHandle)
+    ) {
       window.localStorage.removeItem(storageKey);
       return;
     }
@@ -113,7 +116,10 @@
       delete state.statusByHandle[handle];
     }
 
-    if (!hasEntries(state.itemsByProductId) && !hasEntries(state.statusByHandle)) {
+    if (
+      !hasEntries(state.itemsByProductId) &&
+      !hasEntries(state.statusByHandle)
+    ) {
       clearGuestState();
       return;
     }
@@ -125,7 +131,10 @@
     if (!customerId) return;
 
     var guestState = readGuestState();
-    if (!hasEntries(guestState.itemsByProductId) && !hasEntries(guestState.statusByHandle)) {
+    if (
+      !hasEntries(guestState.itemsByProductId) &&
+      !hasEntries(guestState.statusByHandle)
+    ) {
       return;
     }
 
@@ -204,10 +213,12 @@
         });
     }
 
-    return window.__wishlistConfigPromises[config.configUrl].then(function (payload) {
-      config.requireLogin = !!payload.requireLogin;
-      return config;
-    });
+    return window.__wishlistConfigPromises[config.configUrl].then(
+      function (payload) {
+        config.requireLogin = !!payload.requireLogin;
+        return config;
+      },
+    );
   }
 
   function toggleRemote(config, handle, intent) {
@@ -273,10 +284,12 @@
       .then(function (responsePayload) {
         if (responsePayload.localOnly) {
           mergeGuestStateIntoCustomerState(config.customerId);
+          delete window.__wishlistGuestSyncPromises[config.customerId];
           return responsePayload;
         }
 
         clearGuestState();
+        delete window.__wishlistGuestSyncPromises[config.customerId];
         return responsePayload;
       })
       .catch(function (error) {
@@ -295,7 +308,7 @@
     button.setAttribute("data-wishlist-button", "true");
     button.innerHTML =
       '<span class="wishlist-pro-button__icon" aria-hidden="true">♥</span>' +
-      '<span data-wishlist-label>' +
+      "<span data-wishlist-label>" +
       labels.add +
       "</span>";
     return button;
@@ -304,37 +317,39 @@
   function inject(config, labels, onToggle) {
     var createdHandle = false;
 
-    document.querySelectorAll(config.productLinkSelector).forEach(function (link) {
-      var handle = extractHandle(link.href);
-      if (!handle) return;
+    document
+      .querySelectorAll(config.productLinkSelector)
+      .forEach(function (link) {
+        var handle = extractHandle(link.href);
+        if (!handle) return;
 
-      var card =
-        link.closest(config.productCardSelector) ||
-        link.closest(".card-wrapper") ||
-        link.closest(".grid__item");
+        var card =
+          link.closest(config.productCardSelector) ||
+          link.closest(".card-wrapper") ||
+          link.closest(".grid__item");
 
-      if (!card || card.querySelector("[data-wishlist-card-handle]")) return;
-      if (window.getComputedStyle(card).position === "static") {
-        card.style.position = "relative";
-      }
+        if (!card || card.querySelector("[data-wishlist-card-handle]")) return;
+        if (window.getComputedStyle(card).position === "static") {
+          card.style.position = "relative";
+        }
 
-      var anchor = document.createElement("div");
-      anchor.className = "wishlist-pro-card-anchor";
-      anchor.setAttribute("data-wishlist-card-handle", handle);
+        var anchor = document.createElement("div");
+        anchor.className = "wishlist-pro-card-anchor";
+        anchor.setAttribute("data-wishlist-card-handle", handle);
 
-      var button = makeButton(labels);
-      setState(button, false, labels);
+        var button = makeButton(labels);
+        setState(button, false, labels);
 
-      button.addEventListener("click", function (event) {
-        event.preventDefault();
-        event.stopPropagation();
-        onToggle(handle, button);
+        button.addEventListener("click", function (event) {
+          event.preventDefault();
+          event.stopPropagation();
+          onToggle(handle, button);
+        });
+
+        anchor.appendChild(button);
+        card.appendChild(anchor);
+        createdHandle = true;
       });
-
-      anchor.appendChild(button);
-      card.appendChild(anchor);
-      createdHandle = true;
-    });
 
     return createdHandle;
   }
@@ -349,14 +364,16 @@
   }
 
   function applyStatuses(labels, statusByHandle) {
-    document.querySelectorAll("[data-wishlist-card-handle]").forEach(function (node) {
-      var handle = node.getAttribute("data-wishlist-card-handle");
-      var button = node.querySelector("[data-wishlist-button]");
-      if (!button) return;
+    document
+      .querySelectorAll("[data-wishlist-card-handle]")
+      .forEach(function (node) {
+        var handle = node.getAttribute("data-wishlist-card-handle");
+        var button = node.querySelector("[data-wishlist-button]");
+        if (!button) return;
 
-      setState(button, !!statusByHandle[handle], labels);
-      button.disabled = false;
-    });
+        setState(button, !!statusByHandle[handle], labels);
+        button.disabled = false;
+      });
   }
 
   function setButtonsDisabled(disabled) {
@@ -464,7 +481,8 @@
             function (payload) {
               if (payload.localOnly) {
                 localOnly = true;
-                statusByHandle = readState(config.customerId).statusByHandle || {};
+                statusByHandle =
+                  readState(config.customerId).statusByHandle || {};
                 applyStatuses(labels, statusByHandle);
                 return;
               }
@@ -483,7 +501,8 @@
               console.error("wishlist.cards.status.error", error);
               localOnly = true;
               mergeGuestStateIntoCustomerState(config.customerId);
-              statusByHandle = readState(config.customerId).statusByHandle || {};
+              statusByHandle =
+                readState(config.customerId).statusByHandle || {};
               applyStatuses(labels, statusByHandle);
             },
           );
@@ -506,6 +525,7 @@
 
     if (button.disabled) return;
 
+    var previousActive = button.getAttribute("aria-pressed") === "true";
     var nextActive = button.getAttribute("aria-pressed") !== "true";
 
     if (localOnly) {
@@ -515,6 +535,9 @@
       return;
     }
 
+    setLocalHandleState(config.customerId, handle, nextActive);
+    statusByHandle[handle] = nextActive;
+    setState(button, nextActive, labels);
     button.disabled = true;
     toggleRemote(config, handle, nextActive ? "add" : "remove").then(
       function (payload) {
@@ -528,12 +551,20 @@
         }
 
         pruneLegacyHandles(config.customerId, [handle]);
-        statusByHandle = Object.assign({}, statusByHandle, payload.statusByHandle || {});
+        setLocalHandleState(config.customerId, handle, !!payload.active);
+        statusByHandle = Object.assign(
+          {},
+          statusByHandle,
+          payload.statusByHandle || {},
+        );
         statusByHandle[handle] = !!payload.active;
         applyStatuses(labels, statusByHandle);
       },
       function (error) {
         console.error("wishlist.cards.toggle.error", error);
+        setLocalHandleState(config.customerId, handle, previousActive);
+        statusByHandle[handle] = previousActive;
+        setState(button, previousActive, labels);
         button.disabled = false;
       },
     );

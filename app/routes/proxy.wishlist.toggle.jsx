@@ -4,6 +4,7 @@ import {
   readWishlist,
   resolveProduct,
   toCustomerGid,
+  toProductGid,
   writeWishlist,
 } from "../models/wishlist.server";
 import { authenticate } from "../shopify.server";
@@ -20,45 +21,77 @@ export const action = async ({ request }) => {
   const productId = formData.get("productId")?.toString().trim();
   const handle = formData.get("handle")?.toString().trim();
   const intent = formData.get("intent")?.toString().trim() || "toggle";
+  const normalizedCustomerId = toCustomerGid(customerId || "");
+  const normalizedProductId = toProductGid(productId || "");
 
-  if (!toCustomerGid(customerId || "")) {
+  if (!normalizedCustomerId) {
     return json({ error: "Customer must be logged in" }, { status: 401 });
   }
 
   try {
-    const product = await resolveProduct(context.admin, { productId, handle });
+    let resolvedProductId = normalizedProductId;
+    let resolvedHandle = handle || "";
+
+    if (!resolvedProductId) {
+      const product = await resolveProduct(context.admin, {
+        productId,
+        handle,
+      });
+      resolvedProductId = product.id;
+      resolvedHandle = product.handle || resolvedHandle;
+    }
+
     const wishlist = await readWishlist(context.admin, customerId);
-    const isSaved = wishlist.items.includes(product.id);
+    const isSaved = wishlist.items.includes(resolvedProductId);
     const shouldAdd =
       intent === "add" ? true : intent === "remove" ? false : !isSaved;
     const nextItems = shouldAdd
-      ? [...new Set([...wishlist.items, product.id])]
-      : wishlist.items.filter((item) => item !== product.id);
+      ? [...new Set([...wishlist.items, resolvedProductId])]
+      : wishlist.items.filter((item) => item !== resolvedProductId);
     const result = await writeWishlist(context.admin, customerId, nextItems);
 
     return json({
       ok: true,
       active: shouldAdd,
       intent: shouldAdd ? "add" : "remove",
-      product,
-      customerId: toCustomerGid(customerId),
+      product: {
+        id: resolvedProductId,
+        handle: resolvedHandle || null,
+      },
+      customerId: normalizedCustomerId,
       items: result.items,
       metafield: result.metafield,
+      statusByHandle: resolvedHandle ? { [resolvedHandle]: shouldAdd } : {},
     });
   } catch (error) {
     if (isProtectedCustomerDataError(error)) {
-      const product = await resolveProduct(context.admin, { productId, handle });
+      let resolvedProductId = normalizedProductId;
+      let resolvedHandle = handle || "";
+
+      if (!resolvedProductId) {
+        const product = await resolveProduct(context.admin, {
+          productId,
+          handle,
+        });
+        resolvedProductId = product.id;
+        resolvedHandle = product.handle || resolvedHandle;
+      }
+
       const active = intent === "remove" ? false : true;
 
       return json({
         ok: true,
         active,
         intent: active ? "add" : "remove",
-        product,
-        customerId: toCustomerGid(customerId),
+        product: {
+          id: resolvedProductId,
+          handle: resolvedHandle || null,
+        },
+        customerId: normalizedCustomerId,
         items: [],
         metafield: null,
         localOnly: true,
+        statusByHandle: resolvedHandle ? { [resolvedHandle]: active } : {},
       });
     }
 
