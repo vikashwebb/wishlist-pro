@@ -53,6 +53,14 @@
     });
   }
 
+  function hasGuestWishlistState() {
+    var guestState = readGuestState();
+    return (
+      hasEntries(guestState.itemsByProductId) ||
+      hasEntries(guestState.statusByHandle)
+    );
+  }
+
   function readJson(response) {
     return response
       .json()
@@ -94,10 +102,12 @@
         });
     }
 
-    return window.__wishlistConfigPromises[config.configUrl].then(function (payload) {
-      config.requireLogin = !!payload.requireLogin;
-      return config;
-    });
+    return window.__wishlistConfigPromises[config.configUrl].then(
+      function (payload) {
+        config.requireLogin = !!payload.requireLogin;
+        return config;
+      },
+    );
   }
 
   function syncGuestState(config) {
@@ -138,6 +148,7 @@
           clearStoredState(guestKey());
         }
 
+        delete window.__wishlistGuestSyncPromises[config.customerId];
         return responsePayload;
       })
       .catch(function (error) {
@@ -293,7 +304,10 @@
       delete state.itemsByProductId[productId];
       delete state.statusByHandle[handle];
 
-      if (!hasEntries(state.itemsByProductId) && !hasEntries(state.statusByHandle)) {
+      if (
+        !hasEntries(state.itemsByProductId) &&
+        !hasEntries(state.statusByHandle)
+      ) {
         clearStoredState(guestKey());
         return;
       }
@@ -307,7 +321,10 @@
       delete state.itemsByProductId[productId];
       delete state.statusByHandle[handle];
 
-      if (!hasEntries(state.itemsByProductId) && !hasEntries(state.statusByHandle)) {
+      if (
+        !hasEntries(state.itemsByProductId) &&
+        !hasEntries(state.statusByHandle)
+      ) {
         clearStoredState(storageKey);
         return;
       }
@@ -334,13 +351,34 @@
             }
 
             var guestPayload = getGuestPayload();
-            if (!guestPayload.productIds.length && !guestPayload.handles.length) {
+            if (
+              !guestPayload.productIds.length &&
+              !guestPayload.handles.length
+            ) {
               showProducts([]);
               setStatus("");
               return null;
             }
 
             return fetchItems(config, guestPayload);
+          }
+
+          if (hasGuestWishlistState()) {
+            var immediateGuestPayload = getGuestPayload();
+            if (
+              immediateGuestPayload.productIds.length ||
+              immediateGuestPayload.handles.length
+            ) {
+              fetchItems(config, immediateGuestPayload).then(
+                function (immediatePayload) {
+                  if (!localOnly) {
+                    showProducts(immediatePayload.products || []);
+                    setStatus("Syncing your wishlist.");
+                  }
+                },
+                function () {},
+              );
+            }
           }
 
           return syncGuestState(config)
@@ -359,16 +397,21 @@
             localOnly = true;
             var fallbackPayload = getCustomerFallbackPayload();
 
-            if (!fallbackPayload.productIds.length && !fallbackPayload.handles.length) {
+            if (
+              !fallbackPayload.productIds.length &&
+              !fallbackPayload.handles.length
+            ) {
               showProducts([]);
               setStatus("");
               return;
             }
 
-            return fetchItems(config, fallbackPayload).then(function (localPayload) {
-              showProducts(localPayload.products || []);
-              setStatus("");
-            });
+            return fetchItems(config, fallbackPayload).then(
+              function (localPayload) {
+                showProducts(localPayload.products || []);
+                setStatus("");
+              },
+            );
           }
 
           localOnly = false;

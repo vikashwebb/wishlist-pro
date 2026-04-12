@@ -152,6 +152,14 @@
     writeState(customerId, customerState);
   }
 
+  function hasGuestWishlistState() {
+    var guestState = readGuestState();
+    return (
+      hasEntries(guestState.itemsByProductId) ||
+      hasEntries(guestState.statusByHandle)
+    );
+  }
+
   function extractHandle(url) {
     try {
       var pathname = new URL(url, window.location.origin).pathname;
@@ -453,6 +461,12 @@
       return;
     }
 
+    if (hasGuestWishlistState()) {
+      mergeGuestStateIntoCustomerState(config.customerId);
+      statusByHandle = readState(config.customerId).statusByHandle || {};
+      applyStatuses(labels, statusByHandle);
+    }
+
     window.clearTimeout(refreshTimeoutId);
     refreshTimeoutId = window.setTimeout(function () {
       var handles = getHandles();
@@ -574,6 +588,12 @@
   setButtonsDisabled(true);
 
   loadSettings(config).then(function () {
+    if (config.customerId && hasGuestWishlistState()) {
+      mergeGuestStateIntoCustomerState(config.customerId);
+      statusByHandle = readState(config.customerId).statusByHandle || {};
+      applyStatuses(labels, statusByHandle);
+    }
+
     scheduleRefresh();
   });
 

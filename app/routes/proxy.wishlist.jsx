@@ -36,7 +36,11 @@ function renderPage(content) {
           .wishlist-product__image { aspect-ratio: 4 / 5; background: #e2e8f0; display: block; width: 100%; object-fit: cover; }
           .wishlist-product__body { padding: 16px; display: grid; gap: 10px; }
           .wishlist-product__title { text-decoration: none; color: #0f172a; font-weight: 700; }
+          .wishlist-product__actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
           .wishlist-product__link { color: #0f172a; font-weight: 600; text-decoration: none; }
+          .wishlist-product__remove { border: 0; background: transparent; color: #b91c1c; font: inherit; font-weight: 700; cursor: pointer; padding: 0; }
+          .wishlist-product__remove[disabled] { opacity: 0.6; cursor: wait; }
+          .wishlist-status { margin: 0 0 16px; color: #475569; }
           .wishlist-cta { display: inline-flex; align-items: center; justify-content: center; padding: 12px 16px; border-radius: 999px; background: #0f172a; color: #fff; text-decoration: none; font-weight: 700; }
         </style>
       </head>
@@ -114,11 +118,14 @@ export const loader = async ({ request }) => {
     const content =
       products.length > 0
         ? `
-          <main class="wishlist-shell">
+          <main class="wishlist-shell" data-wishlist-proxy-page data-customer-id="${escapeHtml(
+            customerId,
+          )}">
             <div class="wishlist-header">
               <p>Wishlist</p>
               <h1>Your saved products</h1>
             </div>
+            <p class="wishlist-status" data-wishlist-status hidden></p>
             <section class="wishlist-grid">
               ${products
                 .map((product) => {
@@ -133,7 +140,9 @@ export const loader = async ({ request }) => {
                   );
 
                   return `
-                    <article class="wishlist-product">
+                    <article class="wishlist-product" data-wishlist-product-id="${escapeHtml(
+                      product.id,
+                    )}" data-wishlist-product-handle="${handle}">
                       ${
                         imageUrl
                           ? `<a href="${href}"><img class="wishlist-product__image" src="${imageUrl}" alt="${imageAlt}"></a>`
@@ -141,13 +150,88 @@ export const loader = async ({ request }) => {
                       }
                       <div class="wishlist-product__body">
                         <a class="wishlist-product__title" href="${href}">${title}</a>
-                        <a class="wishlist-product__link" href="${href}">View product</a>
+                        <div class="wishlist-product__actions">
+                          <a class="wishlist-product__link" href="${href}">View product</a>
+                          <button type="button" class="wishlist-product__remove" data-wishlist-remove>Remove</button>
+                        </div>
                       </div>
                     </article>
                   `;
                 })
                 .join("")}
             </section>
+            <script>
+              (function () {
+                var root = document.querySelector("[data-wishlist-proxy-page]");
+                if (!root) return;
+
+                var statusNode = root.querySelector("[data-wishlist-status]");
+                var gridNode = root.querySelector(".wishlist-grid");
+                var customerId = root.getAttribute("data-customer-id");
+
+                function setStatus(message) {
+                  if (!statusNode) return;
+                  statusNode.textContent = message || "";
+                  statusNode.hidden = !message;
+                }
+
+                function showEmptyState() {
+                  root.innerHTML =
+                    '<section class="wishlist-card">' +
+                    '<div class="wishlist-header"><p>Wishlist</p><h1>Your wishlist is empty</h1></div>' +
+                    '<p>Save products from the storefront to see them here.</p>' +
+                    '<a class="wishlist-cta" href="/collections/all">Browse products</a>' +
+                    '</section>';
+                }
+
+                gridNode.addEventListener("click", function (event) {
+                  var button = event.target.closest("[data-wishlist-remove]");
+                  if (!button) return;
+
+                  var card = button.closest("[data-wishlist-product-id]");
+                  if (!card) return;
+
+                  var formData = new FormData();
+                  formData.append("customerId", customerId);
+                  formData.append("productId", card.getAttribute("data-wishlist-product-id"));
+                  formData.append("handle", card.getAttribute("data-wishlist-product-handle"));
+                  formData.append("intent", "remove");
+
+                  button.disabled = true;
+                  setStatus("Removing product from wishlist.");
+
+                  fetch("/apps/wishlist-proxy/wishlist/toggle", {
+                    method: "POST",
+                    credentials: "same-origin",
+                    body: formData
+                  })
+                    .then(function (response) {
+                      return response.json().catch(function () {
+                        return {};
+                      }).then(function (payload) {
+                        if (!response.ok || payload.error) {
+                          throw new Error(payload.error || "Unable to remove wishlist item");
+                        }
+
+                        return payload;
+                      });
+                    })
+                    .then(function () {
+                      card.remove();
+                      setStatus("");
+
+                      if (!gridNode.querySelector("[data-wishlist-product-id]")) {
+                        showEmptyState();
+                      }
+                    })
+                    .catch(function (error) {
+                      console.error("wishlist.proxy.page.remove.error", error);
+                      setStatus(error.message || "Unable to remove wishlist item right now.");
+                      button.disabled = false;
+                    });
+                });
+              })();
+            </script>
           </main>
         `
         : `

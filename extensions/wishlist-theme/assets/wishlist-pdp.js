@@ -144,6 +144,14 @@
     writeState(customerId, customerState);
   }
 
+  function hasGuestWishlistState() {
+    var guestState = readGuestState();
+    return (
+      hasEntries(guestState.itemsByProductId) ||
+      hasEntries(guestState.statusByHandle)
+    );
+  }
+
   function buildStatusUrl(config) {
     var url = new URL(config.statusUrl, window.location.origin);
     url.searchParams.set("customerId", config.customerId);
@@ -501,6 +509,19 @@
 
       var localOnly = false;
       button.disabled = true;
+      var hadGuestWishlist = hasGuestWishlistState();
+
+      if (hadGuestWishlist) {
+        mergeGuestStateIntoCustomerState(config.customerId);
+        var immediateState = readState(config.customerId);
+        setState(
+          button,
+          !!immediateState.itemsByProductId[config.productId] ||
+            !!immediateState.statusByHandle[config.productHandle],
+          labels,
+        );
+        button.disabled = false;
+      }
 
       loadSettings(config)
         .then(function () {
@@ -526,6 +547,17 @@
             );
             button.disabled = false;
             return;
+          }
+
+          if (hadGuestWishlist) {
+            var syncedImmediateState = readState(config.customerId);
+            setState(
+              button,
+              !!syncedImmediateState.itemsByProductId[config.productId] ||
+                !!syncedImmediateState.statusByHandle[config.productHandle],
+              labels,
+            );
+            button.disabled = false;
           }
 
           fetchStatus(config).then(
