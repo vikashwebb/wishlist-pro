@@ -112,11 +112,29 @@ How to add it in Shopify:
 7. Place it where you want on the product details page.
 8. Save the theme.
 
+How to add it from the app for JSON themes:
+
+1. Open the embedded Wishlist Pro dashboard.
+2. Go to the `Product page button` section.
+3. Click `Add app block for JSON themes`.
+4. Shopify opens the product template in Theme Editor and pre-adds the app
+   block in the Apps section.
+5. Review the placement and save the theme.
+
+If the theme uses a liquid product template:
+
+1. Open the embedded Wishlist Pro dashboard.
+2. Go to the `Product page button` section.
+3. Click `Activate embed for liquid themes`.
+4. Shopify opens `Theme settings` > `App embeds`.
+5. Enable the `Product page button` embed and save the theme.
+
 Available block settings:
 
 - `Add label`
 - `Added label`
 - `Logged out helper text`
+- `Optional custom target selector`
 
 Notes:
 
@@ -124,6 +142,11 @@ Notes:
 - It loads `wishlist.css` and `wishlist-pdp.js` automatically.
 - If the store requires login for wishlist, the button will guide logged-out
   shoppers to sign in.
+- Shopify doesn't silently publish app blocks after install. The app can start
+  the Theme Editor flow, but the merchant still needs to save the theme.
+- App blocks need JSON templates and sections that support `@app`.
+- The product-page app embed is the fallback for liquid themes that don't
+  support app blocks on the product template.
 
 ## Data Model
 
@@ -134,10 +157,7 @@ Wishlist items are stored as product GIDs in a customer metafield JSON array.
 Example:
 
 ```json
-[
-  "gid://shopify/Product/1111111111111",
-  "gid://shopify/Product/2222222222222"
-]
+["gid://shopify/Product/1111111111111", "gid://shopify/Product/2222222222222"]
 ```
 
 ### Shop settings

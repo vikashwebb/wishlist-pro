@@ -11,6 +11,33 @@ export const loader = async ({ request }) => {
     import("../shopify.server"),
   ]);
   const { admin, session } = await authenticate.admin(request);
+  // eslint-disable-next-line no-undef
+  const appApiKey = process.env.SHOPIFY_API_KEY || "";
+
+  async function getMainThemeId(accessScopes) {
+    if (!accessScopes.includes("read_themes")) {
+      return null;
+    }
+
+    try {
+      const themeResponse = await admin.graphql(
+        `#graphql
+          query WishlistMainTheme {
+            themes(first: 1, roles: [MAIN]) {
+              nodes {
+                id
+              }
+            }
+          }`,
+      );
+      const themeJson = await themeResponse.json();
+
+      return themeJson.data?.themes?.nodes?.[0]?.id ?? null;
+    } catch (error) {
+      console.error("wishlist.mainTheme.loader.error", error);
+      return null;
+    }
+  }
 
   try {
     const response = await admin.graphql(
@@ -39,16 +66,19 @@ export const loader = async ({ request }) => {
         }`,
     );
     const responseJson = await response.json();
+    const accessScopes =
+      responseJson.data?.currentAppInstallation?.accessScopes?.map(
+        (scope) => scope.handle,
+      ) ?? [];
 
     return {
-      accessScopes:
-        responseJson.data?.currentAppInstallation?.accessScopes?.map(
-          (scope) => scope.handle,
-        ) ?? [],
+      accessScopes,
       customers: responseJson.data?.customers?.nodes ?? [],
       products: responseJson.data?.products?.nodes ?? [],
       settings: await getShopSettings(session.shop),
       shopDomain: session.shop,
+      mainThemeId: await getMainThemeId(accessScopes),
+      appApiKey,
       customerAccessBlocked: false,
     };
   } catch (error) {
@@ -80,16 +110,19 @@ export const loader = async ({ request }) => {
         }`,
     );
     const fallbackJson = await fallbackResponse.json();
+    const accessScopes =
+      fallbackJson.data?.currentAppInstallation?.accessScopes?.map(
+        (scope) => scope.handle,
+      ) ?? [];
 
     return {
-      accessScopes:
-        fallbackJson.data?.currentAppInstallation?.accessScopes?.map(
-          (scope) => scope.handle,
-        ) ?? [],
+      accessScopes,
       customers: [],
       products: fallbackJson.data?.products?.nodes ?? [],
       settings: await getShopSettings(session.shop),
       shopDomain: session.shop,
+      mainThemeId: await getMainThemeId(accessScopes),
+      appApiKey,
       customerAccessBlocked: true,
     };
   }
@@ -103,6 +136,8 @@ export default function Index() {
     customerAccessBlocked,
     settings,
     shopDomain,
+    mainThemeId,
+    appApiKey,
   } = useLoaderData();
   const wishlistFetcher = useFetcher();
   const mutationFetcher = useFetcher();
@@ -242,6 +277,25 @@ export default function Index() {
   const wishlistPageUrl =
     shopDomain && wishlistPage?.handle
       ? `https://${shopDomain}/pages/${wishlistPage.handle}`
+      : null;
+  const themeEditorBaseUrl = shopDomain
+    ? `https://${shopDomain}/admin/themes/${
+        mainThemeId
+          ? encodeURIComponent(mainThemeId.split("/").pop())
+          : "current"
+      }/editor`
+    : null;
+  const productPageButtonEditorUrl =
+    themeEditorBaseUrl && appApiKey
+      ? `${themeEditorBaseUrl}?template=product&addAppBlockId=${encodeURIComponent(
+          `${appApiKey}/pdp-wishlist-button`,
+        )}&target=newAppsSection`
+      : null;
+  const productPageEmbedEditorUrl =
+    themeEditorBaseUrl && appApiKey
+      ? `${themeEditorBaseUrl}?context=apps&template=product&activateAppId=${encodeURIComponent(
+          `${appApiKey}/pdp-wishlist-embed`,
+        )}`
       : null;
 
   const handleToggleWishlist = () => {
@@ -508,20 +562,74 @@ export default function Index() {
               </s-button>
 
               {wishlistPageUrl ? (
-                <s-button
-                  variant="secondary"
+                <a
+                  className={`${styles.linkButton} ${styles.linkButtonSecondary}`}
                   href={wishlistPageUrl}
                   target="_blank"
                   rel="noreferrer"
                 >
                   View storefront page
-                </s-button>
+                </a>
               ) : null}
             </div>
 
             <p className={styles.supportText}>
               Next step: add the wishlist block or final storefront layout to
               this page so shoppers can review saved items in one place.
+            </p>
+          </div>
+        </s-section>
+
+        <s-section heading="Product page button">
+          <div className={styles.surface}>
+            <div className={styles.sectionHeader}>
+              <div>
+                <h2 className={styles.sectionTitle}>
+                  Add the wishlist button to product pages
+                </h2>
+                <p className={styles.sectionText}>
+                  Use the JSON-template app block flow when the theme supports
+                  sections and blocks, or activate the product-page embed for
+                  liquid themes that do not.
+                </p>
+              </div>
+              {statusPill("warning", "Theme-dependent setup")}
+            </div>
+
+            <div className={styles.actionRow}>
+              {productPageButtonEditorUrl ? (
+                <a
+                  className={styles.linkButton}
+                  href={productPageButtonEditorUrl}
+                  target="_top"
+                  rel="noreferrer"
+                >
+                  Add app block for JSON themes
+                </a>
+              ) : (
+                <s-button disabled>Add app block for JSON themes</s-button>
+              )}
+
+              {productPageEmbedEditorUrl ? (
+                <a
+                  className={`${styles.linkButton} ${styles.linkButtonSecondary}`}
+                  href={productPageEmbedEditorUrl}
+                  target="_top"
+                  rel="noreferrer"
+                >
+                  Activate embed for liquid themes
+                </a>
+              ) : (
+                <s-button variant="secondary" disabled>
+                  Activate embed for liquid themes
+                </s-button>
+              )}
+            </div>
+
+            <p className={styles.supportText}>
+              If Shopify says liquid templates don&apos;t support sections and
+              blocks, use the embed option. It works on product pages without
+              requiring a JSON product template.
             </p>
           </div>
         </s-section>

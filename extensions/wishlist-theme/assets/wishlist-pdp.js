@@ -289,6 +289,115 @@
     );
   }
 
+  function defaultMountSelectors() {
+    return [
+      "product-info .product-form",
+      "product-info .buy-buttons",
+      ".product-form",
+      ".product__buy-buttons",
+      ".product__info-wrapper",
+      ".product__info-container",
+      "[data-product-form]",
+      "form[action*='/cart/add']",
+      "main",
+    ];
+  }
+
+  function buildMountSelectors(config) {
+    var selectors = [];
+
+    if (
+      typeof config.targetSelector === "string" &&
+      config.targetSelector.trim()
+    ) {
+      selectors.push(config.targetSelector.trim());
+    }
+
+    return selectors.concat(defaultMountSelectors());
+  }
+
+  function ensureMarkup(root, labels, config) {
+    var button = root.querySelector("[data-wishlist-button]");
+    if (!button) {
+      button = document.createElement("button");
+      button.type = "button";
+      button.className = "wishlist-pro-button";
+      button.setAttribute("data-wishlist-button", "true");
+      button.setAttribute("aria-pressed", "false");
+      button.innerHTML =
+        '<span class="wishlist-pro-button__icon" aria-hidden="true">♥</span>' +
+        "<span data-wishlist-label>" +
+        labels.add +
+        "</span>";
+      root.appendChild(button);
+    }
+
+    var loginNote = root.querySelector("[data-wishlist-login-note]");
+    if (!loginNote && config.loginText) {
+      loginNote = document.createElement("p");
+      loginNote.className = "wishlist-pro-login-note";
+      loginNote.setAttribute("data-wishlist-login-note", "true");
+      loginNote.hidden = true;
+      loginNote.textContent = config.loginText;
+      root.appendChild(loginNote);
+    }
+
+    return {
+      button: button,
+      loginNote: loginNote,
+    };
+  }
+
+  function mountInlineRoot(root, config) {
+    if (root.getAttribute("data-wishlist-auto-insert") !== "true") {
+      return true;
+    }
+
+    if (root.getAttribute("data-wishlist-mounted") === "true") {
+      root.hidden = false;
+      return true;
+    }
+
+    var selectors = buildMountSelectors(config);
+    for (var index = 0; index < selectors.length; index += 1) {
+      var target = document.querySelector(selectors[index]);
+      if (!target) continue;
+
+      root.classList.add("wishlist-pro-inline");
+      root.hidden = false;
+
+      if (target.tagName === "FORM") {
+        target.insertAdjacentElement("afterend", root);
+      } else {
+        target.appendChild(root);
+      }
+
+      root.setAttribute("data-wishlist-mounted", "true");
+      return true;
+    }
+
+    root.hidden = true;
+    return false;
+  }
+
+  function mountInlineRootWhenReady(root, config, start) {
+    if (mountInlineRoot(root, config)) {
+      start();
+      return;
+    }
+
+    var observer = new MutationObserver(function () {
+      if (!mountInlineRoot(root, config)) {
+        return;
+      }
+
+      observer.disconnect();
+      start();
+    });
+
+    observer.observe(document.body, { childList: true, subtree: true });
+  }
+
   function setState(button, active, labels) {
     button.classList.toggle("is-active", active);
     button.setAttribute("aria-pressed", active ? "true" : "false");
@@ -332,91 +441,129 @@
   }
 
   document.querySelectorAll("[data-wishlist-pdp]").forEach(function (root) {
-    var button = root.querySelector("[data-wishlist-button]");
-    if (!button) return;
-    var loginNote = root.querySelector("[data-wishlist-login-note]");
-
     var config = JSON.parse(root.getAttribute("data-wishlist-config") || "{}");
     var labels = {
       add: config.addLabel || "Add to Wishlist",
       added: config.addedLabel || "Added to Wishlist",
     };
+    var markup = ensureMarkup(root, labels, config);
+    var button = markup.button;
+    var loginNote = markup.loginNote;
 
-    if (!config.customerId) {
-      button.disabled = true;
+    function start() {
+      if (root.getAttribute("data-wishlist-bound") === "true") {
+        return;
+      }
 
-      loadSettings(config).then(function () {
-        if (requiresLogin(config)) {
-          if (loginNote) {
-            loginNote.hidden = false;
+      root.setAttribute("data-wishlist-bound", "true");
+
+      if (!config.customerId) {
+        button.disabled = true;
+
+        loadSettings(config).then(function () {
+          if (requiresLogin(config)) {
+            if (loginNote) {
+              loginNote.hidden = false;
+            }
+            setState(button, false, labels);
+            button.disabled = false;
+            return;
           }
-          setState(button, false, labels);
-          button.disabled = false;
-          return;
-        }
 
-        if (loginNote) {
-          loginNote.hidden = true;
-        }
+          if (loginNote) {
+            loginNote.hidden = true;
+          }
 
-        var guestState = readGuestState();
-        setState(
-          button,
-          !!guestState.itemsByProductId[config.productId] ||
-            !!guestState.statusByHandle[config.productHandle],
-          labels,
-        );
-        button.disabled = false;
-      });
-
-      button.addEventListener("click", function () {
-        if (button.disabled) return;
-
-        if (requiresLogin(config)) {
-          window.location.href = config.loginUrl || "/account/login";
-          return;
-        }
-
-        var nextActive = button.getAttribute("aria-pressed") !== "true";
-        setGuestState(config.productId, config.productHandle, nextActive);
-        setState(button, nextActive, labels);
-      });
-      return;
-    }
-
-    var localOnly = false;
-    button.disabled = true;
-
-    loadSettings(config)
-      .then(function () {
-        if (loginNote) {
-          loginNote.hidden = true;
-        }
-
-        return syncGuestState(config);
-      })
-      .catch(function (error) {
-        console.error("wishlist.pdp.sync.error", error);
-        return null;
-      })
-      .then(function (syncPayload) {
-        if (syncPayload && syncPayload.localOnly) {
-          localOnly = true;
-          var syncedFallbackState = readState(config.customerId);
+          var guestState = readGuestState();
           setState(
             button,
-            !!syncedFallbackState.itemsByProductId[config.productId] ||
-              !!syncedFallbackState.statusByHandle[config.productHandle],
+            !!guestState.itemsByProductId[config.productId] ||
+              !!guestState.statusByHandle[config.productHandle],
             labels,
           );
           button.disabled = false;
-          return;
-        }
+        });
 
-        fetchStatus(config).then(
-          function (payload) {
-            if (payload.localOnly) {
+        button.addEventListener("click", function () {
+          if (button.disabled) return;
+
+          if (requiresLogin(config)) {
+            window.location.href = config.loginUrl || "/account/login";
+            return;
+          }
+
+          var nextActive = button.getAttribute("aria-pressed") !== "true";
+          setGuestState(config.productId, config.productHandle, nextActive);
+          setState(button, nextActive, labels);
+        });
+        return;
+      }
+
+      var localOnly = false;
+      button.disabled = true;
+
+      loadSettings(config)
+        .then(function () {
+          if (loginNote) {
+            loginNote.hidden = true;
+          }
+
+          return syncGuestState(config);
+        })
+        .catch(function (error) {
+          console.error("wishlist.pdp.sync.error", error);
+          return null;
+        })
+        .then(function (syncPayload) {
+          if (syncPayload && syncPayload.localOnly) {
+            localOnly = true;
+            var syncedFallbackState = readState(config.customerId);
+            setState(
+              button,
+              !!syncedFallbackState.itemsByProductId[config.productId] ||
+                !!syncedFallbackState.statusByHandle[config.productHandle],
+              labels,
+            );
+            button.disabled = false;
+            return;
+          }
+
+          fetchStatus(config).then(
+            function (payload) {
+              if (payload.localOnly) {
+                localOnly = true;
+                var fallbackState = readState(config.customerId);
+                setState(
+                  button,
+                  !!fallbackState.itemsByProductId[config.productId] ||
+                    !!fallbackState.statusByHandle[config.productHandle],
+                  labels,
+                );
+                button.disabled = false;
+                return;
+              }
+
+              syncLegacyState(config, payload).then(
+                function (nextPayload) {
+                  var active = isActive(config, nextPayload);
+                  setLocalState(
+                    config.customerId,
+                    config.productId,
+                    config.productHandle,
+                    active,
+                  );
+                  setState(button, active, labels);
+                  button.disabled = false;
+                },
+                function () {
+                  button.disabled = false;
+                },
+              );
+            },
+            function (error) {
+              console.error("wishlist.pdp.status.error", error);
               localOnly = true;
+              mergeGuestStateIntoCustomerState(config.customerId);
               var fallbackState = readState(config.customerId);
               setState(
                 button,
@@ -425,48 +572,26 @@
                 labels,
               );
               button.disabled = false;
-              return;
-            }
+            },
+          );
+        });
 
-            syncLegacyState(config, payload).then(
-              function (nextPayload) {
-                var active = isActive(config, nextPayload);
-                setLocalState(
-                  config.customerId,
-                  config.productId,
-                  config.productHandle,
-                  active,
-                );
-                setState(button, active, labels);
-                button.disabled = false;
-              },
-              function () {
-                button.disabled = false;
-              },
-            );
-          },
-          function (error) {
-            console.error("wishlist.pdp.status.error", error);
-            localOnly = true;
-            mergeGuestStateIntoCustomerState(config.customerId);
-            var fallbackState = readState(config.customerId);
-            setState(
-              button,
-              !!fallbackState.itemsByProductId[config.productId] ||
-                !!fallbackState.statusByHandle[config.productHandle],
-              labels,
-            );
-            button.disabled = false;
-          },
-        );
-      });
+      button.addEventListener("click", function () {
+        if (button.disabled) return;
 
-    button.addEventListener("click", function () {
-      if (button.disabled) return;
+        var previousActive = button.getAttribute("aria-pressed") === "true";
+        var nextActive = button.getAttribute("aria-pressed") !== "true";
+        if (localOnly) {
+          setLocalState(
+            config.customerId,
+            config.productId,
+            config.productHandle,
+            nextActive,
+          );
+          setState(button, nextActive, labels);
+          return;
+        }
 
-      var previousActive = button.getAttribute("aria-pressed") === "true";
-      var nextActive = button.getAttribute("aria-pressed") !== "true";
-      if (localOnly) {
         setLocalState(
           config.customerId,
           config.productId,
@@ -474,58 +599,56 @@
           nextActive,
         );
         setState(button, nextActive, labels);
-        return;
-      }
+        button.disabled = true;
+        toggleRemote(config, nextActive ? "add" : "remove").then(
+          function (payload) {
+            if (payload.localOnly) {
+              localOnly = true;
+              setLocalState(
+                config.customerId,
+                config.productId,
+                config.productHandle,
+                nextActive,
+              );
+              setState(button, nextActive, labels);
+              button.disabled = false;
+              return;
+            }
 
-      setLocalState(
-        config.customerId,
-        config.productId,
-        config.productHandle,
-        nextActive,
-      );
-      setState(button, nextActive, labels);
-      button.disabled = true;
-      toggleRemote(config, nextActive ? "add" : "remove").then(
-        function (payload) {
-          if (payload.localOnly) {
-            localOnly = true;
+            pruneLegacyState(
+              config.customerId,
+              config.productId,
+              config.productHandle,
+            );
             setLocalState(
               config.customerId,
               config.productId,
               config.productHandle,
-              nextActive,
+              !!payload.active,
             );
-            setState(button, nextActive, labels);
+            setState(button, isActive(config, payload), labels);
             button.disabled = false;
-            return;
-          }
+          },
+          function (error) {
+            console.error("wishlist.pdp.toggle.error", error);
+            setLocalState(
+              config.customerId,
+              config.productId,
+              config.productHandle,
+              previousActive,
+            );
+            setState(button, previousActive, labels);
+            button.disabled = false;
+          },
+        );
+      });
+    }
 
-          pruneLegacyState(
-            config.customerId,
-            config.productId,
-            config.productHandle,
-          );
-          setLocalState(
-            config.customerId,
-            config.productId,
-            config.productHandle,
-            !!payload.active,
-          );
-          setState(button, isActive(config, payload), labels);
-          button.disabled = false;
-        },
-        function (error) {
-          console.error("wishlist.pdp.toggle.error", error);
-          setLocalState(
-            config.customerId,
-            config.productId,
-            config.productHandle,
-            previousActive,
-          );
-          setState(button, previousActive, labels);
-          button.disabled = false;
-        },
-      );
-    });
+    if (root.getAttribute("data-wishlist-auto-insert") === "true") {
+      mountInlineRootWhenReady(root, config, start);
+      return;
+    }
+
+    start();
   });
 })();

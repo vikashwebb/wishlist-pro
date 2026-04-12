@@ -13,8 +13,12 @@
   font-weight: 600;
   line-height: 1;
   cursor: pointer;
-  transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease,
-    color 120ms ease, border-color 120ms ease;
+  transition:
+    transform 120ms ease,
+    box-shadow 120ms ease,
+    background 120ms ease,
+    color 120ms ease,
+    border-color 120ms ease;
 }
 
 .wishlist-pro-button:hover {
@@ -61,6 +65,13 @@
   margin-top: 0.5rem;
   color: rgb(15 23 42 / 0.72);
   font-size: 0.9rem;
+}
+
+.wishlist-pro-inline {
+  display: grid;
+  gap: 0.5rem;
+  width: fit-content;
+  margin-top: 1rem;
 }
 
 .wishlist-pro-page {
