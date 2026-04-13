@@ -164,6 +164,45 @@
   accent-color: #1d6b59;
 }
 
+.fieldGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.9rem;
+}
+
+.field {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.fieldLabel {
+  color: #0f172a;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.fieldInput {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.8rem 0.95rem;
+  border: 1px solid rgb(15 23 42 / 0.12);
+  border-radius: 14px;
+  background: #fcfcfa;
+  color: #0f172a;
+  font: inherit;
+}
+
+.fieldInput:focus {
+  outline: none;
+  border-color: rgb(29 107 89 / 0.55);
+  box-shadow: 0 0 0 4px rgb(29 107 89 / 0.12);
+}
+
+.fieldHint {
+  color: rgb(15 23 42 / 0.62);
+  font-size: 0.86rem;
+}
+
 .formRow {
   max-width: 28rem;
 }

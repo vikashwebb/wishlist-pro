@@ -185,6 +185,21 @@
       .then(readJson);
   }
 
+  function formatMoney(amount, currencyCode) {
+    if (typeof amount !== "number" || !currencyCode) {
+      return "";
+    }
+
+    try {
+      return new Intl.NumberFormat(undefined, {
+        style: "currency",
+        currency: currencyCode,
+      }).format(amount);
+    } catch {
+      return amount.toFixed(2) + " " + currencyCode;
+    }
+  }
+
   function toggleRemote(config, product, intent) {
     var formData = new window.FormData();
     formData.append("customerId", config.customerId);
@@ -250,6 +265,28 @@
               (product.imageAlt || product.title) +
               '">'
             : '<div class="wishlist-pro-page-card__image wishlist-pro-page-card__image--placeholder">No image</div>';
+          var price = formatMoney(product.priceAmount, product.currencyCode);
+          var compareAt = formatMoney(
+            product.compareAtPriceAmount,
+            product.currencyCode,
+          );
+          var pricing = price
+            ? '<div class="wishlist-pro-page-card__pricing">' +
+              '<span class="wishlist-pro-page-card__price">' +
+              price +
+              "</span>" +
+              (compareAt && product.compareAtPriceAmount > product.priceAmount
+                ? '<span class="wishlist-pro-page-card__compare">' +
+                  compareAt +
+                  "</span>"
+                : "") +
+              (product.discountPercentage
+                ? '<span class="wishlist-pro-page-card__discount">' +
+                  product.discountPercentage +
+                  "% off</span>"
+                : "") +
+              "</div>"
+            : "";
 
           return (
             '<article class="wishlist-pro-page-card" data-wishlist-product-id="' +
@@ -263,11 +300,14 @@
             image +
             "</a>" +
             '<div class="wishlist-pro-page-card__body">' +
+            '<div class="wishlist-pro-page-card__meta">' +
             '<a class="wishlist-pro-page-card__title" href="' +
             product.url +
             '">' +
             product.title +
             "</a>" +
+            pricing +
+            "</div>" +
             '<div class="wishlist-pro-page-card__actions">' +
             '<a class="wishlist-pro-page-card__link" href="' +
             product.url +

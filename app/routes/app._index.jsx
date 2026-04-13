@@ -157,6 +157,12 @@ export default function Index() {
     !!settings?.wishlistRequiresLogin,
   );
   const [wishlistPage, setWishlistPage] = useState(null);
+  const [wishlistPageTitle, setWishlistPageTitle] = useState(
+    settings?.wishlistPageTitle ?? "Wishlist",
+  );
+  const [wishlistPageHandle, setWishlistPageHandle] = useState(
+    settings?.wishlistPageHandle ?? "wishlist",
+  );
 
   useEffect(() => {
     if (!selectedCustomerId) {
@@ -238,8 +244,18 @@ export default function Index() {
     }
 
     setWishlistPage(pageFetcher.data.page ?? null);
+    setWishlistPageTitle(
+      pageFetcher.data.settings?.wishlistPageTitle ??
+        pageFetcher.data.page?.title ??
+        wishlistPageTitle,
+    );
+    setWishlistPageHandle(
+      pageFetcher.data.settings?.wishlistPageHandle ??
+        pageFetcher.data.page?.handle ??
+        wishlistPageHandle,
+    );
     shopify.toast.show("Wishlist page created");
-  }, [pageFetcher.data, shopify]);
+  }, [pageFetcher.data, shopify, wishlistPageHandle, wishlistPageTitle]);
 
   const selectedCustomer = customers.find(
     (customer) => customer.id === selectedCustomerId,
@@ -278,6 +294,7 @@ export default function Index() {
     shopDomain && wishlistPage?.handle
       ? `https://${shopDomain}/pages/${wishlistPage.handle}`
       : null;
+  const wishlistPagePreviewPath = `/pages/${wishlistPageHandle || "wishlist"}`;
   const themeEditorBaseUrl = shopDomain
     ? `https://${shopDomain}/admin/themes/${
         mainThemeId
@@ -519,8 +536,9 @@ export default function Index() {
                   Create your storefront wishlist page
                 </h2>
                 <p className={styles.sectionText}>
-                  Generate the Shopify page at <code>/pages/wishlist</code> and
-                  connect it to your wishlist experience when you are ready.
+                  Create or update the Shopify page at{" "}
+                  <code>{wishlistPagePreviewPath}</code> and control its title
+                  and handle from the app.
                 </p>
               </div>
               {wishlistPage
@@ -539,16 +557,50 @@ export default function Index() {
 
             {wishlistPage ? (
               <s-banner tone="success">
-                Wishlist page created at{" "}
+                Wishlist page available at{" "}
                 <code>/pages/{wishlistPage.handle}</code>.
               </s-banner>
             ) : null}
+
+            <div className={styles.fieldGrid}>
+              <label className={styles.field}>
+                <span className={styles.fieldLabel}>Page title</span>
+                <input
+                  className={styles.fieldInput}
+                  type="text"
+                  value={wishlistPageTitle}
+                  onChange={(event) =>
+                    setWishlistPageTitle(event.currentTarget.value)
+                  }
+                  placeholder="Wishlist"
+                />
+              </label>
+
+              <label className={styles.field}>
+                <span className={styles.fieldLabel}>Page handle</span>
+                <input
+                  className={styles.fieldInput}
+                  type="text"
+                  value={wishlistPageHandle}
+                  onChange={(event) =>
+                    setWishlistPageHandle(event.currentTarget.value)
+                  }
+                  placeholder="wishlist"
+                />
+                <span className={styles.fieldHint}>
+                  Final URL: <code>{wishlistPagePreviewPath}</code>
+                </span>
+              </label>
+            </div>
 
             <div className={styles.actionRow}>
               <s-button
                 onClick={() =>
                   pageFetcher.submit(
-                    {},
+                    {
+                      wishlistPageTitle,
+                      wishlistPageHandle,
+                    },
                     {
                       action: "/app/api/wishlist-page",
                       method: "post",
@@ -558,7 +610,7 @@ export default function Index() {
                 {...(isCreatingWishlistPage ? { loading: true } : {})}
                 disabled={!hasWriteOnlineStorePagesScope}
               >
-                Create wishlist page
+                Save wishlist page
               </s-button>
 
               {wishlistPageUrl ? (

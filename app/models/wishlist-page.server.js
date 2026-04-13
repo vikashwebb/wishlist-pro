@@ -17,7 +17,7 @@ function buildWishlistPageBody() {
   `.trim();
 }
 
-async function findWishlistPage(admin) {
+async function findWishlistPage(admin, handle) {
   const response = await admin.graphql(
     `#graphql
       query FindWishlistPage($query: String!) {
@@ -31,7 +31,7 @@ async function findWishlistPage(admin) {
       }`,
     {
       variables: {
-        query: "handle:wishlist",
+        query: `handle:${handle}`,
       },
     },
   );
@@ -46,7 +46,7 @@ async function findWishlistPage(admin) {
   return payload.data?.pages?.nodes?.[0] ?? null;
 }
 
-async function createWishlistPage(admin) {
+async function createWishlistPage(admin, { title, handle }) {
   const response = await admin.graphql(
     `#graphql
       mutation CreateWishlistPage($page: PageCreateInput!) {
@@ -66,8 +66,8 @@ async function createWishlistPage(admin) {
     {
       variables: {
         page: {
-          title: "Wishlist",
-          handle: "wishlist",
+          title,
+          handle,
           body: buildWishlistPageBody(),
           isPublished: true,
         },
@@ -98,7 +98,7 @@ async function createWishlistPage(admin) {
   };
 }
 
-async function updateWishlistPage(admin, pageId) {
+async function updateWishlistPage(admin, pageId, { title, handle }) {
   const response = await admin.graphql(
     `#graphql
       mutation UpdateWishlistPage($id: ID!, $page: PageUpdateInput!) {
@@ -119,8 +119,8 @@ async function updateWishlistPage(admin, pageId) {
       variables: {
         id: pageId,
         page: {
-          title: "Wishlist",
-          handle: "wishlist",
+          title,
+          handle,
           body: buildWishlistPageBody(),
           isPublished: true,
         },
@@ -151,14 +151,24 @@ async function updateWishlistPage(admin, pageId) {
   };
 }
 
-export async function upsertWishlistPage(admin) {
-  const existingPage = await findWishlistPage(admin);
+export async function upsertWishlistPage(
+  admin,
+  { title = "Wishlist", handle = "wishlist", previousHandle = handle } = {},
+) {
+  const existingPage =
+    (await findWishlistPage(admin, handle)) ||
+    (previousHandle && previousHandle !== handle
+      ? await findWishlistPage(admin, previousHandle)
+      : null);
 
   if (existingPage) {
-    const result = await updateWishlistPage(admin, existingPage.id);
+    const result = await updateWishlistPage(admin, existingPage.id, {
+      title,
+      handle,
+    });
     return { ...result, mode: "updated" };
   }
 
-  const result = await createWishlistPage(admin);
+  const result = await createWishlistPage(admin, { title, handle });
   return { ...result, mode: "created" };
 }

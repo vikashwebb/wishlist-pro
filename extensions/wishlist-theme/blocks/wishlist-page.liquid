@@ -23,6 +23,12 @@
     "removeLabel": {{ block.settings.remove_label | json }}
   }'
 >
+  {% if block.settings.custom_css != blank %}
+    <style>
+      {{ block.settings.custom_css }}
+    </style>
+  {% endif %}
+
   <div class="wishlist-pro-page">
     <div class="wishlist-pro-page__header">
       <p class="wishlist-pro-page__eyebrow">Wishlist</p>
@@ -96,6 +102,12 @@
       "id": "remove_label",
       "label": "Remove button label",
       "default": "Remove"
+    },
+    {
+      "type": "textarea",
+      "id": "custom_css",
+      "label": "Custom CSS",
+      "default": ".wishlist-pro-page { }"
     }
   ]
 }

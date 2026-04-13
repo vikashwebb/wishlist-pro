@@ -88,7 +88,9 @@ export async function readWishlist(admin, customerId) {
   }
 
   const metafield = payload.data.customer.metafield;
-  const items = normalizeWishlistItems(metafield?.jsonValue ?? metafield?.value);
+  const items = normalizeWishlistItems(
+    metafield?.jsonValue ?? metafield?.value,
+  );
 
   return {
     customer: payload.data.customer,
@@ -140,7 +142,10 @@ export async function writeWishlist(admin, customerId, items) {
   );
 
   const mutationPayload = await mutationResponse.json();
-  console.log("wishlist.write.graphql", JSON.stringify(mutationPayload, null, 2));
+  console.log(
+    "wishlist.write.graphql",
+    JSON.stringify(mutationPayload, null, 2),
+  );
 
   if (mutationPayload.errors?.length) {
     throw new Error(
@@ -170,6 +175,18 @@ export async function resolveProduct(admin, { productId, handle }) {
             id
             handle
             title
+            priceRangeV2 {
+              minVariantPrice {
+                amount
+                currencyCode
+              }
+            }
+            compareAtPriceRange {
+              minVariantCompareAtPrice {
+                amount
+                currencyCode
+              }
+            }
             featuredImage {
               url
               altText
@@ -209,6 +226,18 @@ export async function resolveProduct(admin, { productId, handle }) {
             id
             handle
             title
+            priceRangeV2 {
+              minVariantPrice {
+                amount
+                currencyCode
+              }
+            }
+            compareAtPriceRange {
+              minVariantCompareAtPrice {
+                amount
+                currencyCode
+              }
+            }
             featuredImage {
               url
               altText

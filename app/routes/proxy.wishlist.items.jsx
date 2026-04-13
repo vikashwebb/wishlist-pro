@@ -9,12 +9,14 @@ import { getShopSettings } from "../models/shop-settings.server";
 import { authenticate } from "../shopify.server";
 
 function splitList(value) {
-  return [...new Set(
-    (value || "")
-      .split(",")
-      .map((item) => item.trim())
-      .filter(Boolean),
-  )];
+  return [
+    ...new Set(
+      (value || "")
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean),
+    ),
+  ];
 }
 
 export const loader = async ({ request }) => {
@@ -32,15 +34,36 @@ export const loader = async ({ request }) => {
   const products = [];
   const seen = new Set();
 
+  const toAmount = (value) => {
+    const amount = Number.parseFloat(value ?? "");
+    return Number.isFinite(amount) ? amount : null;
+  };
+
   const pushProduct = (product) => {
     if (!product || seen.has(product.id)) return;
     seen.add(product.id);
+    const price = product.priceRangeV2?.minVariantPrice ?? null;
+    const compareAtPrice =
+      product.compareAtPriceRange?.minVariantCompareAtPrice ?? null;
+    const priceAmount = toAmount(price?.amount);
+    const compareAtPriceAmount = toAmount(compareAtPrice?.amount);
+    const discountPercentage =
+      compareAtPriceAmount && priceAmount && compareAtPriceAmount > priceAmount
+        ? Math.round(
+            ((compareAtPriceAmount - priceAmount) / compareAtPriceAmount) * 100,
+          )
+        : null;
+
     products.push({
       id: product.id,
       handle: product.handle,
       title: product.title,
       image: product.featuredImage?.url ?? null,
       imageAlt: product.featuredImage?.altText ?? product.title,
+      priceAmount,
+      compareAtPriceAmount,
+      currencyCode: price?.currencyCode ?? compareAtPrice?.currencyCode ?? null,
+      discountPercentage,
       url: product.handle ? `/products/${product.handle}` : "#",
     });
   };

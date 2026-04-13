@@ -16,6 +16,26 @@ function escapeHtml(value) {
     .replaceAll("'", "&#39;");
 }
 
+function toAmount(value) {
+  const amount = Number.parseFloat(value ?? "");
+  return Number.isFinite(amount) ? amount : null;
+}
+
+function formatMoney(amount, currencyCode) {
+  if (typeof amount !== "number" || !currencyCode) {
+    return "";
+  }
+
+  try {
+    return new Intl.NumberFormat("en", {
+      style: "currency",
+      currency: currencyCode,
+    }).format(amount);
+  } catch {
+    return `${amount.toFixed(2)} ${currencyCode}`;
+  }
+}
+
 function renderPage(content) {
   return new Response(
     `<!doctype html>
@@ -35,7 +55,12 @@ function renderPage(content) {
           .wishlist-product { overflow: hidden; background: #fff; border: 1px solid rgba(15, 23, 42, 0.08); border-radius: 24px; }
           .wishlist-product__image { aspect-ratio: 4 / 5; background: #e2e8f0; display: block; width: 100%; object-fit: cover; }
           .wishlist-product__body { padding: 16px; display: grid; gap: 10px; }
+          .wishlist-product__meta { display: grid; gap: 8px; }
           .wishlist-product__title { text-decoration: none; color: #0f172a; font-weight: 700; }
+          .wishlist-product__pricing { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+          .wishlist-product__price { color: #0f172a; font-size: 16px; font-weight: 800; }
+          .wishlist-product__compare { color: rgba(15, 23, 42, 0.52); font-size: 14px; text-decoration: line-through; }
+          .wishlist-product__discount { display: inline-flex; align-items: center; padding: 4px 8px; border-radius: 999px; background: rgba(220, 252, 231, 0.9); color: #166534; font-size: 12px; font-weight: 800; }
           .wishlist-product__actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
           .wishlist-product__link { color: #0f172a; font-weight: 600; text-decoration: none; }
           .wishlist-product__remove { border: 0; background: transparent; color: #b91c1c; font: inherit; font-weight: 700; cursor: pointer; padding: 0; }
@@ -138,6 +163,34 @@ export const loader = async ({ request }) => {
                   const imageAlt = escapeHtml(
                     product.featuredImage?.altText || product.title,
                   );
+                  const priceAmount = toAmount(
+                    product.priceRangeV2?.minVariantPrice?.amount,
+                  );
+                  const compareAtPriceAmount = toAmount(
+                    product.compareAtPriceRange?.minVariantCompareAtPrice
+                      ?.amount,
+                  );
+                  const currencyCode =
+                    product.priceRangeV2?.minVariantPrice?.currencyCode ||
+                    product.compareAtPriceRange?.minVariantCompareAtPrice
+                      ?.currencyCode ||
+                    null;
+                  const price = escapeHtml(
+                    formatMoney(priceAmount, currencyCode),
+                  );
+                  const compareAtPrice = escapeHtml(
+                    formatMoney(compareAtPriceAmount, currencyCode),
+                  );
+                  const discountPercentage =
+                    compareAtPriceAmount &&
+                    priceAmount &&
+                    compareAtPriceAmount > priceAmount
+                      ? Math.round(
+                          ((compareAtPriceAmount - priceAmount) /
+                            compareAtPriceAmount) *
+                            100,
+                        )
+                      : null;
 
                   return `
                     <article class="wishlist-product" data-wishlist-product-id="${escapeHtml(
@@ -149,7 +202,27 @@ export const loader = async ({ request }) => {
                           : `<a href="${href}" class="wishlist-product__image"></a>`
                       }
                       <div class="wishlist-product__body">
-                        <a class="wishlist-product__title" href="${href}">${title}</a>
+                        <div class="wishlist-product__meta">
+                          <a class="wishlist-product__title" href="${href}">${title}</a>
+                          ${
+                            price
+                              ? `<div class="wishlist-product__pricing">
+                                  <span class="wishlist-product__price">${price}</span>
+                                  ${
+                                    compareAtPrice &&
+                                    compareAtPriceAmount > priceAmount
+                                      ? `<span class="wishlist-product__compare">${compareAtPrice}</span>`
+                                      : ""
+                                  }
+                                  ${
+                                    discountPercentage
+                                      ? `<span class="wishlist-product__discount">${discountPercentage}% off</span>`
+                                      : ""
+                                  }
+                                </div>`
+                              : ""
+                          }
+                        </div>
                         <div class="wishlist-product__actions">
                           <a class="wishlist-product__link" href="${href}">View product</a>
                           <button type="button" class="wishlist-product__remove" data-wishlist-remove>Remove</button>
