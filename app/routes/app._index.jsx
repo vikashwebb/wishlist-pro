@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useFetcher, useLoaderData } from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { boundary } from "@shopify/shopify-app-react-router/server";
@@ -6,10 +6,12 @@ import { DEFINITION_NAME, KEY, NAMESPACE } from "../models/wishlist";
 import styles from "../styles/app-index.module.css";
 
 export const loader = async ({ request }) => {
-  const [{ getShopSettings }, { authenticate }] = await Promise.all([
-    import("../models/shop-settings.server"),
-    import("../shopify.server"),
-  ]);
+  const [{ getShopSettings }, { authenticate }, { readWishlist }] =
+    await Promise.all([
+      import("../models/shop-settings.server"),
+      import("../shopify.server"),
+      import("../models/wishlist.server"),
+    ]);
   const { admin, session } = await authenticate.admin(request);
   // eslint-disable-next-line no-undef
   const appApiKey = process.env.SHOPIFY_API_KEY || "";
@@ -70,16 +72,34 @@ export const loader = async ({ request }) => {
       responseJson.data?.currentAppInstallation?.accessScopes?.map(
         (scope) => scope.handle,
       ) ?? [];
+    const customers = responseJson.data?.customers?.nodes ?? [];
+    const products = responseJson.data?.products?.nodes ?? [];
+    const initialSelectedCustomerId = customers[0]?.id ?? "";
+    let initialWishlistItems = [];
+
+    if (initialSelectedCustomerId) {
+      try {
+        const initialWishlist = await readWishlist(
+          admin,
+          initialSelectedCustomerId,
+        );
+        initialWishlistItems = initialWishlist.items ?? [];
+      } catch (error) {
+        console.error("wishlist.initial.loader.error", error);
+      }
+    }
 
     return {
       accessScopes,
-      customers: responseJson.data?.customers?.nodes ?? [],
-      products: responseJson.data?.products?.nodes ?? [],
+      customers,
+      products,
       settings: await getShopSettings(session.shop),
       shopDomain: session.shop,
       mainThemeId: await getMainThemeId(accessScopes),
       appApiKey,
       customerAccessBlocked: false,
+      initialSelectedCustomerId,
+      initialWishlistItems,
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
@@ -124,6 +144,8 @@ export const loader = async ({ request }) => {
       mainThemeId: await getMainThemeId(accessScopes),
       appApiKey,
       customerAccessBlocked: true,
+      initialSelectedCustomerId: "",
+      initialWishlistItems: [],
     };
   }
 };
@@ -138,6 +160,8 @@ export default function Index() {
     shopDomain,
     mainThemeId,
     appApiKey,
+    initialSelectedCustomerId,
+    initialWishlistItems,
   } = useLoaderData();
   const wishlistFetcher = useFetcher();
   const mutationFetcher = useFetcher();
@@ -146,12 +170,13 @@ export default function Index() {
   const pageFetcher = useFetcher();
   const shopify = useAppBridge();
   const [selectedCustomerId, setSelectedCustomerId] = useState(
-    customers[0]?.id ?? "",
+    initialSelectedCustomerId,
   );
   const [selectedProductId, setSelectedProductId] = useState(
     products[0]?.id ?? "",
   );
-  const [wishlistItems, setWishlistItems] = useState([]);
+  const [wishlistItems, setWishlistItems] = useState(initialWishlistItems);
+  const skippedInitialWishlistLoadRef = useRef(false);
   const [pendingChange, setPendingChange] = useState(null);
   const [wishlistRequiresLogin, setWishlistRequiresLogin] = useState(
     !!settings?.wishlistRequiresLogin,
@@ -170,10 +195,18 @@ export default function Index() {
       return;
     }
 
+    if (
+      !skippedInitialWishlistLoadRef.current &&
+      selectedCustomerId === initialSelectedCustomerId
+    ) {
+      skippedInitialWishlistLoadRef.current = true;
+      return;
+    }
+
     wishlistFetcher.load(
       `/app/api/wishlist?customerId=${encodeURIComponent(selectedCustomerId)}`,
     );
-  }, [selectedCustomerId, wishlistFetcher]);
+  }, [initialSelectedCustomerId, selectedCustomerId, wishlistFetcher]);
 
   useEffect(() => {
     if (!wishlistFetcher.data) return;
