@@ -21,7 +21,11 @@
     "addLabel": {{ block.settings.add_label | json }},
     "addedLabel": {{ block.settings.added_label | json }},
     "loginText": {{ block.settings.login_text | json }},
-    "targetSelector": {{ block.settings.target_selector | json }}
+    "targetSelector": {{ block.settings.target_selector | json }},
+    "buttonStyle": {{ block.settings.button_style | json }},
+    "buttonAccentColor": {{ block.settings.button_accent_color | json }},
+    "buttonTextColor": {{ block.settings.button_text_color | json }},
+    "buttonIconColor": {{ block.settings.button_icon_color | json }}
   }'
 ></div>
 
@@ -59,6 +63,35 @@
       "label": "Optional custom target selector",
       "info": "Use this if your theme needs a custom product-page anchor.",
       "default": ".product-form"
+    },
+    {
+      "type": "select",
+      "id": "button_style",
+      "label": "Button style",
+      "default": "outline",
+      "options": [
+        { "value": "outline", "label": "Outline" },
+        { "value": "solid", "label": "Solid" },
+        { "value": "icon-only", "label": "Icon only" }
+      ]
+    },
+    {
+      "type": "color",
+      "id": "button_accent_color",
+      "label": "Accent color",
+      "default": "#0f172a"
+    },
+    {
+      "type": "color",
+      "id": "button_text_color",
+      "label": "Text color",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "button_icon_color",
+      "label": "Icon color",
+      "default": "#0f172a"
     }
   ]
 }

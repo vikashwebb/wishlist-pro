@@ -412,6 +412,12 @@ export default function Index() {
         : "Shoppers can use wishlist before logging in.",
       tone: wishlistRequiresLogin ? "warning" : "success",
     },
+    {
+      label: "Button design",
+      value: "Theme editor",
+      hint: "Button style and colors now come from your theme app block settings.",
+      tone: "neutral",
+    },
   ];
 
   const setupCards = [
@@ -484,7 +490,9 @@ export default function Index() {
                 </h2>
                 <p className={styles.sectionText}>
                   Decide whether wishlist is open to all visitors or reserved
-                  for signed-in customers.
+                  for signed-in customers. Button style and colors are managed
+                  directly in the theme editor, so they do not rely on the app
+                  server.
                 </p>
               </div>
               {wishlistRequiresLogin
@@ -505,6 +513,45 @@ export default function Index() {
               </span>
             </label>
 
+            <div className={styles.bannerWrap}>
+              <s-banner tone="info">
+                Configure button style, accent color, text color, and icon
+                color in the Theme Editor on the wishlist app block or embed.
+                Those appearance settings now come straight from the theme, not
+                from Prisma.
+              </s-banner>
+            </div>
+
+            <div className={styles.actionRow}>
+              {productPageButtonEditorUrl ? (
+                <a
+                  className={styles.linkButton}
+                  href={productPageButtonEditorUrl}
+                  target="_top"
+                  rel="noreferrer"
+                >
+                  Open product block settings
+                </a>
+              ) : (
+                <s-button disabled>Open product block settings</s-button>
+              )}
+
+              {productPageEmbedEditorUrl ? (
+                <a
+                  className={`${styles.linkButton} ${styles.linkButtonSecondary}`}
+                  href={productPageEmbedEditorUrl}
+                  target="_top"
+                  rel="noreferrer"
+                >
+                  Open embed settings
+                </a>
+              ) : (
+                <s-button variant="secondary" disabled>
+                  Open embed settings
+                </s-button>
+              )}
+            </div>
+
             <div className={styles.actionRow}>
               <s-button
                 onClick={() =>
@@ -522,9 +569,14 @@ export default function Index() {
                 }
                 {...(isSavingSettings ? { loading: true } : {})}
               >
-                Save storefront preference
+                Save storefront settings
               </s-button>
             </div>
+
+            <p className={styles.supportText}>
+              Saving here now updates only the login requirement. Button
+              appearance is saved in the theme editor for each wishlist block.
+            </p>
           </div>
         </s-section>
 

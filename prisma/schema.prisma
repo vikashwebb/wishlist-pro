@@ -38,6 +38,10 @@ model ShopSettings {
   wishlistRequiresLogin Boolean  @default(false)
   wishlistPageTitle     String   @default("Wishlist")
   wishlistPageHandle    String   @default("wishlist")
+  wishlistButtonStyle   String   @default("outline")
+  wishlistButtonAccentColor String @default("#0f172a")
+  wishlistButtonTextColor   String @default("#ffffff")
+  wishlistButtonIconColor   String @default("#0f172a")
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 }

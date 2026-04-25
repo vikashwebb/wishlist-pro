@@ -198,9 +198,86 @@
   box-shadow: 0 0 0 4px rgb(29 107 89 / 0.12);
 }
 
+.colorInput {
+  min-height: 3.2rem;
+  padding: 0.35rem;
+}
+
 .fieldHint {
   color: rgb(15 23 42 / 0.62);
   font-size: 0.86rem;
+}
+
+.previewCard {
+  display: grid;
+  gap: 0.9rem;
+  padding: 1rem;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #fcfcfa, #f6f7f3);
+}
+
+.previewHeader,
+.previewRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.previewLabel {
+  color: rgb(15 23 42 / 0.56);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.buttonPreview {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: 44px;
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--wishlist-preview-accent);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--wishlist-preview-accent);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.buttonPreviewIcon {
+  color: var(--wishlist-preview-icon);
+}
+
+.buttonPreviewOutline {
+  background: #fff;
+  color: var(--wishlist-preview-accent);
+}
+
+.buttonPreviewSolid {
+  background: var(--wishlist-preview-accent);
+  color: var(--wishlist-preview-text);
+}
+
+.buttonPreviewSolid .buttonPreviewIcon {
+  color: var(--wishlist-preview-icon);
+}
+
+.buttonPreviewIconOnly {
+  width: 44px;
+  padding-inline: 0;
+}
+
+.buttonPreviewActive {
+  background: var(--wishlist-preview-accent);
+  border-color: var(--wishlist-preview-accent);
+  color: var(--wishlist-preview-text);
+}
+
+.buttonPreviewActive .buttonPreviewIcon {
+  color: var(--wishlist-preview-text);
 }
 
 .formRow {

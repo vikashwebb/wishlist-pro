@@ -134,6 +134,10 @@ Available block settings:
 - `Add label`
 - `Added label`
 - `Logged out helper text`
+- `Button style`
+- `Accent color`
+- `Text color`
+- `Icon color`
 - `Optional custom target selector`
 
 Notes:
@@ -167,6 +171,9 @@ The app also stores merchant preferences in the local database.
 Current setting:
 
 - `wishlistRequiresLogin`
+
+Button appearance is now configured in theme app block settings instead of the
+local app database.
 
 Related file:
 
@@ -205,7 +212,7 @@ Route:
 
 Behavior:
 
-- Saves storefront login requirement preferences
+- Saves storefront login requirement preferences only
 
 ### Wishlist page API
 

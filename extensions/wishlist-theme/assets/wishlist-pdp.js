@@ -7,6 +7,58 @@
     return !!config.requireLogin;
   }
 
+  function applyDefaultAppearance(config) {
+    if (typeof config.buttonStyle !== "string") {
+      config.buttonStyle = "outline";
+    }
+
+    if (typeof config.buttonAccentColor !== "string") {
+      config.buttonAccentColor = "#0f172a";
+    }
+
+    if (typeof config.buttonTextColor !== "string") {
+      config.buttonTextColor = "#ffffff";
+    }
+
+    if (typeof config.buttonIconColor !== "string") {
+      config.buttonIconColor = "#0f172a";
+    }
+
+    return config;
+  }
+
+  function buttonStyle(config) {
+    return ["outline", "solid", "icon-only"].includes(config.buttonStyle)
+      ? config.buttonStyle
+      : "outline";
+  }
+
+  function applyButtonAppearance(button, config) {
+    var style = buttonStyle(config || {});
+
+    button.classList.toggle(
+      "wishlist-pro-button--outline",
+      style === "outline",
+    );
+    button.classList.toggle("wishlist-pro-button--solid", style === "solid");
+    button.classList.toggle(
+      "wishlist-pro-button--icon-only",
+      style === "icon-only",
+    );
+    button.style.setProperty(
+      "--wishlist-button-accent",
+      config.buttonAccentColor || "#0f172a",
+    );
+    button.style.setProperty(
+      "--wishlist-button-text",
+      config.buttonTextColor || "#ffffff",
+    );
+    button.style.setProperty(
+      "--wishlist-button-icon",
+      config.buttonIconColor || "#0f172a",
+    );
+  }
+
   function emptyState() {
     return { itemsByProductId: {}, statusByHandle: {}, localOnly: true };
   }
@@ -176,6 +228,8 @@
   }
 
   function loadSettings(config) {
+    applyDefaultAppearance(config);
+
     if (typeof config.requireLogin === "boolean") {
       return Promise.resolve(config);
     }
@@ -199,13 +253,16 @@
           };
         })
         .catch(function () {
-          return { requireLogin: false };
+          return {
+            requireLogin: false,
+          };
         });
     }
 
     return window.__wishlistConfigPromises[config.configUrl].then(
       function (payload) {
         config.requireLogin = !!payload.requireLogin;
+        applyDefaultAppearance(config);
         return config;
       },
     );
@@ -340,6 +397,9 @@
       root.appendChild(button);
     }
 
+    button.__wishlistConfig = config;
+    applyButtonAppearance(button, config);
+
     var loginNote = root.querySelector("[data-wishlist-login-note]");
     if (!loginNote && config.loginText) {
       loginNote = document.createElement("p");
@@ -409,9 +469,10 @@
   function setState(button, active, labels) {
     button.classList.toggle("is-active", active);
     button.setAttribute("aria-pressed", active ? "true" : "false");
-    button.querySelector("[data-wishlist-label]").textContent = active
-      ? labels.added
-      : labels.add;
+    var label = active ? labels.added : labels.add;
+    button.querySelector("[data-wishlist-label]").textContent = label;
+    button.setAttribute("aria-label", label);
+    applyButtonAppearance(button, button.__wishlistConfig || {});
   }
 
   function syncLegacyState(config, payload) {
