@@ -1,0 +1,281 @@
+.page {
+  display: grid;
+  gap: 1.5rem;
+  padding-bottom: 2rem;
+}
+
+.hero {
+  display: grid;
+  gap: 1rem;
+  padding: 1.6rem;
+  border: 1px solid rgb(15 23 42 / 0.08);
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at top right, rgb(191 219 254 / 0.35), transparent 28%),
+    radial-gradient(circle at left top, rgb(253 230 138 / 0.28), transparent 24%),
+    linear-gradient(140deg, #fcfcf8 0%, #f7fafc 46%, #f8f6ef 100%);
+  box-shadow: 0 24px 64px rgb(15 23 42 / 0.08);
+}
+
+.eyebrow {
+  margin: 0;
+  color: #7c5a31;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.heroTitle {
+  margin: 0;
+  max-width: 16ch;
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 0.98;
+  letter-spacing: -0.04em;
+  color: #0f172a;
+}
+
+.heroText {
+  margin: 0;
+  max-width: 62ch;
+  color: rgb(15 23 42 / 0.72);
+  line-height: 1.65;
+}
+
+.metricGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.metricCard,
+.panel,
+.insightCard {
+  border: 1px solid rgb(15 23 42 / 0.08);
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 14px 34px rgb(15 23 42 / 0.04);
+}
+
+.metricCard {
+  display: grid;
+  gap: 0.35rem;
+  padding: 1.1rem 1.15rem;
+}
+
+.metricLabel {
+  margin: 0;
+  color: #7c5a31;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.metricValue {
+  margin: 0;
+  color: #0f172a;
+  font-size: 1.8rem;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.metricHint {
+  margin: 0;
+  color: rgb(15 23 42 / 0.68);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(300px, 0.8fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.sideColumn {
+  display: grid;
+  gap: 1rem;
+  align-content: start;
+}
+
+.panel {
+  display: grid;
+  gap: 1rem;
+  padding: 1.2rem;
+}
+
+.panelTitle {
+  margin: 0;
+  color: #0f172a;
+  font-size: 1.2rem;
+  letter-spacing: -0.02em;
+}
+
+.panelText {
+  margin: 0;
+  color: rgb(15 23 42 / 0.72);
+  line-height: 1.6;
+}
+
+.productList,
+.customerList,
+.activityList {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.productRow,
+.customerRow,
+.activityRow {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 0.85rem;
+  align-items: center;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid rgb(15 23 42 / 0.08);
+  border-radius: 18px;
+  background: linear-gradient(180deg, #fff, #fafaf7);
+}
+
+.productImage,
+.productPlaceholder {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  object-fit: cover;
+  background: #e2e8f0;
+}
+
+.productPlaceholder {
+  display: grid;
+  place-items: center;
+  color: #64748b;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.rowTitle {
+  margin: 0;
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.rowMeta {
+  margin: 0.2rem 0 0;
+  color: rgb(15 23 42 / 0.64);
+  font-size: 0.9rem;
+}
+
+.rowStat {
+  display: grid;
+  justify-items: end;
+  gap: 0.15rem;
+  text-align: right;
+}
+
+.rowStat strong {
+  color: #0f172a;
+  font-size: 1rem;
+}
+
+.rowStat span {
+  color: rgb(15 23 42 / 0.58);
+  font-size: 0.82rem;
+}
+
+.barChart {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.barRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.barLabel {
+  margin: 0;
+  color: #0f172a;
+  font-size: 0.92rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.barTrack {
+  grid-column: 1 / -1;
+  overflow: hidden;
+  height: 8px;
+  border-radius: 999px;
+  background: rgb(15 23 42 / 0.08);
+}
+
+.barFill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #1d6b59 0%, #2fa87e 100%);
+}
+
+.insightCard {
+  display: grid;
+  gap: 0.5rem;
+  padding: 1rem 1.1rem;
+}
+
+.insightCardWarning {
+  border-color: rgb(234 179 8 / 0.35);
+  background: rgb(254 249 195 / 0.55);
+}
+
+.insightCardInfo {
+  border-color: rgb(59 130 246 / 0.18);
+  background: rgb(239 246 255 / 0.72);
+}
+
+.insightTitle {
+  margin: 0;
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.insightText {
+  margin: 0;
+  color: rgb(15 23 42 / 0.72);
+  line-height: 1.55;
+}
+
+.emptyState {
+  padding: 1.2rem;
+  border: 1px dashed rgb(15 23 42 / 0.16);
+  border-radius: 18px;
+  color: rgb(15 23 42 / 0.68);
+  line-height: 1.6;
+  text-align: center;
+}
+
+.linkButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  min-height: 2.25rem;
+  padding: 0.6rem 0.95rem;
+  border: 1px solid #1d6b59;
+  border-radius: 999px;
+  background: #1d6b59;
+  color: #fff;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+@media (max-width: 960px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}

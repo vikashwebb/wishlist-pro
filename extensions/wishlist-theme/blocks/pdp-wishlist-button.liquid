@@ -5,6 +5,9 @@
   endif
 %}
 
+{% unless product %}
+  {% comment %}Wishlist button only renders on product templates with a product.{% endcomment %}
+{% else %}
 <div
   data-wishlist-pdp
   data-wishlist-config='{
@@ -40,6 +43,7 @@
     </p>
   {% endunless %}
 </div>
+{% endunless %}
 
 {% schema %}
 {

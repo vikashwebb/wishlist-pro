@@ -111,6 +111,28 @@
   margin-top: 1rem;
 }
 
+.wishlist-pro-inline--pending {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.wishlist-pro-inline--fallback,
+.wishlist-pro-inline:not(.wishlist-pro-inline--pending) {
+  position: static;
+  width: fit-content;
+  height: auto;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+}
+
 .wishlist-pro-page {
   display: grid;
   gap: 1.5rem;

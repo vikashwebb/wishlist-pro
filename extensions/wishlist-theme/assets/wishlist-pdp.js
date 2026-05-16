@@ -358,14 +358,46 @@
     return [
       "product-info .product-form",
       "product-info .buy-buttons",
+      "product-form .product-form",
+      "product-form",
       ".product-form",
       ".product__buy-buttons",
       ".product__info-wrapper",
       ".product__info-container",
+      ".product-info",
       "[data-product-form]",
       "form[action*='/cart/add']",
+      ".shopify-payment-button",
+      "main .product",
       "main",
     ];
+  }
+
+  function mountInlineRootFallback(root) {
+    var fallback =
+      document.querySelector("product-info") ||
+      document.querySelector(".product-info") ||
+      document.querySelector(".product__info-wrapper") ||
+      document.querySelector(".product") ||
+      document.querySelector("main");
+
+    if (!fallback) {
+      return false;
+    }
+
+    root.classList.add(
+      "wishlist-pro-inline",
+      "wishlist-pro-inline--fallback",
+    );
+    root.hidden = false;
+    root.classList.remove("wishlist-pro-inline--pending");
+
+    if (root.parentNode !== fallback) {
+      fallback.appendChild(root);
+    }
+
+    root.setAttribute("data-wishlist-mounted", "true");
+    return true;
   }
 
   function buildMountSelectors(config) {
@@ -433,6 +465,7 @@
 
       root.classList.add("wishlist-pro-inline");
       root.hidden = false;
+      root.classList.remove("wishlist-pro-inline--pending");
 
       if (target.tagName === "FORM") {
         target.insertAdjacentElement("afterend", root);
@@ -444,8 +477,7 @@
       return true;
     }
 
-    root.hidden = true;
-    return false;
+    return mountInlineRootFallback(root);
   }
 
   function mountInlineRootWhenReady(root, config, start) {
@@ -464,6 +496,17 @@
     });
 
     observer.observe(document.body, { childList: true, subtree: true });
+
+    window.setTimeout(function () {
+      if (root.getAttribute("data-wishlist-mounted") === "true") {
+        return;
+      }
+
+      if (mountInlineRootFallback(root)) {
+        observer.disconnect();
+        start();
+      }
+    }, 2500);
   }
 
   function setState(button, active, labels) {

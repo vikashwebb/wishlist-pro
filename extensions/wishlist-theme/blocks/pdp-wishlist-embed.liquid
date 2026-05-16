@@ -5,10 +5,13 @@
   endif
 %}
 
+{% unless product %}
+  {% comment %}Product page embed only renders when a product is available.{% endcomment %}
+{% else %}
 <div
   data-wishlist-pdp
   data-wishlist-auto-insert="true"
-  hidden
+  class="wishlist-pro-inline wishlist-pro-inline--pending"
   data-wishlist-config='{
     "productId": {{ product.admin_graphql_api_id | json }},
     "productHandle": {{ product.handle | json }},
@@ -27,7 +30,18 @@
     "buttonTextColor": {{ block.settings.button_text_color | json }},
     "buttonIconColor": {{ block.settings.button_icon_color | json }}
   }'
-></div>
+>
+  <button
+    type="button"
+    class="wishlist-pro-button"
+    data-wishlist-button
+    aria-pressed="false"
+  >
+    <span class="wishlist-pro-button__icon" aria-hidden="true">♥</span>
+    <span data-wishlist-label>{{ block.settings.add_label }}</span>
+  </button>
+</div>
+{% endunless %}
 
 {% schema %}
 {
@@ -62,7 +76,7 @@
       "id": "target_selector",
       "label": "Optional custom target selector",
       "info": "Use this if your theme needs a custom product-page anchor.",
-      "default": ".product-form"
+      "default": ".product-form, product-form, .product__info-wrapper, .product-info"
     },
     {
       "type": "select",

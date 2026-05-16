@@ -382,19 +382,59 @@
     return button;
   }
 
+  function splitSelectors(value) {
+    return String(value || "")
+      .split(",")
+      .map(function (selector) {
+        return selector.trim();
+      })
+      .filter(Boolean);
+  }
+
+  function collectProductLinks(config) {
+    var links = [];
+    var seen = new Set();
+
+    splitSelectors(config.productLinkSelector).forEach(function (selector) {
+      document.querySelectorAll(selector).forEach(function (link) {
+        if (!(link instanceof HTMLAnchorElement) || !link.href) return;
+        if (seen.has(link)) return;
+        seen.add(link);
+        links.push(link);
+      });
+    });
+
+    return links;
+  }
+
+  function findProductCard(link, config) {
+    var cardSelectors = splitSelectors(config.productCardSelector).concat([
+      ".card-wrapper",
+      ".product-card",
+      ".card-product",
+      ".grid__item",
+      ".collection-product-card",
+      "[data-product-id]",
+    ]);
+
+    for (var index = 0; index < cardSelectors.length; index += 1) {
+      var card = link.closest(cardSelectors[index]);
+      if (card) {
+        return card;
+      }
+    }
+
+    return link.parentElement;
+  }
+
   function inject(config, labels, onToggle) {
     var createdHandle = false;
 
-    document
-      .querySelectorAll(config.productLinkSelector)
-      .forEach(function (link) {
+    collectProductLinks(config).forEach(function (link) {
         var handle = extractHandle(link.href);
         if (!handle) return;
 
-        var card =
-          link.closest(config.productCardSelector) ||
-          link.closest(".card-wrapper") ||
-          link.closest(".grid__item");
+        var card = findProductCard(link, config);
 
         if (!card || card.querySelector("[data-wishlist-card-handle]")) return;
         if (window.getComputedStyle(card).position === "static") {
@@ -644,8 +684,15 @@
     );
   }
 
-  inject(config, labels, handleToggle);
-  setButtonsDisabled(true);
+  function bootstrapCards() {
+    var createdHandle = inject(config, labels, handleToggle);
+    if (createdHandle) {
+      setButtonsDisabled(true);
+    }
+    return createdHandle;
+  }
+
+  bootstrapCards();
 
   loadSettings(config).then(function () {
     if (config.customerId && hasGuestWishlistState()) {
@@ -658,7 +705,7 @@
   });
 
   new MutationObserver(function () {
-    var createdHandle = inject(config, labels, handleToggle);
+    var createdHandle = bootstrapCards();
     if (createdHandle) {
       if (typeof config.requireLogin === "boolean") {
         scheduleRefresh();
@@ -667,4 +714,8 @@
       }
     }
   }).observe(document.body, { childList: true, subtree: true });
+
+  window.setTimeout(bootstrapCards, 500);
+  window.setTimeout(bootstrapCards, 1500);
+  window.setTimeout(bootstrapCards, 3000);
 })();
