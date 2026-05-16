@@ -43,7 +43,7 @@ automatically_update_urls_on_dev = true
 include_config_on_deploy = true
 
 [access_scopes]
-scopes = "read_customers,write_customers,read_products"
+scopes = "read_customers,write_customers,read_products,write_app_proxy,write_online_store_pages,read_themes"
 
 [auth]
 redirect_urls = ["https://example.com/auth/callback"]

@@ -2,6 +2,9 @@
   "name": "wishlist-pro",
   "private": true,
   "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prebuild": "npm run test && npm run typecheck",
     "build": "react-router build",
     "dev": "shopify app dev",
     "config:link": "shopify app config link",
@@ -57,7 +60,8 @@
     "graphql-config": "^5.1.1",
     "prettier": "^3.6.2",
     "typescript": "^5.9.3",
-    "vite": "^6.3.6"
+    "vite": "^6.3.6",
+    "vitest": "^3.2.4"
   },
   "workspaces": [
     "extensions/*"

@@ -28,10 +28,13 @@ npm run dev
 
 ```bash
 npm run dev
+npm run test
 npm run typecheck
 npm run lint
 npm run build
 ```
+
+`npm run build` automatically runs tests and typecheck first.
 
 ## Main App Files
 

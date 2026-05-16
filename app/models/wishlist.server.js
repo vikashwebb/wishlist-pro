@@ -1,9 +1,26 @@
-import { DEFINITION_NAME, KEY, NAMESPACE } from "./wishlist";
+import {
+  DEFINITION_NAME,
+  KEY,
+  LEGACY_NAMESPACE,
+  NAMESPACE,
+} from "./wishlist";
+import { logWishlist, logWishlistError } from "../utils/logger.server";
 
-export { DEFINITION_NAME, KEY, NAMESPACE };
+export { DEFINITION_NAME, KEY, LEGACY_NAMESPACE, NAMESPACE };
 
 export function json(data, init) {
   return Response.json(data, init);
+}
+
+const VALID_WISHLIST_INTENTS = new Set(["add", "remove"]);
+
+export function normalizeWishlistIntent(intent) {
+  const normalized = intent?.toString().trim().toLowerCase();
+  if (!VALID_WISHLIST_INTENTS.has(normalized)) {
+    throw new Error('intent must be "add" or "remove"');
+  }
+
+  return normalized;
 }
 
 export function normalizeWishlistItems(value) {
@@ -44,6 +61,37 @@ export function isProtectedCustomerDataError(error) {
   return message.includes("not approved to access the Customer object");
 }
 
+export function mergeWishlistMetafields(primaryMetafield, legacyMetafield) {
+  const primaryItems = normalizeWishlistItems(
+    primaryMetafield?.jsonValue ?? primaryMetafield?.value,
+  );
+  const legacyItems = normalizeWishlistItems(
+    legacyMetafield?.jsonValue ?? legacyMetafield?.value,
+  );
+
+  if (primaryItems.length > 0) {
+    return {
+      metafield: primaryMetafield,
+      items: primaryItems,
+      usedLegacyNamespace: false,
+    };
+  }
+
+  if (legacyItems.length > 0) {
+    return {
+      metafield: legacyMetafield,
+      items: legacyItems,
+      usedLegacyNamespace: true,
+    };
+  }
+
+  return {
+    metafield: primaryMetafield ?? legacyMetafield ?? null,
+    items: [],
+    usedLegacyNamespace: false,
+  };
+}
+
 export async function readWishlist(admin, customerId) {
   const ownerId = toCustomerGid(customerId);
   if (!ownerId) {
@@ -52,11 +100,25 @@ export async function readWishlist(admin, customerId) {
 
   const response = await admin.graphql(
     `#graphql
-      query WishlistMetafield($customerId: ID!, $namespace: String!, $key: String!) {
+      query WishlistMetafield(
+        $customerId: ID!
+        $namespace: String!
+        $legacyNamespace: String!
+        $key: String!
+      ) {
         customer(id: $customerId) {
           id
           displayName
           metafield(namespace: $namespace, key: $key) {
+            id
+            namespace
+            key
+            type
+            value
+            jsonValue
+            updatedAt
+          }
+          legacyMetafield: metafield(namespace: $legacyNamespace, key: $key) {
             id
             namespace
             key
@@ -71,13 +133,14 @@ export async function readWishlist(admin, customerId) {
       variables: {
         customerId: ownerId,
         namespace: NAMESPACE,
+        legacyNamespace: LEGACY_NAMESPACE,
         key: KEY,
       },
     },
   );
 
   const payload = await response.json();
-  console.log("wishlist.read.graphql", JSON.stringify(payload, null, 2));
+  logWishlist("wishlist.read.graphql", JSON.stringify(payload, null, 2));
 
   if (payload.errors?.length) {
     throw new Error(payload.errors.map((error) => error.message).join(", "));
@@ -87,15 +150,23 @@ export async function readWishlist(admin, customerId) {
     throw new Error(`Customer not found for ownerId ${ownerId}`);
   }
 
-  const metafield = payload.data.customer.metafield;
-  const items = normalizeWishlistItems(
-    metafield?.jsonValue ?? metafield?.value,
+  const merged = mergeWishlistMetafields(
+    payload.data.customer.metafield,
+    payload.data.customer.legacyMetafield,
   );
+
+  if (merged.usedLegacyNamespace && merged.items.length > 0) {
+    try {
+      await writeWishlist(admin, customerId, merged.items);
+    } catch (error) {
+      logWishlistError("wishlist.migrateLegacy.error", error);
+    }
+  }
 
   return {
     customer: payload.data.customer,
-    metafield,
-    items,
+    metafield: merged.metafield,
+    items: merged.items,
   };
 }
 
@@ -142,7 +213,7 @@ export async function writeWishlist(admin, customerId, items) {
   );
 
   const mutationPayload = await mutationResponse.json();
-  console.log(
+  logWishlist(
     "wishlist.write.graphql",
     JSON.stringify(mutationPayload, null, 2),
   );
@@ -198,7 +269,7 @@ export async function resolveProduct(admin, { productId, handle }) {
       },
     );
     const payload = await response.json();
-    console.log(
+    logWishlist(
       "wishlist.resolveProductById.graphql",
       JSON.stringify(payload, null, 2),
     );
@@ -252,7 +323,7 @@ export async function resolveProduct(admin, { productId, handle }) {
     },
   );
   const payload = await response.json();
-  console.log(
+  logWishlist(
     "wishlist.resolveProductByHandle.graphql",
     JSON.stringify(payload, null, 2),
   );
@@ -267,6 +338,77 @@ export async function resolveProduct(admin, { productId, handle }) {
   }
 
   return product;
+}
+
+function findWishlistDefinition(definitions = []) {
+  return (
+    definitions.find(
+      (node) => node.namespace === NAMESPACE && node.key === KEY,
+    ) ??
+    definitions.find(
+      (node) => node.namespace === LEGACY_NAMESPACE && node.key === KEY,
+    ) ??
+    null
+  );
+}
+
+export async function ensureWishlistMetafieldDefinition(admin) {
+  const diagnostics = await getWishlistDiagnostics(admin);
+
+  if (diagnostics.checks.definitionExists) {
+    return diagnostics.definition;
+  }
+
+  const response = await admin.graphql(
+    `#graphql
+      mutation EnsureWishlistDefinition($definition: MetafieldDefinitionInput!) {
+        metafieldDefinitionCreate(definition: $definition) {
+          createdDefinition {
+            id
+            name
+            namespace
+            key
+            type {
+              name
+            }
+          }
+          userErrors {
+            field
+            message
+            code
+          }
+        }
+      }`,
+    {
+      variables: {
+        definition: {
+          name: DEFINITION_NAME,
+          namespace: NAMESPACE,
+          key: KEY,
+          ownerType: "CUSTOMER",
+          type: "json",
+        },
+      },
+    },
+  );
+
+  const payload = await response.json();
+  logWishlist(
+    "wishlist.definitionCreate.graphql",
+    JSON.stringify(payload, null, 2),
+  );
+
+  if (payload.errors?.length) {
+    throw new Error(payload.errors.map((error) => error.message).join(", "));
+  }
+
+  const userErrors =
+    payload.data?.metafieldDefinitionCreate?.userErrors ?? [];
+  if (userErrors.length > 0) {
+    throw new Error(userErrors.map((error) => error.message).join(", "));
+  }
+
+  return payload.data?.metafieldDefinitionCreate?.createdDefinition ?? null;
 }
 
 export async function getWishlistDiagnostics(admin, customerId) {
@@ -293,7 +435,7 @@ export async function getWishlistDiagnostics(admin, customerId) {
       }`,
   );
   const definitionPayload = await definitionResponse.json();
-  console.log(
+  logWishlist(
     "wishlist.diagnostics.definitions.graphql",
     JSON.stringify(definitionPayload, null, 2),
   );
@@ -308,14 +450,20 @@ export async function getWishlistDiagnostics(admin, customerId) {
     definitionPayload.data?.currentAppInstallation?.accessScopes?.map(
       (scope) => scope.handle,
     ) ?? [];
-  const definition =
-    definitionPayload.data?.metafieldDefinitions?.nodes?.find((node) => {
-      return node.namespace === NAMESPACE && node.key === KEY;
-    }) ?? null;
+  const definitions =
+    definitionPayload.data?.metafieldDefinitions?.nodes ?? [];
+  const definition = findWishlistDefinition(definitions);
+  const hasCanonicalDefinition = definitions.some(
+    (node) => node.namespace === NAMESPACE && node.key === KEY,
+  );
+  const hasLegacyDefinition = definitions.some(
+    (node) => node.namespace === LEGACY_NAMESPACE && node.key === KEY,
+  );
 
   const diagnostics = {
     definitionName: DEFINITION_NAME,
     namespace: NAMESPACE,
+    legacyNamespace: LEGACY_NAMESPACE,
     key: KEY,
     ownerType: "CUSTOMER",
     customerId: customerId || null,
@@ -323,7 +471,10 @@ export async function getWishlistDiagnostics(admin, customerId) {
       customerIdProvided: !!customerId,
       customerIdValid: !!toCustomerGid(customerId || ""),
       definitionExists: !!definition,
+      canonicalDefinitionExists: hasCanonicalDefinition,
+      legacyDefinitionExists: hasLegacyDefinition,
       definitionType: definition?.type?.name ?? null,
+      definitionNamespace: definition?.namespace ?? null,
       accessScopes,
       hasReadCustomersScope: accessScopes.includes("read_customers"),
       hasWriteCustomersScope: accessScopes.includes("write_customers"),
@@ -331,12 +482,20 @@ export async function getWishlistDiagnostics(admin, customerId) {
       customerMetafieldExists: null,
       customerMetafieldType: null,
       customerWishlistItemsCount: null,
+      storefrontLocalOnlyMode: false,
     },
     definition,
     metafield: null,
     items: [],
     errors: [],
+    warnings: [],
   };
+
+  if (hasLegacyDefinition && !hasCanonicalDefinition) {
+    diagnostics.warnings.push(
+      `Legacy metafield definition ${LEGACY_NAMESPACE}.${KEY} was found. Create ${NAMESPACE}.${KEY} and migrate customer data.`,
+    );
+  }
 
   if (!customerId || !toCustomerGid(customerId)) {
     return diagnostics;
@@ -350,11 +509,18 @@ export async function getWishlistDiagnostics(admin, customerId) {
     diagnostics.checks.customerWishlistItemsCount = result.items.length;
     diagnostics.metafield = result.metafield;
     diagnostics.items = result.items;
+
+    if (result.metafield?.namespace === LEGACY_NAMESPACE) {
+      diagnostics.warnings.push(
+        `Customer wishlist data is still stored under ${LEGACY_NAMESPACE}.${KEY}. It was migrated automatically on read.`,
+      );
+    }
   } catch (error) {
     if (isProtectedCustomerDataError(error)) {
       diagnostics.checks.protectedCustomerAccessApproved = false;
+      diagnostics.checks.storefrontLocalOnlyMode = true;
       diagnostics.errors.push(
-        "This app is not approved to access the Customer object.",
+        "This app is not approved to access the Customer object. Storefront toggles will stay browser-only until Partner Dashboard access is approved.",
       );
       return diagnostics;
     }

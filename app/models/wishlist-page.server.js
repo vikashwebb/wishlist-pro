@@ -1,3 +1,5 @@
+import { logWishlist } from "../utils/logger.server";
+
 export function getWishlistPagePath(handle = "wishlist") {
   return `/pages/${handle}`;
 }
@@ -37,7 +39,7 @@ async function findWishlistPage(admin, handle) {
   );
 
   const payload = await response.json();
-  console.log("wishlist.pageFind.graphql", JSON.stringify(payload, null, 2));
+  logWishlist("wishlist.pageFind.graphql", JSON.stringify(payload, null, 2));
 
   if (payload.errors?.length) {
     throw new Error(payload.errors.map((error) => error.message).join(", "));
@@ -81,7 +83,7 @@ async function createWishlistPage(admin, { title, handle }) {
   );
 
   const payload = await response.json();
-  console.log("wishlist.pageCreate.graphql", JSON.stringify(payload, null, 2));
+  logWishlist("wishlist.pageCreate.graphql", JSON.stringify(payload, null, 2));
 
   if (payload.errors?.length) {
     throw new Error(payload.errors.map((error) => error.message).join(", "));
@@ -134,7 +136,7 @@ async function updateWishlistPage(admin, pageId, { title, handle }) {
   );
 
   const payload = await response.json();
-  console.log("wishlist.pageUpdate.graphql", JSON.stringify(payload, null, 2));
+  logWishlist("wishlist.pageUpdate.graphql", JSON.stringify(payload, null, 2));
 
   if (payload.errors?.length) {
     throw new Error(payload.errors.map((error) => error.message).join(", "));

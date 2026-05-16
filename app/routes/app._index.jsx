@@ -286,6 +286,19 @@ export default function Index() {
   const pageFetcher = useFetcher();
   const shopify = useAppBridge();
   const skippedInitialWishlistLoadRef = useRef(false);
+  const optimisticRollbackRef = useRef(null);
+  const savedStorefrontRulesRef = useRef(!!settings?.wishlistRequiresLogin);
+  const diagnosticsToastRef = useRef("initial");
+  const lastDiagnosticsCustomerRef = useRef(initialSelectedCustomerId);
+  const wishlistLoadCustomerRef = useRef(initialSelectedCustomerId);
+  const diagnosticsRequestIdRef = useRef(0);
+  const wishlistFetcherRef = useRef(wishlistFetcher);
+  const mutationFetcherRef = useRef(mutationFetcher);
+  const diagnosticsFetcherRef = useRef(diagnosticsFetcher);
+
+  wishlistFetcherRef.current = wishlistFetcher;
+  mutationFetcherRef.current = mutationFetcher;
+  diagnosticsFetcherRef.current = diagnosticsFetcher;
   const [selectedCustomerId, setSelectedCustomerId] = useState(
     initialSelectedCustomerId,
   );
@@ -329,13 +342,19 @@ export default function Index() {
       selectedCustomerId === initialSelectedCustomerId
     ) {
       skippedInitialWishlistLoadRef.current = true;
+      wishlistLoadCustomerRef.current = selectedCustomerId;
       return;
     }
 
-    wishlistFetcher.load(
+    if (wishlistLoadCustomerRef.current === selectedCustomerId) {
+      return;
+    }
+
+    wishlistLoadCustomerRef.current = selectedCustomerId;
+    wishlistFetcherRef.current.load(
       `/app/api/wishlist?customerId=${encodeURIComponent(selectedCustomerId)}`,
     );
-  }, [initialSelectedCustomerId, selectedCustomerId, wishlistFetcher]);
+  }, [initialSelectedCustomerId, selectedCustomerId]);
 
   useEffect(() => {
     if (!wishlistFetcher.data) return;
@@ -356,19 +375,24 @@ export default function Index() {
     if (!pendingChange) return;
 
     const timeoutId = window.setTimeout(() => {
-      mutationFetcher.submit(pendingChange, {
+      mutationFetcherRef.current.submit(pendingChange, {
         action: "/app/api/wishlist",
         method: "post",
       });
     }, 300);
 
     return () => window.clearTimeout(timeoutId);
-  }, [mutationFetcher, pendingChange]);
+  }, [pendingChange]);
 
   useEffect(() => {
-    if (!mutationFetcher.data) return;
+    if (mutationFetcher.state !== "idle" || !mutationFetcher.data) return;
 
     if (mutationFetcher.data.error) {
+      if (optimisticRollbackRef.current) {
+        setWishlistItems(optimisticRollbackRef.current);
+        optimisticRollbackRef.current = null;
+      }
+      setPendingChange(null);
       shopify.toast.show(mutationFetcher.data.error, { isError: true });
       return;
     }
@@ -378,23 +402,53 @@ export default function Index() {
       : [];
 
     setWishlistItems(nextItems);
+    optimisticRollbackRef.current = null;
+    setPendingChange(null);
 
     const actionLabel =
       mutationFetcher.data.intent === "remove" ? "Removed" : "Added";
     shopify.toast.show(`${actionLabel} wishlist item`);
-  }, [mutationFetcher.data, shopify]);
+  }, [mutationFetcher.data, mutationFetcher.state, shopify]);
 
   useEffect(() => {
-    if (!diagnosticsFetcher.data) return;
+    if (diagnosticsFetcher.state !== "idle" || !diagnosticsFetcher.data) return;
 
     if (diagnosticsFetcher.data.error) {
-      shopify.toast.show(diagnosticsFetcher.data.error, { isError: true });
+      if (diagnosticsToastRef.current === "manual") {
+        shopify.toast.show(diagnosticsFetcher.data.error, { isError: true });
+      }
       return;
     }
 
     setDiagnostics(diagnosticsFetcher.data);
-    shopify.toast.show("System health updated");
-  }, [diagnosticsFetcher.data, shopify]);
+    lastDiagnosticsCustomerRef.current =
+      diagnosticsFetcher.data.customerId ?? selectedCustomerId;
+
+    if (diagnosticsToastRef.current === "manual") {
+      shopify.toast.show("System health updated");
+    }
+  }, [diagnosticsFetcher.data, diagnosticsFetcher.state, selectedCustomerId, shopify]);
+
+  useEffect(() => {
+    if (customerAccessBlocked) return;
+    if (selectedCustomerId === lastDiagnosticsCustomerRef.current) return;
+
+    const requestId = diagnosticsRequestIdRef.current + 1;
+    diagnosticsRequestIdRef.current = requestId;
+    diagnosticsToastRef.current = "auto";
+
+    const timeoutId = window.setTimeout(() => {
+      if (requestId !== diagnosticsRequestIdRef.current) return;
+      if (selectedCustomerId === lastDiagnosticsCustomerRef.current) return;
+
+      const url = selectedCustomerId
+        ? `/app/api/wishlist-check?customerId=${encodeURIComponent(selectedCustomerId)}`
+        : "/app/api/wishlist-check";
+      diagnosticsFetcherRef.current.load(url);
+    }, 350);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [customerAccessBlocked, selectedCustomerId]);
 
   useEffect(() => {
     if (!settingsFetcher.data) return;
@@ -406,6 +460,7 @@ export default function Index() {
 
     const nextValue = !!settingsFetcher.data.settings?.wishlistRequiresLogin;
     setWishlistRequiresLogin(nextValue);
+    savedStorefrontRulesRef.current = nextValue;
     shopify.toast.show("Storefront rules saved");
   }, [settingsFetcher.data, shopify]);
 
@@ -440,9 +495,10 @@ export default function Index() {
   const selectedCustomerLabel = formatCustomerLabel(selectedCustomer);
   const selectedProductLabel = formatProductLabel(selectedProduct);
   const wishlistCount = Array.isArray(wishlistItems) ? wishlistItems.length : 0;
-  const wishlistLabels = wishlistItems.map((productId) =>
-    formatWishlistLabel(productId, products),
-  );
+  const wishlistLabels = wishlistItems.map((productId) => ({
+    id: productId,
+    label: formatWishlistLabel(productId, products),
+  }));
   const productIsSaved = wishlistItems.includes(selectedProductId);
   const isMutating =
     mutationFetcher.state === "loading" ||
@@ -493,6 +549,9 @@ export default function Index() {
     diagnosticsCustomerId === selectedCustomerId;
   const diagnosticsFresh = !!diagnostics && diagnosticsMatchesSelection;
   const diagnosticsErrors = diagnosticsFresh ? diagnostics?.errors ?? [] : [];
+  const diagnosticsWarnings = diagnosticsFresh ? diagnostics?.warnings ?? [] : [];
+  const storefrontLocalOnlyMode =
+    diagnosticsFresh && diagnostics?.checks?.storefrontLocalOnlyMode === true;
   const definitionReady =
     diagnosticsFresh && diagnostics?.checks?.definitionExists === true;
   const customerAccessReady = customerAccessBlocked
@@ -506,7 +565,9 @@ export default function Index() {
   const customerMetafieldReady =
     diagnosticsFresh && diagnostics?.checks?.customerMetafieldExists === true;
   const customerDataStepComplete = definitionReady && customerAccessReady;
-  const storefrontStepComplete = true;
+  const storefrontStepComplete =
+    wishlistRequiresLogin === savedStorefrontRulesRef.current &&
+    !isSavingSettings;
   const pageStepComplete = !!wishlistPage;
   const themeStepComplete = themePlacementConfirmed;
   const qaStepComplete =
@@ -538,10 +599,12 @@ export default function Index() {
   };
 
   const runDiagnostics = () => {
+    diagnosticsToastRef.current = "manual";
+    diagnosticsRequestIdRef.current += 1;
     const url = selectedCustomerId
       ? `/app/api/wishlist-check?customerId=${encodeURIComponent(selectedCustomerId)}`
       : "/app/api/wishlist-check";
-    diagnosticsFetcher.load(url);
+    diagnosticsFetcherRef.current.load(url);
   };
 
   const saveStorefrontSettings = () => {
@@ -582,6 +645,7 @@ export default function Index() {
       ? wishlistItems.filter((item) => item !== selectedProductId)
       : [...new Set([...wishlistItems, selectedProductId])];
 
+    optimisticRollbackRef.current = wishlistItems;
     setWishlistItems(nextItems);
     setPendingChange({
       customerId: selectedCustomerId,
@@ -714,6 +778,19 @@ export default function Index() {
           ? "warning"
           : "critical",
     },
+    {
+      label: "Storefront persistence",
+      value: storefrontLocalOnlyMode
+        ? "Browser-only mode"
+        : diagnosticsFresh
+          ? "Metafield writes enabled"
+          : "Pending check",
+      tone: storefrontLocalOnlyMode
+        ? "critical"
+        : diagnosticsFresh
+          ? "success"
+          : "neutral",
+    },
   ];
 
   const progressItems = [
@@ -731,9 +808,11 @@ export default function Index() {
     {
       title: "Storefront rules",
       complete: storefrontStepComplete,
-      detail: wishlistRequiresLogin
-        ? "Wishlist requires customer login."
-        : "Guests can save wishlist items.",
+      detail: storefrontStepComplete
+        ? wishlistRequiresLogin
+          ? "Wishlist requires customer login."
+          : "Guests can save wishlist items."
+        : "Save storefront rules to confirm guest or login-only mode.",
     },
     {
       title: "Wishlist page",
@@ -897,6 +976,20 @@ export default function Index() {
                   </div>
                 ) : null}
 
+                {storefrontLocalOnlyMode ? (
+                  <div className={`${styles.callout} ${styles.calloutWarning}`}>
+                    Storefront wishlist actions are running in browser-only mode until
+                    protected customer access is approved. Saved items will not persist
+                    to customer metafields yet.
+                  </div>
+                ) : null}
+
+                {diagnosticsWarnings.length > 0 ? (
+                  <div className={`${styles.callout} ${styles.calloutInfo}`}>
+                    {diagnosticsWarnings.join(" ")}
+                  </div>
+                ) : null}
+
                 {!diagnosticsFresh && selectedCustomerId && diagnostics ? (
                   <div className={`${styles.callout} ${styles.calloutInfo}`}>
                     The selected customer changed. Re-run the live system check so
@@ -995,7 +1088,8 @@ export default function Index() {
                       label: "Refresh customer snapshot",
                       onClick: () => {
                         if (!selectedCustomerId) return;
-                        wishlistFetcher.load(
+                        wishlistLoadCustomerRef.current = "";
+                        wishlistFetcherRef.current.load(
                           `/app/api/wishlist?customerId=${encodeURIComponent(
                             selectedCustomerId,
                           )}`,
@@ -1390,7 +1484,8 @@ export default function Index() {
                       label: "Refresh wishlist snapshot",
                       onClick: () => {
                         if (!selectedCustomerId) return;
-                        wishlistFetcher.load(
+                        wishlistLoadCustomerRef.current = "";
+                        wishlistFetcherRef.current.load(
                           `/app/api/wishlist?customerId=${encodeURIComponent(
                             selectedCustomerId,
                           )}`,
@@ -1505,9 +1600,9 @@ export default function Index() {
                 <h3 className={styles.railTitle}>Wishlist snapshot</h3>
                 {wishlistLabels.length > 0 ? (
                   <div className={styles.savedList}>
-                    {wishlistLabels.map((label) => (
-                      <span key={label} className={styles.savedItem}>
-                        {label}
+                    {wishlistLabels.map((entry) => (
+                      <span key={entry.id} className={styles.savedItem}>
+                        {entry.label}
                       </span>
                     ))}
                   </div>

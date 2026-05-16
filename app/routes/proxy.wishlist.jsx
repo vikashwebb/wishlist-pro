@@ -4,8 +4,10 @@ import {
   resolveProduct,
   toCustomerGid,
 } from "../models/wishlist.server";
+import { getProxyWishlistPageScript } from "../models/proxy-wishlist-page.server";
 import { getShopSettings } from "../models/shop-settings.server";
 import { authenticate } from "../shopify.server";
+import { logWishlistError } from "../utils/logger.server";
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -36,7 +38,11 @@ function formatMoney(amount, currencyCode) {
   }
 }
 
-function renderPage(content) {
+function renderPage(content, { includeGuestScript = false } = {}) {
+  const guestScript = includeGuestScript
+    ? `<script>${getProxyWishlistPageScript()}</script>`
+    : "";
+
   return new Response(
     `<!doctype html>
     <html lang="en">
@@ -69,7 +75,7 @@ function renderPage(content) {
           .wishlist-cta { display: inline-flex; align-items: center; justify-content: center; padding: 12px 16px; border-radius: 999px; background: #0f172a; color: #fff; text-decoration: none; font-weight: 700; }
         </style>
       </head>
-      <body>${content}</body>
+      <body>${content}${guestScript}</body>
     </html>`,
     {
       headers: {
@@ -102,26 +108,34 @@ export const loader = async ({ request }) => {
     searchParams.get("customerId") || searchParams.get("logged_in_customer_id");
 
   if (!toCustomerGid(customerId || "")) {
-    return renderPage(`
-      <main class="wishlist-shell">
-        <section class="wishlist-card">
-          <div class="wishlist-header">
-            <p>Wishlist</p>
-            <h1>${escapeHtml(
-              settings.wishlistRequiresLogin
-                ? "Sign in to view your wishlist"
-                : "Your wishlist is empty",
-            )}</h1>
-          </div>
-          <p>${
-            settings.wishlistRequiresLogin
-              ? "Please log in to see the products saved to your wishlist."
-              : "Save products from the storefront to see them here."
-          }</p>
-          <a class="wishlist-cta" href="/account/login">Login</a>
-        </section>
+    if (settings.wishlistRequiresLogin) {
+      return renderPage(`
+        <main class="wishlist-shell">
+          <section class="wishlist-card">
+            <div class="wishlist-header">
+              <p>Wishlist</p>
+              <h1>Sign in to view your wishlist</h1>
+            </div>
+            <p>Please log in to see the products saved to your wishlist.</p>
+            <a class="wishlist-cta" href="/account/login">Login</a>
+          </section>
+        </main>
+      `);
+    }
+
+    return renderPage(
+      `
+      <main class="wishlist-shell" data-wishlist-proxy-guest>
+        <div class="wishlist-header">
+          <p>Wishlist</p>
+          <h1>Your saved products</h1>
+        </div>
+        <p class="wishlist-status" data-wishlist-status>Loading your wishlist.</p>
+        <section class="wishlist-grid" data-wishlist-grid hidden></section>
       </main>
-    `);
+    `,
+      { includeGuestScript: true },
+    );
   }
 
   try {
@@ -133,7 +147,7 @@ export const loader = async ({ request }) => {
         const product = await resolveProduct(context.admin, { productId });
         products.push(product);
       } catch (error) {
-        console.error("wishlist.proxy.page.resolveProduct.error", {
+        logWishlistError("wishlist.proxy.page.resolveProduct.error", {
           productId,
           error: error instanceof Error ? error.message : String(error),
         });
@@ -336,7 +350,7 @@ export const loader = async ({ request }) => {
       `);
     }
 
-    console.error("wishlist.proxy.page.error", error);
+    logWishlistError("wishlist.proxy.page.error", error);
     return renderPage(`
       <main class="wishlist-shell">
         <section class="wishlist-card">

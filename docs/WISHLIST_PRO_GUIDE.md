@@ -28,6 +28,9 @@ Wishlist data is stored on the Shopify customer metafield:
 - Key: `items`
 - Type: `json`
 
+Older dev builds used `wishlist_pro.items`. The app still reads that legacy
+namespace and migrates items to `wishlist.items` automatically.
+
 ## Main User Experience
 
 ### Public login page
@@ -172,8 +175,8 @@ Current setting:
 
 - `wishlistRequiresLogin`
 
-Button appearance is now configured in theme app block settings instead of the
-local app database.
+Button appearance is configured in theme app block settings. The app database
+only stores storefront rules and wishlist page settings.
 
 Related file:
 
@@ -319,13 +322,21 @@ Main design decisions:
 
 ## Verification
 
+Automated tests run before every production build via `prebuild`.
+
 Useful commands:
 
 ```bash
+npm run test
+npm run test:watch
 npm run typecheck
 npm run lint
 npm run build
 ```
+
+Test files live in `tests/` and cover metafield helpers, guest sync parsing, shop
+settings, admin wishlist API behavior, and proxy guest-to-customer sync flows.
+Storefront browser flows still need manual QA on a development store.
 
 ## Related Docs
 

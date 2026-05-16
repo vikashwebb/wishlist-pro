@@ -1,5 +1,10 @@
-import { getWishlistDiagnostics, json } from "../models/wishlist.server";
+import {
+  ensureWishlistMetafieldDefinition,
+  getWishlistDiagnostics,
+  json,
+} from "../models/wishlist.server";
 import { authenticate } from "../shopify.server";
+import { logWishlist, logWishlistError } from "../utils/logger.server";
 
 export const loader = async ({ request }) => {
   const { admin } = await authenticate.admin(request);
@@ -7,15 +12,22 @@ export const loader = async ({ request }) => {
   const customerId = searchParams.get("customerId");
 
   try {
-    console.log("wishlist.check.request", {
+    logWishlist("wishlist.check.request", {
       customerId,
     });
+
+    try {
+      await ensureWishlistMetafieldDefinition(admin);
+    } catch (error) {
+      logWishlistError("wishlist.definition.ensure.error", error);
+    }
+
     const diagnostics = await getWishlistDiagnostics(admin, customerId);
-    console.log(
+    logWishlist(
       "wishlist.check.diagnostics.json",
       JSON.stringify(diagnostics, null, 2),
     );
-    console.log("wishlist.check.result", {
+    logWishlist("wishlist.check.result", {
       customerId,
       definitionName: diagnostics.definitionName,
       namespace: diagnostics.namespace,
@@ -27,20 +39,20 @@ export const loader = async ({ request }) => {
       errors: diagnostics.errors,
     });
     if (diagnostics.definition) {
-      console.log(
+      logWishlist(
         "wishlist.check.definition.json",
         JSON.stringify(diagnostics.definition, null, 2),
       );
     }
     if (diagnostics.metafield) {
-      console.log(
+      logWishlist(
         "wishlist.check.metafield.json",
         JSON.stringify(diagnostics.metafield, null, 2),
       );
     }
     return json(diagnostics);
   } catch (error) {
-    console.error("wishlist.check.loader.error", error);
+    logWishlistError("wishlist.check.loader.error", error);
     return json({ error: error.message }, { status: 422 });
   }
 };

@@ -1,3 +1,4 @@
+import { parseGuestWishlistState } from "../models/guest-wishlist-state.server";
 import {
   isProtectedCustomerDataError,
   json,
@@ -8,38 +9,6 @@ import {
   writeWishlist,
 } from "../models/wishlist.server";
 import { authenticate } from "../shopify.server";
-
-function parseGuestState(rawValue) {
-  if (!rawValue) {
-    return { productIds: [], handles: [] };
-  }
-
-  try {
-    const parsed = JSON.parse(rawValue);
-    const productIds = Array.isArray(parsed.productIds)
-      ? [
-          ...new Set(
-            parsed.productIds
-              .map((item) => item?.toString().trim())
-              .filter(Boolean),
-          ),
-        ]
-      : [];
-    const handles = Array.isArray(parsed.handles)
-      ? [
-          ...new Set(
-            parsed.handles
-              .map((item) => item?.toString().trim())
-              .filter(Boolean),
-          ),
-        ]
-      : [];
-
-    return { productIds, handles };
-  } catch {
-    throw new Error("Invalid guest wishlist state");
-  }
-}
 
 export const action = async ({ request }) => {
   const context = await authenticate.public.appProxy(request);
@@ -57,7 +26,7 @@ export const action = async ({ request }) => {
   }
 
   try {
-    const guestState = parseGuestState(rawState);
+    const guestState = parseGuestWishlistState(rawState);
     const current = await readWishlist(context.admin, customerId);
     const nextItems = new Set(current.items);
 

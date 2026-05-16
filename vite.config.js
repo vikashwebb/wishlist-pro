@@ -37,7 +37,8 @@ if (host === "localhost") {
 
 export default defineConfig({
   server: {
-    allowedHosts: [host],
+    // Allow the current Cloudflare tunnel host during `shopify app dev`.
+    allowedHosts: host === "localhost" ? [host] : true,
     cors: {
       preflightContinue: true,
     },
