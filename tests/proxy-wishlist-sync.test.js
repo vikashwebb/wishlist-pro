@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { readWishlist, writeWishlist, resolveProduct, authenticate } = vi.hoisted(
+const { readWishlist, writeWishlist, resolveProducts, authenticate } = vi.hoisted(
   () => ({
     readWishlist: vi.fn(),
     writeWishlist: vi.fn(),
-    resolveProduct: vi.fn(),
+    resolveProducts: vi.fn(),
     authenticate: vi.fn(),
   }),
 );
@@ -15,6 +15,13 @@ vi.mock("../app/shopify.server.js", () => ({
       appProxy: authenticate,
     },
   },
+  unauthenticated: {
+    admin: vi.fn(),
+  },
+}));
+
+vi.mock("../app/utils/app-proxy.server.js", () => ({
+  authenticateAppProxy: authenticate,
 }));
 
 vi.mock("../app/models/wishlist.server.js", async () => {
@@ -23,7 +30,7 @@ vi.mock("../app/models/wishlist.server.js", async () => {
     ...actual,
     readWishlist,
     writeWishlist,
-    resolveProduct,
+    resolveProducts,
     isProtectedCustomerDataError: actual.isProtectedCustomerDataError,
     json: actual.json,
     toCustomerGid: actual.toCustomerGid,
@@ -121,10 +128,12 @@ describe("proxy wishlist sync action", () => {
 
   it("resolves guest handles into product IDs before merge", async () => {
     readWishlist.mockResolvedValue({ items: [], metafield: null });
-    resolveProduct.mockResolvedValue({
-      id: PRODUCT_B,
-      handle: "shirt",
-    });
+    resolveProducts.mockResolvedValue([
+      {
+        id: PRODUCT_B,
+        handle: "shirt",
+      },
+    ]);
     writeWishlist.mockResolvedValue({
       items: [PRODUCT_B],
       metafield: { id: "meta-2" },
@@ -142,8 +151,8 @@ describe("proxy wishlist sync action", () => {
 
     const payload = await response.json();
     expect(payload.synced).toBe(true);
-    expect(resolveProduct).toHaveBeenCalledWith(expect.anything(), {
-      handle: "shirt",
+    expect(resolveProducts).toHaveBeenCalledWith(expect.anything(), {
+      handles: ["shirt"],
     });
     expect(writeWishlist).toHaveBeenCalledWith(
       expect.anything(),

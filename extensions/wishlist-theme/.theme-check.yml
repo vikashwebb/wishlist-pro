@@ -1,0 +1,8 @@
+AssetSizeAppBlockJavaScript:
+  enabled: true
+  severity: warning
+  threshold_in_bytes: 30000
+
+HardcodedRoutes:
+  enabled: true
+  severity: warning

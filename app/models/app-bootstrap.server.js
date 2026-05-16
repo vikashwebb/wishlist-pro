@@ -1,6 +1,6 @@
 import { getShopSettings } from "./shop-settings.server";
 import { getWishlistDiagnostics, readWishlist } from "./wishlist.server";
-import { getWishlistPageByHandle } from "./wishlist-page.server";
+import { ensureWishlistPageBodyCurrent } from "./wishlist-page.server";
 
 async function getMainThemeId(admin, accessScopes) {
   if (!accessScopes.includes("read_themes")) {
@@ -38,11 +38,41 @@ async function getInitialWishlistPage(admin, accessScopes, settings) {
   }
 
   try {
-    return await getWishlistPageByHandle(admin, settings.wishlistPageHandle);
+    const { page } = await ensureWishlistPageBodyCurrent(admin, {
+      title: settings.wishlistPageTitle,
+      handle: settings.wishlistPageHandle,
+    });
+    return page;
   } catch (error) {
     console.error("wishlist.page.loader.error", error);
     return null;
   }
+}
+
+const BLOCKED_CUSTOMER_ACCESS_ERROR =
+  "Protected customer data is not approved for this app. Request Customer access in Partner Dashboard, reinstall the app, then re-run the live system check.";
+
+function markCustomerAccessBlocked(diagnostics) {
+  if (!diagnostics) {
+    return {
+      customerId: null,
+      checks: {
+        protectedCustomerAccessApproved: false,
+        storefrontLocalOnlyMode: true,
+        definitionExists: false,
+      },
+      errors: [BLOCKED_CUSTOMER_ACCESS_ERROR],
+      warnings: [],
+    };
+  }
+
+  diagnostics.checks.protectedCustomerAccessApproved = false;
+  diagnostics.checks.storefrontLocalOnlyMode = true;
+  if (!diagnostics.errors.includes(BLOCKED_CUSTOMER_ACCESS_ERROR)) {
+    diagnostics.errors.push(BLOCKED_CUSTOMER_ACCESS_ERROR);
+  }
+
+  return diagnostics;
 }
 
 async function getInitialDiagnostics(admin, customerId) {
@@ -159,10 +189,11 @@ export async function loadWishlistDashboardBootstrap({ request }) {
         (scope) => scope.handle,
       ) ?? [];
     const settings = await getShopSettings(session.shop);
-    const [initialWishlistPage, initialDiagnostics] = await Promise.all([
+    const [initialWishlistPage, initialDiagnosticsRaw] = await Promise.all([
       getInitialWishlistPage(admin, accessScopes, settings),
       getInitialDiagnostics(admin),
     ]);
+    const initialDiagnostics = markCustomerAccessBlocked(initialDiagnosticsRaw);
 
     return {
       accessScopes,

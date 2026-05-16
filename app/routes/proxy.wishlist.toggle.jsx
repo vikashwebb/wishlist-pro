@@ -7,13 +7,16 @@ import {
   toProductGid,
   writeWishlist,
 } from "../models/wishlist.server";
-import { authenticate } from "../shopify.server";
+import { authenticateAppProxy } from "../utils/app-proxy.server";
 
 export const action = async ({ request }) => {
-  const context = await authenticate.public.appProxy(request);
+  const context = await authenticateAppProxy(request);
 
   if (!context.session || !context.admin) {
-    return json({ error: "App proxy session not found" }, { status: 401 });
+    return json(
+      { error: "App proxy session not found. Re-open the app in Admin to reconnect." },
+      { status: 401 },
+    );
   }
 
   const formData = await request.formData();

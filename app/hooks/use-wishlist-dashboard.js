@@ -274,6 +274,12 @@ export function useWishlistDashboard() {
           `${appApiKey}/pdp-wishlist-embed`,
         )}`
       : null;
+  const wishlistPageEmbedEditorUrl =
+    themeEditorBaseUrl && appApiKey
+      ? `${themeEditorBaseUrl}?context=apps&template=page&activateAppId=${encodeURIComponent(
+          `${appApiKey}/wishlist-page-embed`,
+        )}`
+      : null;
   const hasThemeEditorLinks = Boolean(themeEditorBaseUrl && appApiKey);
 
   const diagnosticsCustomerId = diagnostics?.customerId ?? "";
@@ -287,14 +293,16 @@ export function useWishlistDashboard() {
     diagnosticsFresh && diagnostics?.checks?.storefrontLocalOnlyMode === true;
   const definitionReady =
     diagnosticsFresh && diagnostics?.checks?.definitionExists === true;
-  const customerAccessReady = customerAccessBlocked
-    ? false
-    : selectedCustomerId
+  const customerAccessReady =
+    !customerAccessBlocked &&
+    !storefrontLocalOnlyMode &&
+    (selectedCustomerId
       ? diagnosticsFresh &&
         diagnostics?.checks?.protectedCustomerAccessApproved === true
       : diagnosticsFresh &&
         diagnostics?.checks?.hasReadCustomersScope === true &&
-        diagnostics?.checks?.hasWriteCustomersScope === true;
+        diagnostics?.checks?.hasWriteCustomersScope === true &&
+        diagnostics?.checks?.protectedCustomerAccessApproved !== false);
   const customerMetafieldReady =
     diagnosticsFresh && diagnostics?.checks?.customerMetafieldExists === true;
   const customerDataStepComplete = definitionReady && customerAccessReady;
@@ -622,6 +630,7 @@ export function useWishlistDashboard() {
     wishlistPagePreviewPath,
     productPageButtonEditorUrl,
     productPageEmbedEditorUrl,
+    wishlistPageEmbedEditorUrl,
     hasThemeEditorLinks,
     diagnosticsFresh,
     diagnosticsErrors,

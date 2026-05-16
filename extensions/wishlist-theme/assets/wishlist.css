@@ -133,6 +133,16 @@
   white-space: normal;
 }
 
+/* One page title only: hide the theme's default page heading when our widget is present. */
+body:has([data-wishlist-page]) .main-page-title,
+body:has([data-wishlist-page]) .page-title,
+body:has([data-wishlist-page]) .page__title,
+body:has([data-wishlist-page]) .template-page__header h1,
+body:has([data-wishlist-page]) .page-header h1,
+body:has([data-wishlist-page]) h1.title {
+  display: none !important;
+}
+
 .wishlist-pro-page {
   display: grid;
   gap: 1.5rem;
@@ -163,6 +173,10 @@
 .wishlist-pro-page__status {
   color: rgb(15 23 42 / 0.72);
   font-size: 0.95rem;
+}
+
+[data-wishlist-page] [hidden] {
+  display: none !important;
 }
 
 .wishlist-pro-page__empty {

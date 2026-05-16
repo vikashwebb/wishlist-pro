@@ -3,18 +3,22 @@ import {
   isProtectedCustomerDataError,
   json,
   readWishlist,
-  resolveProduct,
+  resolveProducts,
   toCustomerGid,
   toProductGid,
+  wishlistItemsEqual,
   writeWishlist,
 } from "../models/wishlist.server";
-import { authenticate } from "../shopify.server";
+import { authenticateAppProxy } from "../utils/app-proxy.server";
 
 export const action = async ({ request }) => {
-  const context = await authenticate.public.appProxy(request);
+  const context = await authenticateAppProxy(request);
 
   if (!context.session || !context.admin) {
-    return json({ error: "App proxy session not found" }, { status: 401 });
+    return json(
+      { error: "App proxy session not found. Re-open the app in Admin to reconnect." },
+      { status: 401 },
+    );
   }
 
   const formData = await request.formData();
@@ -27,7 +31,25 @@ export const action = async ({ request }) => {
 
   try {
     const guestState = parseGuestWishlistState(rawState);
-    const current = await readWishlist(context.admin, customerId);
+    const hasGuestItems =
+      guestState.productIds.length > 0 || guestState.handles.length > 0;
+
+    if (!hasGuestItems) {
+      return json({
+        ok: true,
+        synced: false,
+        customerId: toCustomerGid(customerId),
+        items: [],
+      });
+    }
+
+    const [current, resolvedFromHandles] = await Promise.all([
+      readWishlist(context.admin, customerId),
+      guestState.handles.length > 0
+        ? resolveProducts(context.admin, { handles: guestState.handles })
+        : Promise.resolve([]),
+    ]);
+
     const nextItems = new Set(current.items);
 
     guestState.productIds.forEach((productId) => {
@@ -37,33 +59,14 @@ export const action = async ({ request }) => {
       }
     });
 
-    const resolvedHandleProducts = await Promise.allSettled(
-      guestState.handles.map((handle) =>
-        resolveProduct(context.admin, { handle }).then((product) => ({
-          handle,
-          product,
-        })),
-      ),
-    );
-
-    resolvedHandleProducts.forEach((result, index) => {
-      if (result.status === "fulfilled") {
-        nextItems.add(result.value.product.id);
-        return;
+    resolvedFromHandles.forEach((product) => {
+      if (product?.id) {
+        nextItems.add(product.id);
       }
-
-      const handle = guestState.handles[index] || "unknown";
-      console.error("wishlist.proxy.sync.resolveHandle.error", {
-        handle,
-        error:
-          result.reason instanceof Error
-            ? result.reason.message
-            : String(result.reason),
-      });
     });
 
     const mergedItems = [...nextItems];
-    if (mergedItems.length === current.items.length) {
+    if (wishlistItemsEqual(mergedItems, current.items)) {
       return json({
         ok: true,
         synced: false,

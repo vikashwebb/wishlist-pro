@@ -1,0 +1,16 @@
+{% comment %}
+  Loads wishlist page JS/CSS via the app proxy (theme assets exceed Shopify's 10KB block limit).
+{% endcomment %}
+
+{% render 'wishlist-page-assets' %}
+
+{% schema %}
+{
+  "name": "Wishlist page loader",
+  "target": "body",
+  "enabled_on": {
+    "templates": ["page"]
+  },
+  "settings": []
+}
+{% endschema %}

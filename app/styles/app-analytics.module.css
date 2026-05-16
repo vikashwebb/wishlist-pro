@@ -87,6 +87,216 @@
   line-height: 1.5;
 }
 
+.chartGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.chartCard {
+  display: grid;
+  gap: 1rem;
+  padding: 1.2rem;
+  border: 1px solid rgb(15 23 42 / 0.08);
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 14px 34px rgb(15 23 42 / 0.04);
+}
+
+.chartHeader {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.chartTitle {
+  margin: 0;
+  color: #0f172a;
+  font-size: 1.05rem;
+  letter-spacing: -0.02em;
+}
+
+.chartText,
+.chartFootnote {
+  margin: 0;
+  color: rgb(15 23 42 / 0.68);
+  line-height: 1.55;
+  font-size: 0.92rem;
+}
+
+.chartFootnote {
+  padding-top: 0.15rem;
+}
+
+.chartEmpty {
+  padding: 1.2rem;
+  border: 1px dashed rgb(15 23 42 / 0.16);
+  border-radius: 18px;
+  color: rgb(15 23 42 / 0.68);
+  line-height: 1.6;
+  text-align: center;
+}
+
+.donutLayout {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1rem;
+  align-items: center;
+}
+
+.donutWrap {
+  position: relative;
+  width: 140px;
+  height: 140px;
+}
+
+.donutSvg {
+  width: 140px;
+  height: 140px;
+}
+
+.donutTrack {
+  stroke: rgb(15 23 42 / 0.08);
+}
+
+.donutCenter {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 0.1rem;
+  text-align: center;
+}
+
+.donutCenter strong {
+  color: #0f172a;
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.donutCenter span {
+  color: rgb(15 23 42 / 0.58);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.chartLegend {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.legendRow {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 0.55rem;
+  align-items: center;
+}
+
+.legendSwatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+}
+
+.legendLabel {
+  color: rgb(15 23 42 / 0.72);
+  font-size: 0.9rem;
+}
+
+.legendValue {
+  color: #0f172a;
+  font-size: 0.92rem;
+}
+
+.columnChart {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+  align-items: end;
+  min-height: 180px;
+}
+
+.columnGroup {
+  display: grid;
+  gap: 0.45rem;
+  justify-items: center;
+  align-content: end;
+  height: 100%;
+}
+
+.columnTrack {
+  display: flex;
+  align-items: flex-end;
+  width: 100%;
+  height: 120px;
+  border-radius: 14px 14px 8px 8px;
+  background: rgb(15 23 42 / 0.06);
+}
+
+.columnFill {
+  display: block;
+  width: 100%;
+  min-height: 6px;
+  border-radius: inherit;
+}
+
+.columnValue {
+  color: #0f172a;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.columnLabel {
+  color: rgb(15 23 42 / 0.64);
+  font-size: 0.78rem;
+  text-align: center;
+  line-height: 1.35;
+}
+
+.trendSvg {
+  width: 100%;
+  height: auto;
+}
+
+.trendGridLine {
+  stroke: rgb(15 23 42 / 0.08);
+  stroke-width: 1;
+}
+
+.trendArea {
+  fill: rgb(29 107 89 / 0.14);
+}
+
+.trendLine {
+  fill: none;
+  stroke: #1d6b59;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.trendPoint {
+  fill: #1d6b59;
+  stroke: #fff;
+  stroke-width: 1.5;
+}
+
+.trendAxis {
+  display: grid;
+  grid-template-columns: repeat(14, minmax(0, 1fr));
+  gap: 0.15rem;
+}
+
+.trendAxisLabel {
+  color: rgb(15 23 42 / 0.58);
+  font-size: 0.68rem;
+  text-align: center;
+}
+
 .layout {
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(300px, 0.8fr);
@@ -274,8 +484,19 @@
   font-weight: 700;
 }
 
+@media (max-width: 1100px) {
+  .chartGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 960px) {
   .layout {
     grid-template-columns: 1fr;
+  }
+
+  .donutLayout {
+    grid-template-columns: 1fr;
+    justify-items: center;
   }
 }

@@ -8,14 +8,99 @@ export function getWishlistProxyPath() {
   return "/apps/wishlist-proxy/wishlist";
 }
 
-function buildWishlistPageBody() {
+export function isLegacyWishlistPageBody(body = "") {
+  const normalized = String(body).toLowerCase();
+  const proxyPath = getWishlistProxyPath().toLowerCase();
+
+  if (
+    normalized.includes('http-equiv="refresh"') ||
+    normalized.includes("http-equiv='refresh'") ||
+    normalized.includes("location.replace")
+  ) {
+    return true;
+  }
+
+  if (!normalized.includes("data-wishlist-page")) {
+    return (
+      normalized.includes(proxyPath) &&
+      !normalized.includes("data-wishlist-page-config")
+    );
+  }
+
+  if (
+    normalized.includes("theme-js") ||
+    normalized.includes("theme-css") ||
+    normalized.includes("wishlist-pro-page__eyebrow") ||
+    normalized.includes("wishlist-pro-page__header") ||
+    (normalized.includes("<script") &&
+      !normalized.includes(`${proxyPath}/theme.js`))
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+function normalizePageBody(body = "") {
+  return String(body).replace(/\s+/g, " ").trim();
+}
+
+export function isWishlistPageBodyCurrent(body, { title = "Your wishlist" } = {}) {
+  return (
+    normalizePageBody(body) === normalizePageBody(buildWishlistPageBody({ title }))
+  );
+}
+
+export function needsWishlistPageBodyRepair(body = "") {
+  if (!String(body ?? "").trim()) {
+    return true;
+  }
+
+  const duplicateWidgets =
+    (String(body).match(/data-wishlist-page(?!-)/g) || []).length > 1;
+
+  return isLegacyWishlistPageBody(body) || duplicateWidgets;
+}
+
+export function buildWishlistPageBody({ title = "Your wishlist" } = {}) {
   const proxyPath = getWishlistProxyPath();
+  const config = {
+    customerId: "",
+    configUrl: `${proxyPath}/config`,
+    itemsUrl: `${proxyPath}/items`,
+    syncUrl: `${proxyPath}/sync`,
+    toggleUrl: `${proxyPath}/toggle`,
+    loginUrl: "/account/login",
+    emptyTitle: "Your wishlist is empty",
+    emptyText: "Save products to see them here.",
+    loginTitle: "Sign in to view your wishlist",
+    loginText: "Your wishlist is available after you log in to your account.",
+    browseLabel: "Browse products",
+    removeLabel: "Remove",
+  };
+  const configJson = JSON.stringify(config).replace(/</g, "\\u003c");
 
   return `
-    <meta http-equiv="refresh" content="0; url=${proxyPath}">
-    <script>window.location.replace(${JSON.stringify(proxyPath)});</script>
-    <p>Redirecting to your wishlist...</p>
-    <p><a href="${proxyPath}">Open wishlist</a></p>
+<link rel="stylesheet" href="${proxyPath}/theme.css">
+<script src="${proxyPath}/theme.js" defer></script>
+<div
+  data-wishlist-page
+  data-wishlist-page-config='${configJson}'
+>
+  <div class="wishlist-pro-page">
+    <div class="wishlist-pro-page__status" data-wishlist-page-status>
+      Loading your wishlist.
+    </div>
+    <div class="wishlist-pro-page__empty" data-wishlist-page-empty hidden>
+      <h3 data-wishlist-empty-title>Your wishlist is empty</h3>
+      <p data-wishlist-empty-text>Save products to see them here.</p>
+      <a class="wishlist-pro-page__cta" href="/collections/all" data-wishlist-empty-link>
+        Browse products
+      </a>
+    </div>
+    <div class="wishlist-pro-page__grid" data-wishlist-page-grid hidden></div>
+  </div>
+</div>
   `.trim();
 }
 
@@ -28,6 +113,7 @@ async function findWishlistPage(admin, handle) {
             id
             title
             handle
+            body
           }
         }
       }`,
@@ -75,7 +161,7 @@ async function createWishlistPage(admin, { title, handle }) {
         page: {
           title,
           handle,
-          body: buildWishlistPageBody(),
+          body: buildWishlistPageBody({ title }),
           isPublished: true,
         },
       },
@@ -128,7 +214,7 @@ async function updateWishlistPage(admin, pageId, { title, handle }) {
         page: {
           title,
           handle,
-          body: buildWishlistPageBody(),
+          body: buildWishlistPageBody({ title }),
           isPublished: true,
         },
       },
@@ -156,6 +242,28 @@ async function updateWishlistPage(admin, pageId, { title, handle }) {
     page,
     path: getWishlistPagePath(page.handle),
   };
+}
+
+export async function ensureWishlistPageBodyCurrent(
+  admin,
+  { title = "Wishlist", handle = "wishlist" } = {},
+) {
+  const page = await findWishlistPage(admin, handle);
+  if (!page) {
+    return { repaired: false, page: null };
+  }
+
+  if (
+    isWishlistPageBodyCurrent(page.body, { title }) &&
+    !needsWishlistPageBodyRepair(page.body)
+  ) {
+    return { repaired: false, page };
+  }
+
+  logWishlist("wishlist.pageRepair", { pageId: page.id, handle });
+
+  const result = await updateWishlistPage(admin, page.id, { title, handle });
+  return { repaired: true, page: result.page, path: result.path };
 }
 
 export async function upsertWishlistPage(

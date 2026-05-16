@@ -2,10 +2,11 @@ import {
   isProtectedCustomerDataError,
   json,
   readWishlist,
-  resolveProduct,
+  resolveProducts,
   toCustomerGid,
+  toProductGid,
 } from "../models/wishlist.server";
-import { authenticate } from "../shopify.server";
+import { authenticateAppProxy } from "../utils/app-proxy.server";
 
 function splitList(value) {
   return (value || "")
@@ -14,15 +15,32 @@ function splitList(value) {
     .filter(Boolean);
 }
 
+function buildStatusByHandle(wishlistItems, products) {
+  const itemSet = new Set(wishlistItems);
+  const statusByHandle = {};
+
+  products.forEach((product) => {
+    if (!product?.handle) return;
+    statusByHandle[product.handle] = itemSet.has(product.id);
+  });
+
+  return statusByHandle;
+}
+
 export const loader = async ({ request }) => {
-  const context = await authenticate.public.appProxy(request);
+  const context = await authenticateAppProxy(request);
 
   if (!context.session || !context.admin) {
-    return json({ error: "App proxy session not found" }, { status: 401 });
+    return json(
+      { error: "App proxy session not found. Re-open the app in Admin to reconnect." },
+      { status: 401 },
+    );
   }
 
   const { searchParams } = new URL(request.url);
-  const customerId = searchParams.get("customerId");
+  const customerId =
+    searchParams.get("customerId") ||
+    searchParams.get("logged_in_customer_id");
   const productId = searchParams.get("productId");
   const handle = searchParams.get("handle");
   const handles = splitList(searchParams.get("handles"));
@@ -33,34 +51,69 @@ export const loader = async ({ request }) => {
 
   try {
     const wishlist = await readWishlist(context.admin, customerId);
-    const response = {
+    const normalizedProductId = toProductGid(productId || "");
+    const statusByHandle = {};
+    let active = false;
+    let product = null;
+
+    if (normalizedProductId) {
+      active = wishlist.items.includes(normalizedProductId);
+    }
+
+    if (handle) {
+      statusByHandle[handle] = active;
+    }
+
+    const lookupHandles = [...new Set(handles.filter(Boolean))];
+
+    if (lookupHandles.length === 0 && normalizedProductId) {
+      return json({
+        loggedIn: true,
+        customerId: toCustomerGid(customerId),
+        items: wishlist.items,
+        active,
+        product: null,
+        productsByHandle: {},
+        statusByHandle,
+      });
+    }
+
+    if (lookupHandles.length > 0 || handle) {
+      const handlesToResolve = [...new Set([handle, ...lookupHandles].filter(Boolean))];
+      const resolved = await resolveProducts(context.admin, {
+        handles: handlesToResolve,
+      });
+      Object.assign(statusByHandle, buildStatusByHandle(wishlist.items, resolved));
+
+      if (normalizedProductId) {
+        const matched = resolved.find((entry) => entry.id === normalizedProductId);
+        if (matched) {
+          product = matched;
+          active = wishlist.items.includes(matched.id);
+          statusByHandle[matched.handle] = active;
+        }
+      } else if (handle) {
+        const matched = resolved.find((entry) => entry.handle === handle);
+        if (matched) {
+          product = matched;
+          active = wishlist.items.includes(matched.id);
+          statusByHandle[handle] = active;
+        }
+      }
+    }
+
+    return json({
       loggedIn: true,
       customerId: toCustomerGid(customerId),
       items: wishlist.items,
-      active: false,
-      product: null,
-      productsByHandle: {},
-      statusByHandle: {},
-    };
-
-    if (productId || handle) {
-      const product = await resolveProduct(context.admin, { productId, handle });
-      response.product = product;
-      response.active = wishlist.items.includes(product.id);
-      response.productsByHandle[product.handle] = product;
-      response.statusByHandle[product.handle] = wishlist.items.includes(product.id);
-    }
-
-    for (const itemHandle of handles) {
-      const product = await resolveProduct(context.admin, { handle: itemHandle });
-      response.productsByHandle[product.handle] = product;
-      response.statusByHandle[product.handle] = wishlist.items.includes(product.id);
-    }
-
-    return json(response);
+      active,
+      product,
+      productsByHandle: product ? { [product.handle]: product } : {},
+      statusByHandle,
+    });
   } catch (error) {
     if (isProtectedCustomerDataError(error)) {
-      const response = {
+      return json({
         loggedIn: true,
         customerId: toCustomerGid(customerId),
         items: [],
@@ -69,26 +122,7 @@ export const loader = async ({ request }) => {
         productsByHandle: {},
         statusByHandle: {},
         localOnly: true,
-      };
-
-      try {
-        if (productId || handle) {
-          const product = await resolveProduct(context.admin, { productId, handle });
-          response.product = product;
-          response.productsByHandle[product.handle] = product;
-          response.statusByHandle[product.handle] = false;
-        }
-
-        for (const itemHandle of handles) {
-          const product = await resolveProduct(context.admin, { handle: itemHandle });
-          response.productsByHandle[product.handle] = product;
-          response.statusByHandle[product.handle] = false;
-        }
-      } catch (productError) {
-        console.error("wishlist.proxy.status.localOnly.error", productError);
-      }
-
-      return json(response);
+      });
     }
 
     console.error("wishlist.proxy.status.error", error);

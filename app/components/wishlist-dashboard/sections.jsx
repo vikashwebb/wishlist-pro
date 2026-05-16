@@ -2,6 +2,7 @@
 import { DEFINITION_NAME, KEY, NAMESPACE } from "../../models/wishlist";
 import {
   ActionButton,
+  DashboardSelect,
   StatusPill,
   formatCustomerLabel,
   formatProductLabel,
@@ -77,13 +78,11 @@ function DataFoundationSection({ d }) {
                   <div className={styles.formCard}>
                     <label className={styles.field}>
                       <span className={styles.fieldLabel}>QA customer</span>
-                      <s-select
+                      <DashboardSelect
                         label="QA customer"
                         value={d.selectedCustomerId}
-                        onChange={(event) =>
-                          d.setSelectedCustomerId(event.currentTarget.value)
-                        }
-                        {...(d.customers.length === 0 ? { disabled: true } : {})}
+                        onChange={d.setSelectedCustomerId}
+                        disabled={d.customers.length === 0}
                       >
                         {d.customers.length === 0 ? (
                           <option value="">No customers available</option>
@@ -94,7 +93,7 @@ function DataFoundationSection({ d }) {
                             </option>
                           ))
                         )}
-                      </s-select>
+                      </DashboardSelect>
                     </label>
                     <p className={styles.fieldHint}>
                       Pick the customer you want to inspect and later use in the
@@ -272,6 +271,32 @@ function WishlistPageSection({ d }) {
                     Wishlist page detected at <code>/pages/{d.wishlistPage.handle}</code>.
                   </div>
                 ) : null}
+
+                <div className={`${styles.callout} ${styles.calloutInfo}`}>
+                  Enable <strong>Wishlist page loader</strong> for the wishlist page
+                  UI. Guest saves merge when shoppers visit pages that load wishlist
+                  scripts (product page, collection cards, wishlist page). Do
+                  not add the <strong>Wishlist page</strong> app block on the same
+                  page — the app already injects the wishlist UI into the page
+                  content.
+                </div>
+                <div className={styles.buttonRow}>
+                  <ActionButton
+                    action={
+                      d.wishlistPageEmbedEditorUrl
+                        ? {
+                            label: "Enable wishlist page loader",
+                            href: d.wishlistPageEmbedEditorUrl,
+                            target: "_top",
+                            rel: "noreferrer",
+                          }
+                        : {
+                            label: "Enable wishlist page loader",
+                            disabled: true,
+                          }
+                    }
+                  />
+                </div>
 
                 <div className={styles.fieldGrid}>
                   <label className={styles.field}>
@@ -472,7 +497,16 @@ function QaLabSection({ d }) {
                   actually became value.
                 </p>
 
-                {!d.testDataReady ? (
+                {d.customerAccessBlocked ? (
+                  <div className={`${styles.callout} ${styles.calloutWarning}`}>
+                    Customer API access is blocked, so the QA lab cannot load
+                    customers or write metafields. In Partner Dashboard → your app →
+                    API access, request protected customer data, reinstall the app,
+                    then return here.
+                  </div>
+                ) : null}
+
+                {!d.testDataReady && !d.customerAccessBlocked ? (
                   <div className={styles.emptyState}>
                     <h4 className={styles.emptyTitle}>QA needs a customer and a product</h4>
                     <p className={styles.emptyText}>
@@ -485,13 +519,11 @@ function QaLabSection({ d }) {
                 <div className={styles.fieldGrid}>
                   <label className={styles.field}>
                     <span className={styles.fieldLabel}>Customer</span>
-                    <s-select
+                    <DashboardSelect
                       label="Customer"
                       value={d.selectedCustomerId}
-                      onChange={(event) =>
-                        d.setSelectedCustomerId(event.currentTarget.value)
-                      }
-                      {...(d.customers.length === 0 ? { disabled: true } : {})}
+                      onChange={d.setSelectedCustomerId}
+                      disabled={d.customers.length === 0}
                     >
                       {d.customers.length === 0 ? (
                         <option value="">No customers available</option>
@@ -502,18 +534,16 @@ function QaLabSection({ d }) {
                           </option>
                         ))
                       )}
-                    </s-select>
+                    </DashboardSelect>
                   </label>
 
                   <label className={styles.field}>
                     <span className={styles.fieldLabel}>Product</span>
-                    <s-select
+                    <DashboardSelect
                       label="Product"
                       value={d.selectedProductId}
-                      onChange={(event) =>
-                        d.setSelectedProductId(event.currentTarget.value)
-                      }
-                      {...(d.products.length === 0 ? { disabled: true } : {})}
+                      onChange={d.setSelectedProductId}
+                      disabled={d.products.length === 0}
                     >
                       {d.products.length === 0 ? (
                         <option value="">No products available</option>
@@ -524,7 +554,7 @@ function QaLabSection({ d }) {
                           </option>
                         ))
                       )}
-                    </s-select>
+                    </DashboardSelect>
                   </label>
                 </div>
 

@@ -92,6 +92,11 @@ export function buildWishlistAnalytics(customers = [], options = {}) {
     )
     .slice(0, RECENT_ACTIVITY_LIMIT);
 
+  const charts = buildAnalyticsCharts(customerRows, {
+    customersScanned: customers.length,
+    customersWithWishlist,
+  });
+
   return {
     summary: {
       customersScanned: customers.length,
@@ -105,6 +110,86 @@ export function buildWishlistAnalytics(customers = [], options = {}) {
     topProducts,
     topCustomers,
     recentActivity,
+    charts,
+  };
+}
+
+const WISHLIST_SIZE_BUCKETS = [
+  { label: "1 item", min: 1, max: 1 },
+  { label: "2–3 items", min: 2, max: 3 },
+  { label: "4–5 items", min: 4, max: 5 },
+  { label: "6+ items", min: 6, max: Infinity },
+];
+
+const ACTIVITY_TIMELINE_DAYS = 14;
+
+function formatTimelineDayLabel(dateKey) {
+  try {
+    const date = new Date(`${dateKey}T12:00:00Z`);
+    return new Intl.DateTimeFormat(undefined, {
+      month: "short",
+      day: "numeric",
+    }).format(date);
+  } catch {
+    return dateKey;
+  }
+}
+
+export function buildWishlistSizeBuckets(customerRows = []) {
+  return WISHLIST_SIZE_BUCKETS.map((bucket) => ({
+    label: bucket.label,
+    count: customerRows.filter(
+      (row) => row.itemCount >= bucket.min && row.itemCount <= bucket.max,
+    ).length,
+  }));
+}
+
+export function buildActivityTimeline(
+  customerRows = [],
+  dayCount = ACTIVITY_TIMELINE_DAYS,
+  referenceDate = new Date(),
+) {
+  const days = [];
+  const now = referenceDate;
+
+  for (let offset = dayCount - 1; offset >= 0; offset -= 1) {
+    const date = new Date(now);
+    date.setUTCDate(date.getUTCDate() - offset);
+    const dateKey = date.toISOString().slice(0, 10);
+
+    days.push({
+      date: dateKey,
+      label: formatTimelineDayLabel(dateKey),
+      count: 0,
+    });
+  }
+
+  const countsByDate = new Map(days.map((day) => [day.date, day]));
+
+  customerRows.forEach((row) => {
+    if (!row.updatedAt) return;
+
+    const dateKey = new Date(row.updatedAt).toISOString().slice(0, 10);
+    const entry = countsByDate.get(dateKey);
+    if (entry) {
+      entry.count += 1;
+    }
+  });
+
+  return days;
+}
+
+export function buildAnalyticsCharts(customerRows = [], summary = {}) {
+  const customersScanned = summary.customersScanned ?? 0;
+  const customersWithWishlist = summary.customersWithWishlist ?? 0;
+
+  return {
+    adoption: {
+      withWishlist: customersWithWishlist,
+      withoutWishlist: Math.max(customersScanned - customersWithWishlist, 0),
+    },
+    wishlistSizes: buildWishlistSizeBuckets(customerRows),
+    activityTimeline: buildActivityTimeline(customerRows),
   };
 }
 

@@ -7,12 +7,25 @@ import {
   readWishlist,
   toCustomerGid,
   toProductGid,
+  wishlistItemsEqual,
   writeWishlist,
 } from "../app/models/wishlist.server.js";
 
 const PRODUCT_A = "gid://shopify/Product/111";
 const PRODUCT_B = "gid://shopify/Product/222";
 const CUSTOMER_GID = "gid://shopify/Customer/999";
+
+describe("wishlistItemsEqual", () => {
+  it("compares item lists regardless of order", () => {
+    expect(
+      wishlistItemsEqual(
+        [PRODUCT_A, PRODUCT_B],
+        [PRODUCT_B, PRODUCT_A],
+      ),
+    ).toBe(true);
+    expect(wishlistItemsEqual([PRODUCT_A], [PRODUCT_A, PRODUCT_B])).toBe(false);
+  });
+});
 
 describe("normalizeWishlistItems", () => {
   it("returns empty array for nullish values", () => {

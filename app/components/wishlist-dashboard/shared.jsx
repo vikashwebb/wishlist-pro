@@ -30,6 +30,27 @@ export function StatusPill({ tone = "neutral", children }) {
   );
 }
 
+/** Native select — React does not reliably bind onChange to Polaris <s-select> web components. */
+export function DashboardSelect({
+  label,
+  value,
+  onChange,
+  disabled = false,
+  children,
+}) {
+  return (
+    <select
+      className={styles.fieldInput}
+      aria-label={label}
+      value={value}
+      disabled={disabled}
+      onChange={(event) => onChange(event.target.value)}
+    >
+      {children}
+    </select>
+  );
+}
+
 export function ActionButton({ action, secondary = false }) {
   if (!action) return null;
 

@@ -56,6 +56,13 @@ export function toProductGid(productId) {
   return null;
 }
 
+export function wishlistItemsEqual(left = [], right = []) {
+  const a = [...new Set(left.filter(Boolean))].sort();
+  const b = [...new Set(right.filter(Boolean))].sort();
+  if (a.length !== b.length) return false;
+  return a.every((item, index) => item === b[index]);
+}
+
 export function isProtectedCustomerDataError(error) {
   const message = error instanceof Error ? error.message : String(error);
   return message.includes("not approved to access the Customer object");
@@ -235,6 +242,138 @@ export async function writeWishlist(admin, customerId, items) {
   };
 }
 
+const WISHLIST_PRODUCT_FIELDS = `
+  id
+  handle
+  title
+  priceRangeV2 {
+    minVariantPrice {
+      amount
+      currencyCode
+    }
+  }
+  compareAtPriceRange {
+    minVariantCompareAtPrice {
+      amount
+      currencyCode
+    }
+  }
+  featuredImage {
+    url
+    altText
+  }
+`;
+
+function toAmount(value) {
+  const amount = Number.parseFloat(value ?? "");
+  return Number.isFinite(amount) ? amount : null;
+}
+
+export function formatWishlistStorefrontProduct(product) {
+  if (!product?.id) return null;
+
+  const price = product.priceRangeV2?.minVariantPrice ?? null;
+  const compareAtPrice =
+    product.compareAtPriceRange?.minVariantCompareAtPrice ?? null;
+  const priceAmount = toAmount(price?.amount);
+  const compareAtPriceAmount = toAmount(compareAtPrice?.amount);
+  const discountPercentage =
+    compareAtPriceAmount && priceAmount && compareAtPriceAmount > priceAmount
+      ? Math.round(
+          ((compareAtPriceAmount - priceAmount) / compareAtPriceAmount) * 100,
+        )
+      : null;
+
+  return {
+    id: product.id,
+    handle: product.handle,
+    title: product.title,
+    image: product.featuredImage?.url ?? null,
+    imageAlt: product.featuredImage?.altText ?? product.title,
+    priceAmount,
+    compareAtPriceAmount,
+    currencyCode: price?.currencyCode ?? compareAtPrice?.currencyCode ?? null,
+    discountPercentage,
+    url: product.handle ? `/products/${product.handle}` : "#",
+  };
+}
+
+export async function resolveProducts(
+  admin,
+  { productIds = [], handles = [] } = {},
+) {
+  const ids = [
+    ...new Set(
+      productIds.map((productId) => toProductGid(productId)).filter(Boolean),
+    ),
+  ];
+  const uniqueHandles = [...new Set(handles.filter(Boolean))];
+  const products = [];
+  const seen = new Set();
+
+  const addProduct = (product) => {
+    if (!product?.id || seen.has(product.id)) return;
+    seen.add(product.id);
+    products.push(product);
+  };
+
+  if (ids.length > 0) {
+    const response = await admin.graphql(
+      `#graphql
+        query WishlistProductsByIds($ids: [ID!]!) {
+          nodes(ids: $ids) {
+            ... on Product {
+              ${WISHLIST_PRODUCT_FIELDS}
+            }
+          }
+        }`,
+      { variables: { ids } },
+    );
+    const payload = await response.json();
+
+    if (payload.errors?.length) {
+      throw new Error(payload.errors.map((error) => error.message).join(", "));
+    }
+
+    for (const node of payload.data?.nodes ?? []) {
+      if (node?.id) {
+        addProduct(node);
+      }
+    }
+  }
+
+  if (uniqueHandles.length > 0) {
+    const query = uniqueHandles.map((handle) => `handle:${handle}`).join(" OR ");
+    const response = await admin.graphql(
+      `#graphql
+        query WishlistProductsByHandles($query: String!, $first: Int!) {
+          products(first: $first, query: $query) {
+            nodes {
+              ${WISHLIST_PRODUCT_FIELDS}
+            }
+          }
+        }`,
+      {
+        variables: {
+          query,
+          first: Math.min(uniqueHandles.length, 50),
+        },
+      },
+    );
+    const payload = await response.json();
+
+    if (payload.errors?.length) {
+      throw new Error(payload.errors.map((error) => error.message).join(", "));
+    }
+
+    for (const product of payload.data?.products?.nodes ?? []) {
+      addProduct(product);
+    }
+  }
+
+  return products;
+}
+
 export async function resolveProduct(admin, { productId, handle }) {
   const ownerId = toProductGid(productId);
 
@@ -243,25 +382,7 @@ export async function resolveProduct(admin, { productId, handle }) {
       `#graphql
         query ProductById($id: ID!) {
           product(id: $id) {
-            id
-            handle
-            title
-            priceRangeV2 {
-              minVariantPrice {
-                amount
-                currencyCode
-              }
-            }
-            compareAtPriceRange {
-              minVariantCompareAtPrice {
-                amount
-                currencyCode
-              }
-            }
-            featuredImage {
-              url
-              altText
-            }
+            ${WISHLIST_PRODUCT_FIELDS}
           }
         }`,
       {
@@ -294,25 +415,7 @@ export async function resolveProduct(admin, { productId, handle }) {
       query ProductByHandle($query: String!) {
         products(first: 1, query: $query) {
           nodes {
-            id
-            handle
-            title
-            priceRangeV2 {
-              minVariantPrice {
-                amount
-                currencyCode
-              }
-            }
-            compareAtPriceRange {
-              minVariantCompareAtPrice {
-                amount
-                currencyCode
-              }
-            }
-            featuredImage {
-              url
-              altText
-            }
+            ${WISHLIST_PRODUCT_FIELDS}
           }
         }
       }`,

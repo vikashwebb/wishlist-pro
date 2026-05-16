@@ -314,6 +314,36 @@
       .then(readJson);
   }
 
+  function guestSyncSessionKey(customerId) {
+    return "wishlist-pro:guest-synced:" + customerId;
+  }
+
+  function isGuestSyncPending(customerId) {
+    var guestState = readGuestState();
+    if (
+      !activeKeys(guestState.itemsByProductId).length &&
+      !activeKeys(guestState.statusByHandle).length
+    ) {
+      return false;
+    }
+
+    try {
+      return (
+        window.sessionStorage.getItem(guestSyncSessionKey(customerId)) !== "1"
+      );
+    } catch {
+      return true;
+    }
+  }
+
+  function markGuestSynced(customerId) {
+    try {
+      window.sessionStorage.setItem(guestSyncSessionKey(customerId), "1");
+    } catch {
+      /* ignore storage errors */
+    }
+  }
+
   function syncGuestState(config) {
     if (!config.customerId || !config.syncUrl) {
       return Promise.resolve(null);
@@ -326,6 +356,10 @@
     };
 
     if (!payload.productIds.length && !payload.handles.length) {
+      return Promise.resolve(null);
+    }
+
+    if (!isGuestSyncPending(config.customerId)) {
       return Promise.resolve(null);
     }
 
@@ -355,6 +389,7 @@
         }
 
         clearGuestState();
+        markGuestSynced(config.customerId);
         delete window.__wishlistGuestSyncPromises[config.customerId];
         return responsePayload;
       })
@@ -578,12 +613,14 @@
           button.disabled = true;
         });
 
-      syncGuestState(config)
-        .catch(function (error) {
-          console.error("wishlist.cards.sync.error", error);
-          return null;
-        })
-        .then(function (syncPayload) {
+      var syncPromise = isGuestSyncPending(config.customerId)
+        ? syncGuestState(config).catch(function (error) {
+            console.error("wishlist.cards.sync.error", error);
+            return null;
+          })
+        : Promise.resolve(null);
+
+      syncPromise.then(function (syncPayload) {
           if (syncPayload && syncPayload.localOnly) {
             localOnly = true;
             statusByHandle = readState(config.customerId).statusByHandle || {};

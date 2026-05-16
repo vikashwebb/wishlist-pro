@@ -1,4 +1,73 @@
 (function () {
+  function initWishlistPage() {
+  function dedupeWishlistPageRoots() {
+    var roots = Array.prototype.slice.call(
+      document.querySelectorAll("[data-wishlist-page]"),
+    );
+    if (roots.length <= 1) {
+      return roots[0] || null;
+    }
+
+    function scoreRoot(root) {
+      var score = 0;
+      if (
+        root.closest(
+          ".rte, .page__content, .page-content, .main-page-content, #MainContent, .shopify-section--page, .page-width",
+        )
+      ) {
+        score += 2;
+      }
+
+      try {
+        var parsed = JSON.parse(
+          root.getAttribute("data-wishlist-page-config") || "{}",
+        );
+        if (parsed.customerId) {
+          score += 3;
+        }
+        if (parsed.itemsUrl) {
+          score += 1;
+        }
+      } catch {
+        score -= 1;
+      }
+
+      return score;
+    }
+
+    var preferred = roots[0];
+    var bestScore = scoreRoot(preferred);
+    roots.forEach(function (root) {
+      var nextScore = scoreRoot(root);
+      if (nextScore > bestScore) {
+        preferred = root;
+        bestScore = nextScore;
+      }
+    });
+
+    roots.forEach(function (root) {
+      if (root === preferred) {
+        return;
+      }
+
+      root.setAttribute("data-wishlist-page-skip", "true");
+      root.hidden = true;
+      root.style.display = "none";
+    });
+
+    return preferred;
+  }
+
+  if (!document.querySelector("[data-wishlist-page]")) {
+    return;
+  }
+
+  dedupeWishlistPageRoots();
+
+  if (!document.querySelector("[data-wishlist-page]:not([data-wishlist-page-skip])")) {
+    return;
+  }
+
   function guestKey() {
     return "wishlist-pro:guest";
   }
@@ -110,6 +179,36 @@
     );
   }
 
+  function guestSyncSessionKey(customerId) {
+    return "wishlist-pro:guest-synced:" + customerId;
+  }
+
+  function isGuestSyncPending(customerId) {
+    var guestState = readGuestState();
+    if (
+      !activeKeys(guestState.itemsByProductId).length &&
+      !activeKeys(guestState.statusByHandle).length
+    ) {
+      return false;
+    }
+
+    try {
+      return (
+        window.sessionStorage.getItem(guestSyncSessionKey(customerId)) !== "1"
+      );
+    } catch {
+      return true;
+    }
+  }
+
+  function markGuestSynced(customerId) {
+    try {
+      window.sessionStorage.setItem(guestSyncSessionKey(customerId), "1");
+    } catch {
+      /* ignore storage errors */
+    }
+  }
+
   function syncGuestState(config) {
     if (!config.customerId || !config.syncUrl) {
       return Promise.resolve(null);
@@ -122,6 +221,10 @@
     };
 
     if (!payload.productIds.length && !payload.handles.length) {
+      return Promise.resolve(null);
+    }
+
+    if (!isGuestSyncPending(config.customerId)) {
       return Promise.resolve(null);
     }
 
@@ -146,6 +249,7 @@
       .then(function (responsePayload) {
         if (!responsePayload.localOnly) {
           clearStoredState(guestKey());
+          markGuestSynced(config.customerId);
         }
 
         delete window.__wishlistGuestSyncPromises[config.customerId];
@@ -216,10 +320,37 @@
       .then(readJson);
   }
 
-  document.querySelectorAll("[data-wishlist-page]").forEach(function (root) {
-    var config = JSON.parse(
-      root.getAttribute("data-wishlist-page-config") || "{}",
-    );
+  function resolveCustomerId(config) {
+    if (config.customerId) {
+      return String(config.customerId);
+    }
+
+    if (window.Shopify && window.Shopify.customer && window.Shopify.customer.id) {
+      return String(window.Shopify.customer.id);
+    }
+
+    if (window.__st && window.__st.cid) {
+      return String(window.__st.cid);
+    }
+
+    var meta = document.querySelector('meta[name="shopify-customer-id"]');
+    if (meta && meta.content) {
+      return meta.content;
+    }
+
+    return "";
+  }
+
+  document
+    .querySelectorAll("[data-wishlist-page]:not([data-wishlist-page-skip])")
+    .forEach(function (root) {
+    var config = {};
+    try {
+      config = JSON.parse(root.getAttribute("data-wishlist-page-config") || "{}");
+    } catch (error) {
+      console.error("wishlist.page.config.error", error);
+    }
+    config.customerId = resolveCustomerId(config);
     var statusNode = root.querySelector("[data-wishlist-page-status]");
     var emptyNode = root.querySelector("[data-wishlist-page-empty]");
     var emptyTitleNode = root.querySelector("[data-wishlist-empty-title]");
@@ -228,22 +359,39 @@
     var gridNode = root.querySelector("[data-wishlist-page-grid]");
     var localOnly = false;
 
+    if (!statusNode || !emptyNode || !gridNode) {
+      console.error("wishlist.page.mount.error", "Missing wishlist page markup");
+      return;
+    }
+
+    function setPanelVisible(node, visible) {
+      if (!node) return;
+      node.hidden = !visible;
+    }
+
     function setStatus(text) {
+      if (!statusNode) return;
       statusNode.textContent = text || "";
-      statusNode.hidden = !text;
+      setPanelVisible(statusNode, !!text);
     }
 
     function showEmpty(title, text, linkLabel, linkHref) {
-      emptyTitleNode.textContent = title;
-      emptyTextNode.textContent = text;
-      emptyLinkNode.textContent = linkLabel;
-      emptyLinkNode.href = linkHref;
-      emptyNode.hidden = false;
-      gridNode.hidden = true;
-      gridNode.innerHTML = "";
+      if (emptyTitleNode) emptyTitleNode.textContent = title;
+      if (emptyTextNode) emptyTextNode.textContent = text;
+      if (emptyLinkNode) {
+        emptyLinkNode.textContent = linkLabel;
+        emptyLinkNode.href = linkHref;
+      }
+      setPanelVisible(emptyNode, true);
+      setPanelVisible(gridNode, false);
+      if (gridNode) gridNode.innerHTML = "";
     }
 
     function showProducts(products) {
+      if (!gridNode || !emptyNode) {
+        return;
+      }
+
       if (!products.length) {
         showEmpty(
           config.emptyTitle || "Your wishlist is empty",
@@ -254,8 +402,8 @@
         return;
       }
 
-      emptyNode.hidden = true;
-      gridNode.hidden = false;
+      setPanelVisible(emptyNode, false);
+      setPanelVisible(gridNode, true);
       gridNode.innerHTML = products
         .map(function (product) {
           var image = product.image
@@ -403,35 +551,38 @@
             return fetchItems(config, guestPayload);
           }
 
-          if (hasGuestWishlistState()) {
-            var immediateGuestPayload = getGuestPayload();
-            if (
-              immediateGuestPayload.productIds.length ||
-              immediateGuestPayload.handles.length
-            ) {
-              fetchItems(config, immediateGuestPayload).then(
-                function (immediatePayload) {
-                  if (!localOnly) {
-                    showProducts(immediatePayload.products || []);
-                    setStatus("Syncing your wishlist.");
-                  }
-                },
-                function () {},
-              );
-            }
+          var itemsPromise = fetchItems(config, {
+            customerId: config.customerId,
+          });
+
+          if (!isGuestSyncPending(config.customerId)) {
+            return itemsPromise;
           }
 
-          return syncGuestState(config)
-            .catch(function (error) {
+          return Promise.all([
+            itemsPromise,
+            syncGuestState(config).catch(function (error) {
               console.error("wishlist.page.sync.error", error);
               return null;
-            })
-            .then(function () {
+            }),
+          ]).then(function (results) {
+            var itemsPayload = results[0];
+            var syncPayload = results[1];
+
+            if (syncPayload && syncPayload.synced) {
               return fetchItems(config, { customerId: config.customerId });
-            });
+            }
+
+            return itemsPayload;
+          });
         })
         .then(function (payload) {
-          if (!payload) return;
+          if (!payload) {
+            if (statusNode.textContent === "Loading your wishlist.") {
+              setStatus("");
+            }
+            return;
+          }
 
           if (payload.localOnly) {
             localOnly = true;
@@ -460,7 +611,11 @@
         })
         .catch(function (error) {
           console.error("wishlist.page.load.error", error);
-          setStatus("Unable to load wishlist right now.");
+          setStatus(
+            error && error.message
+              ? error.message
+              : "Unable to load wishlist right now.",
+          );
         });
     }
 
@@ -503,4 +658,11 @@
 
     loadWishlist();
   });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initWishlistPage);
+  } else {
+    initWishlistPage();
+  }
 })();

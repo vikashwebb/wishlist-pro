@@ -2,6 +2,12 @@
 import { useLoaderData, useRouteError } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { AppLink } from "../components/app-link";
+import {
+  AreaTrendChart,
+  DonutChart,
+  HorizontalBarChart,
+  VerticalBarChart,
+} from "../components/analytics-charts";
 import { getShopSettings } from "../models/shop-settings.server";
 import { loadWishlistAnalyticsReport } from "../models/wishlist-analytics.server";
 import styles from "../styles/app-analytics.module.css";
@@ -81,10 +87,11 @@ export default function AnalyticsPage() {
   }
 
   const summary = analytics.summary;
-  const maxCustomerCount = Math.max(
-    ...analytics.topProducts.map((product) => product.customerCount),
-    1,
-  );
+  const charts = analytics.charts ?? {
+    adoption: { withWishlist: 0, withoutWishlist: 0 },
+    wishlistSizes: [],
+    activityTimeline: [],
+  };
   const storefrontUrl = shopDomain ? `https://${shopDomain}` : null;
   const wishlistPagePath = `/pages/${settings.wishlistPageHandle || "wishlist"}`;
 
@@ -133,6 +140,36 @@ export default function AnalyticsPage() {
           />
         </section>
 
+        <section className={styles.chartGrid}>
+          <DonutChart
+            title="Wishlist adoption"
+            description="Share of scanned customers with at least one saved product."
+            segments={[
+              {
+                label: "With wishlist",
+                value: charts.adoption.withWishlist,
+                color: "#1d6b59",
+              },
+              {
+                label: "No wishlist yet",
+                value: charts.adoption.withoutWishlist,
+                color: "#cbd5e1",
+              },
+            ]}
+            footnote={`${formatPercent(summary.adoptionRate)} adoption among customers scanned.`}
+          />
+          <AreaTrendChart
+            title="Wishlist activity"
+            description="Customers whose wishlist metafield was updated each day (last 14 days)."
+            points={charts.activityTimeline}
+          />
+          <VerticalBarChart
+            title="Wishlist size distribution"
+            description="How many products active customers are saving."
+            items={charts.wishlistSizes}
+          />
+        </section>
+
         <div className={styles.layout}>
           <section className={styles.panel}>
             <h2 className={styles.panelTitle}>Top wishlisted products</h2>
@@ -178,33 +215,11 @@ export default function AnalyticsPage() {
           </section>
 
           <div className={styles.sideColumn}>
-            <section className={styles.panel}>
-              <h2 className={styles.panelTitle}>Adoption chart</h2>
-              <p className={styles.panelText}>Leading products by customer count.</p>
-
-              {analytics.topProducts.length > 0 ? (
-                <div className={styles.barChart}>
-                  {analytics.topProducts.slice(0, 5).map((product) => (
-                    <div key={product.productId} className={styles.barRow}>
-                      <p className={styles.barLabel}>{product.title}</p>
-                      <span className={styles.rowMeta}>{product.customerCount}</span>
-                      <div className={styles.barTrack}>
-                        <span
-                          className={styles.barFill}
-                          style={{
-                            width: `${Math.round(
-                              (product.customerCount / maxCustomerCount) * 100,
-                            )}%`,
-                          }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className={styles.emptyState}>No product data yet.</div>
-              )}
-            </section>
+            <HorizontalBarChart
+              title="Top products chart"
+              description="Leading products by how many customers saved them."
+              items={analytics.topProducts.slice(0, 6)}
+            />
 
             <section className={styles.panel}>
               <h2 className={styles.panelTitle}>Most engaged customers</h2>
