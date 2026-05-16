@@ -46,6 +46,11 @@ async function findWishlistPage(admin, handle) {
   return payload.data?.pages?.nodes?.[0] ?? null;
 }
 
+export async function getWishlistPageByHandle(admin, handle = "wishlist") {
+  if (!handle) return null;
+  return findWishlistPage(admin, handle);
+}
+
 async function createWishlistPage(admin, { title, handle }) {
   const response = await admin.graphql(
     `#graphql

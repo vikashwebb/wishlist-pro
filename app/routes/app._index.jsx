@@ -1,17 +1,89 @@
+/* eslint-disable react/prop-types */
 import { useEffect, useRef, useState } from "react";
-import { useFetcher, useLoaderData } from "react-router";
+import { useFetcher, useLoaderData, useRouteError } from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { DEFINITION_NAME, KEY, NAMESPACE } from "../models/wishlist";
 import styles from "../styles/app-index.module.css";
 
+function formatCustomerLabel(customer) {
+  if (!customer) return "No customer selected";
+  return customer.displayName || customer.email || customer.id;
+}
+
+function formatProductLabel(product) {
+  if (!product) return "No product selected";
+  return product.title || product.handle || product.id;
+}
+
+function formatWishlistLabel(productId, products) {
+  const product = products.find((entry) => entry.id === productId);
+  return product?.title || productId.split("/").pop() || productId;
+}
+
+function getToneClassName(tone) {
+  if (tone === "success") return styles.pillSuccess;
+  if (tone === "warning") return styles.pillWarning;
+  if (tone === "critical") return styles.pillCritical;
+  return styles.pillNeutral;
+}
+
+function StatusPill({ tone = "neutral", children }) {
+  return (
+    <span className={`${styles.pill} ${getToneClassName(tone)}`}>{children}</span>
+  );
+}
+
+function ActionButton({ action, secondary = false }) {
+  if (!action) return null;
+
+  if (action.href) {
+    if (action.disabled) {
+      return (
+        <s-button {...(secondary ? { variant: "secondary" } : {})} disabled>
+          {action.label}
+        </s-button>
+      );
+    }
+
+    return (
+      <a
+        className={`${styles.linkButton} ${
+          secondary ? styles.linkButtonSecondary : ""
+        }`}
+        href={action.href}
+        target={action.target}
+        rel={action.rel}
+      >
+        {action.label}
+      </a>
+    );
+  }
+
+  return (
+    <s-button
+      {...(secondary ? { variant: "secondary" } : {})}
+      onClick={action.onClick}
+      disabled={action.disabled}
+      {...(action.loading ? { loading: true } : {})}
+    >
+      {action.label}
+    </s-button>
+  );
+}
+
 export const loader = async ({ request }) => {
-  const [{ getShopSettings }, { authenticate }, { readWishlist }] =
-    await Promise.all([
-      import("../models/shop-settings.server"),
-      import("../shopify.server"),
-      import("../models/wishlist.server"),
-    ]);
+  const [
+    { getShopSettings },
+    { authenticate },
+    { getWishlistDiagnostics, readWishlist },
+    { getWishlistPageByHandle },
+  ] = await Promise.all([
+    import("../models/shop-settings.server"),
+    import("../shopify.server"),
+    import("../models/wishlist.server"),
+    import("../models/wishlist-page.server"),
+  ]);
   const { admin, session } = await authenticate.admin(request);
   // eslint-disable-next-line no-undef
   const appApiKey = process.env.SHOPIFY_API_KEY || "";
@@ -37,6 +109,33 @@ export const loader = async ({ request }) => {
       return themeJson.data?.themes?.nodes?.[0]?.id ?? null;
     } catch (error) {
       console.error("wishlist.mainTheme.loader.error", error);
+      return null;
+    }
+  }
+
+  async function getInitialWishlistPage(accessScopes, settings) {
+    const canInspectPages =
+      accessScopes.includes("write_online_store_pages") ||
+      accessScopes.includes("write_content") ||
+      accessScopes.includes("read_content");
+
+    if (!canInspectPages) {
+      return null;
+    }
+
+    try {
+      return await getWishlistPageByHandle(admin, settings.wishlistPageHandle);
+    } catch (error) {
+      console.error("wishlist.page.loader.error", error);
+      return null;
+    }
+  }
+
+  async function getInitialDiagnostics(customerId) {
+    try {
+      return await getWishlistDiagnostics(admin, customerId);
+    } catch (error) {
+      console.error("wishlist.diagnostics.loader.error", error);
       return null;
     }
   }
@@ -89,17 +188,25 @@ export const loader = async ({ request }) => {
       }
     }
 
+    const settings = await getShopSettings(session.shop);
+    const [initialWishlistPage, initialDiagnostics] = await Promise.all([
+      getInitialWishlistPage(accessScopes, settings),
+      getInitialDiagnostics(initialSelectedCustomerId || undefined),
+    ]);
+
     return {
       accessScopes,
       customers,
       products,
-      settings: await getShopSettings(session.shop),
+      settings,
       shopDomain: session.shop,
       mainThemeId: await getMainThemeId(accessScopes),
       appApiKey,
       customerAccessBlocked: false,
       initialSelectedCustomerId,
       initialWishlistItems,
+      initialDiagnostics,
+      initialWishlistPage,
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
@@ -134,18 +241,25 @@ export const loader = async ({ request }) => {
       fallbackJson.data?.currentAppInstallation?.accessScopes?.map(
         (scope) => scope.handle,
       ) ?? [];
+    const settings = await getShopSettings(session.shop);
+    const [initialWishlistPage, initialDiagnostics] = await Promise.all([
+      getInitialWishlistPage(accessScopes, settings),
+      getInitialDiagnostics(),
+    ]);
 
     return {
       accessScopes,
       customers: [],
       products: fallbackJson.data?.products?.nodes ?? [],
-      settings: await getShopSettings(session.shop),
+      settings,
       shopDomain: session.shop,
       mainThemeId: await getMainThemeId(accessScopes),
       appApiKey,
       customerAccessBlocked: true,
       initialSelectedCustomerId: "",
       initialWishlistItems: [],
+      initialDiagnostics,
+      initialWishlistPage,
     };
   }
 };
@@ -162,6 +276,8 @@ export default function Index() {
     appApiKey,
     initialSelectedCustomerId,
     initialWishlistItems,
+    initialDiagnostics,
+    initialWishlistPage,
   } = useLoaderData();
   const wishlistFetcher = useFetcher();
   const mutationFetcher = useFetcher();
@@ -169,6 +285,7 @@ export default function Index() {
   const settingsFetcher = useFetcher();
   const pageFetcher = useFetcher();
   const shopify = useAppBridge();
+  const skippedInitialWishlistLoadRef = useRef(false);
   const [selectedCustomerId, setSelectedCustomerId] = useState(
     initialSelectedCustomerId,
   );
@@ -176,18 +293,30 @@ export default function Index() {
     products[0]?.id ?? "",
   );
   const [wishlistItems, setWishlistItems] = useState(initialWishlistItems);
-  const skippedInitialWishlistLoadRef = useRef(false);
   const [pendingChange, setPendingChange] = useState(null);
   const [wishlistRequiresLogin, setWishlistRequiresLogin] = useState(
     !!settings?.wishlistRequiresLogin,
   );
-  const [wishlistPage, setWishlistPage] = useState(null);
+  const [wishlistPage, setWishlistPage] = useState(initialWishlistPage);
   const [wishlistPageTitle, setWishlistPageTitle] = useState(
     settings?.wishlistPageTitle ?? "Wishlist",
   );
   const [wishlistPageHandle, setWishlistPageHandle] = useState(
     settings?.wishlistPageHandle ?? "wishlist",
   );
+  const [diagnostics, setDiagnostics] = useState(initialDiagnostics);
+  const [themePlacementConfirmed, setThemePlacementConfirmed] = useState(false);
+
+  const themePlacementStorageKey = shopDomain
+    ? `wishlist-pro:theme-placement:${shopDomain}`
+    : "wishlist-pro:theme-placement";
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const savedValue = window.localStorage.getItem(themePlacementStorageKey);
+    setThemePlacementConfirmed(savedValue === "true");
+  }, [themePlacementStorageKey]);
 
   useEffect(() => {
     if (!selectedCustomerId) {
@@ -256,6 +385,18 @@ export default function Index() {
   }, [mutationFetcher.data, shopify]);
 
   useEffect(() => {
+    if (!diagnosticsFetcher.data) return;
+
+    if (diagnosticsFetcher.data.error) {
+      shopify.toast.show(diagnosticsFetcher.data.error, { isError: true });
+      return;
+    }
+
+    setDiagnostics(diagnosticsFetcher.data);
+    shopify.toast.show("System health updated");
+  }, [diagnosticsFetcher.data, shopify]);
+
+  useEffect(() => {
     if (!settingsFetcher.data) return;
 
     if (settingsFetcher.data.error) {
@@ -265,7 +406,7 @@ export default function Index() {
 
     const nextValue = !!settingsFetcher.data.settings?.wishlistRequiresLogin;
     setWishlistRequiresLogin(nextValue);
-    shopify.toast.show("Storefront wishlist settings saved");
+    shopify.toast.show("Storefront rules saved");
   }, [settingsFetcher.data, shopify]);
 
   useEffect(() => {
@@ -287,7 +428,7 @@ export default function Index() {
         pageFetcher.data.page?.handle ??
         wishlistPageHandle,
     );
-    shopify.toast.show("Wishlist page created");
+    shopify.toast.show("Wishlist page is live");
   }, [pageFetcher.data, shopify, wishlistPageHandle, wishlistPageTitle]);
 
   const selectedCustomer = customers.find(
@@ -296,7 +437,12 @@ export default function Index() {
   const selectedProduct = products.find(
     (product) => product.id === selectedProductId,
   );
-  const diagnostics = diagnosticsFetcher.data;
+  const selectedCustomerLabel = formatCustomerLabel(selectedCustomer);
+  const selectedProductLabel = formatProductLabel(selectedProduct);
+  const wishlistCount = Array.isArray(wishlistItems) ? wishlistItems.length : 0;
+  const wishlistLabels = wishlistItems.map((productId) =>
+    formatWishlistLabel(productId, products),
+  );
   const productIsSaved = wishlistItems.includes(selectedProductId);
   const isMutating =
     mutationFetcher.state === "loading" ||
@@ -312,17 +458,9 @@ export default function Index() {
     settingsFetcher.state === "submitting";
   const isCreatingWishlistPage =
     pageFetcher.state === "loading" || pageFetcher.state === "submitting";
-  const metafieldExists = diagnostics?.checks?.definitionExists;
-  const customerValueExists = diagnostics?.checks?.customerMetafieldExists;
-  const protectedAccessApproved =
-    diagnostics?.checks?.protectedCustomerAccessApproved;
   const hasWriteOnlineStorePagesScope =
     accessScopes.includes("write_online_store_pages") ||
     accessScopes.includes("write_content");
-  const wishlistCount = Array.isArray(wishlistItems) ? wishlistItems.length : 0;
-  const savedProductTitles = products
-    .filter((product) => wishlistItems.includes(product.id))
-    .map((product) => product.title);
   const wishlistPageUrl =
     shopDomain && wishlistPage?.handle
       ? `https://${shopDomain}/pages/${wishlistPage.handle}`
@@ -347,6 +485,89 @@ export default function Index() {
           `${appApiKey}/pdp-wishlist-embed`,
         )}`
       : null;
+  const hasThemeEditorLinks = Boolean(themeEditorBaseUrl && appApiKey);
+
+  const diagnosticsCustomerId = diagnostics?.customerId ?? "";
+  const diagnosticsMatchesSelection =
+    (!selectedCustomerId && !diagnosticsCustomerId) ||
+    diagnosticsCustomerId === selectedCustomerId;
+  const diagnosticsFresh = !!diagnostics && diagnosticsMatchesSelection;
+  const diagnosticsErrors = diagnosticsFresh ? diagnostics?.errors ?? [] : [];
+  const definitionReady =
+    diagnosticsFresh && diagnostics?.checks?.definitionExists === true;
+  const customerAccessReady = customerAccessBlocked
+    ? false
+    : selectedCustomerId
+      ? diagnosticsFresh &&
+        diagnostics?.checks?.protectedCustomerAccessApproved === true
+      : diagnosticsFresh &&
+        diagnostics?.checks?.hasReadCustomersScope === true &&
+        diagnostics?.checks?.hasWriteCustomersScope === true;
+  const customerMetafieldReady =
+    diagnosticsFresh && diagnostics?.checks?.customerMetafieldExists === true;
+  const customerDataStepComplete = definitionReady && customerAccessReady;
+  const storefrontStepComplete = true;
+  const pageStepComplete = !!wishlistPage;
+  const themeStepComplete = themePlacementConfirmed;
+  const qaStepComplete =
+    !!selectedCustomerId && !!selectedProductId && wishlistCount > 0;
+  const testDataReady = customers.length > 0 && products.length > 0;
+  const completedSteps = [
+    customerDataStepComplete,
+    storefrontStepComplete,
+    pageStepComplete,
+    themeStepComplete,
+    qaStepComplete,
+  ].filter(Boolean).length;
+  const progressPercent = Math.round((completedSteps / 5) * 100);
+  const readinessLabel =
+    progressPercent === 100
+      ? "Launch ready"
+      : progressPercent >= 80
+        ? "Almost live"
+        : progressPercent >= 40
+          ? "In progress"
+          : "Getting started";
+
+  const scrollToSection = (sectionId) => {
+    if (typeof document === "undefined") return;
+    document.getElementById(sectionId)?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  };
+
+  const runDiagnostics = () => {
+    const url = selectedCustomerId
+      ? `/app/api/wishlist-check?customerId=${encodeURIComponent(selectedCustomerId)}`
+      : "/app/api/wishlist-check";
+    diagnosticsFetcher.load(url);
+  };
+
+  const saveStorefrontSettings = () => {
+    settingsFetcher.submit(
+      {
+        wishlistRequiresLogin: wishlistRequiresLogin ? "true" : "false",
+      },
+      {
+        action: "/app/api/settings",
+        method: "post",
+      },
+    );
+  };
+
+  const saveWishlistPage = () => {
+    pageFetcher.submit(
+      {
+        wishlistPageTitle,
+        wishlistPageHandle,
+      },
+      {
+        action: "/app/api/wishlist-page",
+        method: "post",
+      },
+    );
+  };
 
   const handleToggleWishlist = () => {
     if (!selectedCustomerId || !selectedProductId) {
@@ -362,7 +583,6 @@ export default function Index() {
       : [...new Set([...wishlistItems, selectedProductId])];
 
     setWishlistItems(nextItems);
-
     setPendingChange({
       customerId: selectedCustomerId,
       productId: selectedProductId,
@@ -370,101 +590,173 @@ export default function Index() {
     });
   };
 
-  const runDiagnostics = () => {
-    const url = selectedCustomerId
-      ? `/app/api/wishlist-check?customerId=${encodeURIComponent(selectedCustomerId)}`
-      : "/app/api/wishlist-check";
-    diagnosticsFetcher.load(url);
-  };
+  const handleThemePlacementConfirmation = (nextValue) => {
+    setThemePlacementConfirmed(nextValue);
 
-  const statusPill = (tone, text) => {
-    const toneClassNames = {
-      neutral: styles.pillNeutral,
-      success: styles.pillSuccess,
-      warning: styles.pillWarning,
-      critical: styles.pillCritical,
-    };
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(
+        themePlacementStorageKey,
+        nextValue ? "true" : "false",
+      );
+    }
 
-    return (
-      <span
-        className={`${styles.pill} ${toneClassNames[tone] ?? styles.pillNeutral}`}
-      >
-        {text}
-      </span>
+    shopify.toast.show(
+      nextValue
+        ? "Theme placement marked complete"
+        : "Theme placement marked as incomplete",
     );
   };
 
-  const summaryCards = [
+  const primaryHeroAction =
+    !diagnosticsFresh || customerAccessBlocked
+      ? {
+          label: "Run live system check",
+          onClick: runDiagnostics,
+          loading: isCheckingMetafield,
+        }
+      : !pageStepComplete && hasWriteOnlineStorePagesScope
+        ? {
+            label: "Create wishlist page",
+            onClick: saveWishlistPage,
+            loading: isCreatingWishlistPage,
+          }
+        : !themeStepComplete && productPageButtonEditorUrl
+          ? {
+              label: "Open product theme editor",
+              href: productPageButtonEditorUrl,
+              target: "_top",
+              rel: "noreferrer",
+            }
+          : !themeStepComplete && productPageEmbedEditorUrl
+            ? {
+                label: "Open app embed settings",
+                href: productPageEmbedEditorUrl,
+                target: "_top",
+                rel: "noreferrer",
+              }
+            : !qaStepComplete
+              ? {
+                  label: "Open merchant QA lab",
+                  onClick: () => scrollToSection("qa-lab"),
+                }
+              : wishlistPageUrl
+                ? {
+                    label: "Open live wishlist page",
+                    href: wishlistPageUrl,
+                    target: "_blank",
+                    rel: "noreferrer",
+                  }
+                : {
+                    label: "Re-run system check",
+                    onClick: runDiagnostics,
+                    loading: isCheckingMetafield,
+                  };
+
+  const secondaryHeroAction = wishlistPageUrl
+    ? {
+        label: "View storefront page",
+        href: wishlistPageUrl,
+        target: "_blank",
+        rel: "noreferrer",
+      }
+    : {
+        label: "Jump to setup journey",
+        onClick: () => scrollToSection("activation-journey"),
+      };
+
+  const healthItems = [
     {
-      label: "Customer data",
-      value: customerAccessBlocked
-        ? "Approval needed"
-        : diagnostics
-          ? protectedAccessApproved === true
-            ? "Ready"
-            : protectedAccessApproved === false
-              ? "Review"
-              : "Waiting"
-          : "Not checked",
-      hint: customerAccessBlocked
-        ? "Protected customer access is still blocked for this app."
-        : "Confirms whether customer wishlist data can be read and written.",
-      tone: customerAccessBlocked
-        ? "warning"
-        : diagnostics
-          ? protectedAccessApproved === true
-            ? "success"
-            : protectedAccessApproved === false
-              ? "warning"
-              : "neutral"
-          : "neutral",
+      label: "Metafield definition",
+      value: definitionReady ? "Ready" : diagnosticsFresh ? "Needs action" : "Not checked",
+      tone: definitionReady ? "success" : diagnosticsFresh ? "critical" : "neutral",
+    },
+    {
+      label: "Protected customer access",
+      value: customerAccessReady
+        ? "Approved"
+        : customerAccessBlocked
+          ? "Blocked"
+          : diagnosticsFresh
+            ? "Needs approval"
+            : "Pending",
+      tone: customerAccessReady
+        ? "success"
+        : customerAccessBlocked
+          ? "critical"
+          : diagnosticsFresh
+            ? "warning"
+            : "neutral",
     },
     {
       label: "Wishlist page",
-      value: wishlistPage
-        ? `/pages/${wishlistPage.handle}`
-        : hasWriteOnlineStorePagesScope
-          ? "Ready to create"
-          : "Needs scope",
-      hint: wishlistPage
-        ? "Your storefront page already exists."
-        : hasWriteOnlineStorePagesScope
-          ? "Create the page in one click when you are ready."
-          : "Reinstall the app after adding page write scope.",
-      tone: wishlistPage
+      value: pageStepComplete ? "Live" : hasWriteOnlineStorePagesScope ? "Ready to create" : "Scope required",
+      tone: pageStepComplete
         ? "success"
         : hasWriteOnlineStorePagesScope
-          ? "neutral"
-          : "warning",
+          ? "warning"
+          : "critical",
     },
     {
-      label: "Storefront mode",
-      value: wishlistRequiresLogin ? "Login required" : "Guests allowed",
-      hint: wishlistRequiresLogin
-        ? "Only signed-in customers can save products."
-        : "Shoppers can use wishlist before logging in.",
-      tone: wishlistRequiresLogin ? "warning" : "success",
+      label: "Theme placement",
+      value: themeStepComplete ? "Confirmed" : hasThemeEditorLinks ? "Awaiting confirmation" : "Theme access unavailable",
+      tone: themeStepComplete
+        ? "success"
+        : hasThemeEditorLinks
+          ? "warning"
+          : "neutral",
     },
     {
-      label: "Button design",
-      value: "Theme editor",
-      hint: "Button style and colors now come from your theme app block settings.",
-      tone: "neutral",
+      label: "Merchant QA",
+      value: qaStepComplete ? "Passed with saved item" : testDataReady ? "Ready to test" : "Needs store data",
+      tone: qaStepComplete
+        ? "success"
+        : testDataReady
+          ? "warning"
+          : "critical",
     },
   ];
 
-  const setupCards = [
+  const progressItems = [
     {
-      title: "Install on your dev store",
-      text: "Run `npm run dev`, open the Shopify preview, and install Wishlist Pro on the store you are testing.",
+      title: "Data foundation",
+      complete: customerDataStepComplete,
+      detail: customerDataStepComplete
+        ? "Customer data pipeline verified."
+        : customerAccessBlocked
+          ? "Protected customer access still needs approval."
+          : diagnosticsFresh
+            ? "Definition or access still needs attention."
+            : "Run the live system check.",
     },
     {
-      title: "Prepare test data",
-      text: "Create at least one customer and one product so you can verify the save and remove flow end to end.",
+      title: "Storefront rules",
+      complete: storefrontStepComplete,
+      detail: wishlistRequiresLogin
+        ? "Wishlist requires customer login."
+        : "Guests can save wishlist items.",
     },
     {
-      title: "Create the wishlist metafield",
-      text: `In Shopify Admin, create the customer metafield definition ${NAMESPACE}.${KEY} as JSON using the name ${DEFINITION_NAME}.`,
+      title: "Wishlist page",
+      complete: pageStepComplete,
+      detail: pageStepComplete
+        ? `Live at /pages/${wishlistPage?.handle}`
+        : hasWriteOnlineStorePagesScope
+          ? `Ready to publish at ${wishlistPagePreviewPath}`
+          : "Page write scope is missing.",
+    },
+    {
+      title: "Theme placement",
+      complete: themeStepComplete,
+      detail: themeStepComplete
+        ? "Theme button placement confirmed."
+        : "Open Theme Editor and confirm once placed.",
+    },
+    {
+      title: "Merchant QA",
+      complete: qaStepComplete,
+      detail: qaStepComplete
+        ? "A wishlist item is saved for the active test customer."
+        : "Use the QA lab to validate add and remove flows.",
     },
   ];
 
@@ -473,593 +765,767 @@ export default function Index() {
       <div className={styles.page}>
         <section className={styles.hero}>
           <div className={styles.heroCopy}>
-            <p className={styles.eyebrow}>Merchant workspace</p>
+            <p className={styles.eyebrow}>Activation workspace</p>
             <h1 className={styles.heroTitle}>
-              A calmer setup flow for your storefront wishlist
+              Launch Wishlist Pro like a premium storefront system, not a setup checklist
             </h1>
             <p className={styles.heroText}>
-              Configure the storefront behavior, confirm the customer data
-              connection, and test the experience from one clear dashboard.
+              Everything you need to configure, validate, test, and launch is
+              now organized as one guided merchant command center.
             </p>
+
+            <div className={styles.heroSignalRow}>
+              <div className={styles.progressBadge}>
+                <strong>{progressPercent}%</strong>
+                <span>{readinessLabel}</span>
+              </div>
+              <StatusPill tone={qaStepComplete ? "success" : "warning"}>
+                {qaStepComplete ? "First value reached" : "Activation in progress"}
+              </StatusPill>
+              <StatusPill tone={wishlistRequiresLogin ? "warning" : "success"}>
+                {wishlistRequiresLogin ? "Login required mode" : "Guest wishlist enabled"}
+              </StatusPill>
+            </div>
+
+            <div className={styles.progressTrack}>
+              <span
+                className={styles.progressFill}
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+
             <div className={styles.heroActions}>
-              <s-button
-                onClick={runDiagnostics}
-                {...(isCheckingMetafield ? { loading: true } : {})}
-              >
-                Check setup health
-              </s-button>
-              {wishlistPageUrl ? (
-                <s-button
-                  variant="secondary"
-                  href={wishlistPageUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Open wishlist page
-                </s-button>
-              ) : null}
+              <ActionButton action={primaryHeroAction} />
+              <ActionButton action={secondaryHeroAction} secondary />
             </div>
           </div>
 
-          <div className={styles.summaryGrid}>
-            {summaryCards.map((card) => (
-              <article key={card.label} className={styles.summaryCard}>
-                <div className={styles.summaryCardTop}>
-                  <span className={styles.summaryLabel}>{card.label}</span>
-                  {statusPill(card.tone, card.value)}
-                </div>
-                <p className={styles.summaryHint}>{card.hint}</p>
-              </article>
-            ))}
+          <div className={styles.heroStatsGrid}>
+            <article className={styles.metricCard}>
+              <span className={styles.metricLabel}>Current snapshot</span>
+              <strong className={styles.metricValue}>
+                {wishlistCount} {wishlistCount === 1 ? "saved item" : "saved items"}
+              </strong>
+              <p className={styles.metricText}>
+                Active customer: {selectedCustomerLabel}
+              </p>
+            </article>
+
+            <article className={styles.metricCard}>
+              <span className={styles.metricLabel}>Wishlist page</span>
+              <strong className={styles.metricValue}>
+                {pageStepComplete ? wishlistPagePreviewPath : "Not published yet"}
+              </strong>
+              <p className={styles.metricText}>
+                {pageStepComplete
+                  ? "Shoppers have a dedicated wishlist destination."
+                  : "Create the page when you are ready to launch."}
+              </p>
+            </article>
+
+            <article className={styles.metricCard}>
+              <span className={styles.metricLabel}>Theme placement</span>
+              <strong className={styles.metricValue}>
+                {themeStepComplete ? "Confirmed" : "Waiting on merchant"}
+              </strong>
+              <p className={styles.metricText}>
+                {themeStepComplete
+                  ? "Wishlist button placement has been confirmed."
+                  : "Open the Theme Editor and confirm once the button is visible."}
+              </p>
+            </article>
           </div>
         </section>
 
-        <s-section heading="Storefront preferences">
-          <div className={styles.surface}>
-            <div className={styles.sectionHeader}>
-              <div>
+        <div className={styles.mainGrid}>
+          <div className={styles.journeyColumn}>
+            <section
+              id="activation-journey"
+              className={styles.stageSection}
+            >
+              <div className={styles.sectionIntro}>
+                <p className={styles.sectionEyebrow}>Phase A · Information architecture</p>
                 <h2 className={styles.sectionTitle}>
-                  Choose how shoppers use wishlist
+                  Guided activation journey
                 </h2>
                 <p className={styles.sectionText}>
-                  Decide whether wishlist is open to all visitors or reserved
-                  for signed-in customers. Button style and colors are managed
-                  directly in the theme editor, so they do not rely on the app
-                  server.
+                  The dashboard is structured as five merchant decisions in the
+                  order they actually think: verify data, choose rules, publish
+                  the page, place the button, and run a live QA pass.
                 </p>
               </div>
-              {wishlistRequiresLogin
-                ? statusPill("warning", "Login required")
-                : statusPill("success", "Guests can save items")}
-            </div>
 
-            <label className={styles.checkboxRow}>
-              <input
-                type="checkbox"
-                checked={wishlistRequiresLogin}
-                onChange={(event) =>
-                  setWishlistRequiresLogin(event.currentTarget.checked)
-                }
-              />
-              <span>
-                Require customer login before shoppers can use wishlist
-              </span>
-            </label>
-
-            <div className={styles.bannerWrap}>
-              <s-banner tone="info">
-                Configure button style, accent color, text color, and icon
-                color in the Theme Editor on the wishlist app block or embed.
-                Those appearance settings now come straight from the theme, not
-                from Prisma.
-              </s-banner>
-            </div>
-
-            <div className={styles.actionRow}>
-              {productPageButtonEditorUrl ? (
-                <a
-                  className={styles.linkButton}
-                  href={productPageButtonEditorUrl}
-                  target="_top"
-                  rel="noreferrer"
-                >
-                  Open product block settings
-                </a>
-              ) : (
-                <s-button disabled>Open product block settings</s-button>
-              )}
-
-              {productPageEmbedEditorUrl ? (
-                <a
-                  className={`${styles.linkButton} ${styles.linkButtonSecondary}`}
-                  href={productPageEmbedEditorUrl}
-                  target="_top"
-                  rel="noreferrer"
-                >
-                  Open embed settings
-                </a>
-              ) : (
-                <s-button variant="secondary" disabled>
-                  Open embed settings
-                </s-button>
-              )}
-            </div>
-
-            <div className={styles.actionRow}>
-              <s-button
-                onClick={() =>
-                  settingsFetcher.submit(
-                    {
-                      wishlistRequiresLogin: wishlistRequiresLogin
-                        ? "true"
-                        : "false",
-                    },
-                    {
-                      action: "/app/api/settings",
-                      method: "post",
-                    },
-                  )
-                }
-                {...(isSavingSettings ? { loading: true } : {})}
-              >
-                Save storefront settings
-              </s-button>
-            </div>
-
-            <p className={styles.supportText}>
-              Saving here now updates only the login requirement. Button
-              appearance is saved in the theme editor for each wishlist block.
-            </p>
-          </div>
-        </s-section>
-
-        <s-section heading="Wishlist page">
-          <div className={styles.surface}>
-            <div className={styles.sectionHeader}>
-              <div>
-                <h2 className={styles.sectionTitle}>
-                  Create your storefront wishlist page
-                </h2>
-                <p className={styles.sectionText}>
-                  Create or update the Shopify page at{" "}
-                  <code>{wishlistPagePreviewPath}</code> and control its title
-                  and handle from the app.
+              <article id="data-foundation" className={styles.stepCard}>
+                <div className={styles.stepHeader}>
+                  <div>
+                    <span className={styles.stepIndex}>Step 1</span>
+                    <h3 className={styles.stepTitle}>
+                      Verify the customer data foundation
+                    </h3>
+                  </div>
+                  <StatusPill
+                    tone={
+                      customerDataStepComplete
+                        ? "success"
+                        : customerAccessBlocked
+                          ? "critical"
+                          : diagnosticsFresh
+                            ? "warning"
+                            : "neutral"
+                    }
+                  >
+                    {customerDataStepComplete
+                      ? "Ready for launch"
+                      : customerAccessBlocked
+                        ? "Approval blocked"
+                        : diagnosticsFresh
+                          ? "Needs attention"
+                          : "Check required"}
+                  </StatusPill>
+                </div>
+                <p className={styles.stepText}>
+                  Confirm that the wishlist metafield definition exists, Shopify
+                  scopes are active, and the selected customer can actually read
+                  and write wishlist data.
                 </p>
-              </div>
-              {wishlistPage
-                ? statusPill("success", "Page created")
-                : hasWriteOnlineStorePagesScope
-                  ? statusPill("neutral", "Ready to create")
-                  : statusPill("warning", "Scope required")}
-            </div>
 
-            {!hasWriteOnlineStorePagesScope ? (
-              <s-banner tone="warning">
-                Add the <code>write_online_store_pages</code> scope, then
-                reinstall the app before creating <code>/pages/wishlist</code>.
-              </s-banner>
-            ) : null}
+                {customerAccessBlocked ? (
+                  <div className={`${styles.callout} ${styles.calloutWarning}`}>
+                    Protected customer data is still blocked for this app. Approve
+                    customer access in Partner Dashboard, reinstall the app, and
+                    then re-run the live system check.
+                  </div>
+                ) : null}
 
-            {wishlistPage ? (
-              <s-banner tone="success">
-                Wishlist page available at{" "}
-                <code>/pages/{wishlistPage.handle}</code>.
-              </s-banner>
-            ) : null}
+                {!diagnosticsFresh && selectedCustomerId && diagnostics ? (
+                  <div className={`${styles.callout} ${styles.calloutInfo}`}>
+                    The selected customer changed. Re-run the live system check so
+                    the health panel matches the active QA customer.
+                  </div>
+                ) : null}
 
-            <div className={styles.fieldGrid}>
-              <label className={styles.field}>
-                <span className={styles.fieldLabel}>Page title</span>
-                <input
-                  className={styles.fieldInput}
-                  type="text"
-                  value={wishlistPageTitle}
-                  onChange={(event) =>
-                    setWishlistPageTitle(event.currentTarget.value)
-                  }
-                  placeholder="Wishlist"
-                />
-              </label>
+                <div className={styles.controlGrid}>
+                  <div className={styles.formCard}>
+                    <label className={styles.field}>
+                      <span className={styles.fieldLabel}>QA customer</span>
+                      <s-select
+                        label="QA customer"
+                        value={selectedCustomerId}
+                        onChange={(event) =>
+                          setSelectedCustomerId(event.currentTarget.value)
+                        }
+                        {...(customers.length === 0 ? { disabled: true } : {})}
+                      >
+                        {customers.length === 0 ? (
+                          <option value="">No customers available</option>
+                        ) : (
+                          customers.map((customer) => (
+                            <option key={customer.id} value={customer.id}>
+                              {formatCustomerLabel(customer)}
+                            </option>
+                          ))
+                        )}
+                      </s-select>
+                    </label>
+                    <p className={styles.fieldHint}>
+                      Pick the customer you want to inspect and later use in the
+                      QA lab.
+                    </p>
+                  </div>
 
-              <label className={styles.field}>
-                <span className={styles.fieldLabel}>Page handle</span>
-                <input
-                  className={styles.fieldInput}
-                  type="text"
-                  value={wishlistPageHandle}
-                  onChange={(event) =>
-                    setWishlistPageHandle(event.currentTarget.value)
-                  }
-                  placeholder="wishlist"
-                />
-                <span className={styles.fieldHint}>
-                  Final URL: <code>{wishlistPagePreviewPath}</code>
-                </span>
-              </label>
-            </div>
+                  <div className={styles.metricGrid}>
+                    <article className={styles.inlineMetric}>
+                      <span className={styles.metricLabel}>Definition</span>
+                      <strong className={styles.metricValue}>
+                        {definitionReady ? DEFINITION_NAME : "Not verified"}
+                      </strong>
+                      <p className={styles.metricText}>
+                        Expected key: <code>{NAMESPACE}.{KEY}</code>
+                      </p>
+                    </article>
+                    <article className={styles.inlineMetric}>
+                      <span className={styles.metricLabel}>Customer access</span>
+                      <strong className={styles.metricValue}>
+                        {customerAccessReady
+                          ? "Approved"
+                          : customerAccessBlocked
+                            ? "Blocked"
+                            : "Pending review"}
+                      </strong>
+                      <p className={styles.metricText}>
+                        {selectedCustomerId
+                          ? "Uses the active customer for a real access test."
+                          : "Choose a customer to verify protected data access."}
+                      </p>
+                    </article>
+                    <article className={styles.inlineMetric}>
+                      <span className={styles.metricLabel}>Customer metafield</span>
+                      <strong className={styles.metricValue}>
+                        {customerMetafieldReady ? "Found" : "Not yet created"}
+                      </strong>
+                      <p className={styles.metricText}>
+                        {diagnosticsFresh
+                          ? `Wishlist contains ${
+                              diagnostics?.checks?.customerWishlistItemsCount ?? 0
+                            } saved items.`
+                          : "Run the live system check to inspect the customer record."}
+                      </p>
+                    </article>
+                  </div>
+                </div>
 
-            <div className={styles.actionRow}>
-              <s-button
-                onClick={() =>
-                  pageFetcher.submit(
-                    {
-                      wishlistPageTitle,
-                      wishlistPageHandle,
-                    },
-                    {
-                      action: "/app/api/wishlist-page",
-                      method: "post",
-                    },
-                  )
-                }
-                {...(isCreatingWishlistPage ? { loading: true } : {})}
-                disabled={!hasWriteOnlineStorePagesScope}
-              >
-                Save wishlist page
-              </s-button>
+                {diagnosticsErrors.length > 0 ? (
+                  <div className={`${styles.callout} ${styles.calloutCritical}`}>
+                    {diagnosticsErrors.join(" ")}
+                  </div>
+                ) : null}
 
-              {wishlistPageUrl ? (
-                <a
-                  className={`${styles.linkButton} ${styles.linkButtonSecondary}`}
-                  href={wishlistPageUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  View storefront page
-                </a>
-              ) : null}
-            </div>
-
-            <p className={styles.supportText}>
-              Next step: add the wishlist block or final storefront layout to
-              this page so shoppers can review saved items in one place.
-            </p>
-          </div>
-        </s-section>
-
-        <s-section heading="Product page button">
-          <div className={styles.surface}>
-            <div className={styles.sectionHeader}>
-              <div>
-                <h2 className={styles.sectionTitle}>
-                  Add the wishlist button to product pages
-                </h2>
-                <p className={styles.sectionText}>
-                  Use the JSON-template app block flow when the theme supports
-                  sections and blocks, or activate the product-page embed for
-                  liquid themes that do not.
-                </p>
-              </div>
-              {statusPill("warning", "Theme-dependent setup")}
-            </div>
-
-            <div className={styles.actionRow}>
-              {productPageButtonEditorUrl ? (
-                <a
-                  className={styles.linkButton}
-                  href={productPageButtonEditorUrl}
-                  target="_top"
-                  rel="noreferrer"
-                >
-                  Add app block for JSON themes
-                </a>
-              ) : (
-                <s-button disabled>Add app block for JSON themes</s-button>
-              )}
-
-              {productPageEmbedEditorUrl ? (
-                <a
-                  className={`${styles.linkButton} ${styles.linkButtonSecondary}`}
-                  href={productPageEmbedEditorUrl}
-                  target="_top"
-                  rel="noreferrer"
-                >
-                  Activate embed for liquid themes
-                </a>
-              ) : (
-                <s-button variant="secondary" disabled>
-                  Activate embed for liquid themes
-                </s-button>
-              )}
-            </div>
-
-            <p className={styles.supportText}>
-              If Shopify says liquid templates don&apos;t support sections and
-              blocks, use the embed option. It works on product pages without
-              requiring a JSON product template.
-            </p>
-          </div>
-        </s-section>
-
-        <s-section heading="Setup checklist">
-          <div className={styles.checklistGrid}>
-            {setupCards.map((card) => (
-              <article key={card.title} className={styles.checklistCard}>
-                <span className={styles.checklistIndex}>Step</span>
-                <h2>{card.title}</h2>
-                <p>{card.text}</p>
+                <div className={styles.buttonRow}>
+                  <ActionButton
+                    action={{
+                      label: diagnosticsFresh
+                        ? "Re-run live system check"
+                        : "Run live system check",
+                      onClick: runDiagnostics,
+                      loading: isCheckingMetafield,
+                    }}
+                  />
+                  <ActionButton
+                    action={{
+                      label: "Refresh customer snapshot",
+                      onClick: () => {
+                        if (!selectedCustomerId) return;
+                        wishlistFetcher.load(
+                          `/app/api/wishlist?customerId=${encodeURIComponent(
+                            selectedCustomerId,
+                          )}`,
+                        );
+                      },
+                      loading: isReloadingWishlist,
+                      disabled: !selectedCustomerId,
+                    }}
+                    secondary
+                  />
+                </div>
               </article>
-            ))}
-          </div>
 
-          {customerAccessBlocked ? (
-            <div className={styles.bannerWrap}>
-              <s-banner tone="warning">
-                Protected customer data access is still blocked. After approval
-                in Partner Dashboard, reinstall the app and run the setup check
-                again.
-              </s-banner>
-            </div>
-          ) : null}
-        </s-section>
-
-        <s-section heading="Connection health">
-          {customers.length === 0 ? (
-            <s-banner tone="warning">
-              No customers found yet. Create one in Shopify Admin before testing
-              wishlist data.
-            </s-banner>
-          ) : null}
-
-          {products.length === 0 ? (
-            <s-banner tone="warning">
-              No products found yet. Add a product before testing wishlist
-              actions.
-            </s-banner>
-          ) : null}
-
-          <div className={styles.surface}>
-            <div className={styles.sectionHeader}>
-              <div>
-                <h2 className={styles.sectionTitle}>
-                  Check the customer wishlist connection
-                </h2>
-                <p className={styles.sectionText}>
-                  Confirm the metafield definition, access approval, and whether
-                  the selected customer already has wishlist data.
+              <article id="storefront-rules" className={styles.stepCard}>
+                <div className={styles.stepHeader}>
+                  <div>
+                    <span className={styles.stepIndex}>Step 2</span>
+                    <h3 className={styles.stepTitle}>
+                      Choose the storefront access rules
+                    </h3>
+                  </div>
+                  <StatusPill tone={wishlistRequiresLogin ? "warning" : "success"}>
+                    {wishlistRequiresLogin
+                      ? "Login required"
+                      : "Guest wishlist enabled"}
+                  </StatusPill>
+                </div>
+                <p className={styles.stepText}>
+                  Set the shopper experience you want before launching. This is
+                  the policy decision merchants care about most because it shapes
+                  sign-in friction and wishlist adoption.
                 </p>
-              </div>
-              {isCheckingMetafield
-                ? statusPill("warning", "Checking now")
-                : diagnostics
-                  ? metafieldExists
-                    ? statusPill("success", "Definition found")
-                    : statusPill("critical", "Definition missing")
-                  : statusPill("neutral", "Not checked")}
-            </div>
 
-            <div className={styles.formRow}>
-              <s-select
-                label="Customer to inspect"
-                value={selectedCustomerId}
-                onChange={(event) =>
-                  setSelectedCustomerId(event.currentTarget.value)
-                }
-              >
-                {customers.map((customer) => (
-                  <option key={customer.id} value={customer.id}>
-                    {customer.displayName || customer.email || customer.id}
-                  </option>
-                ))}
-              </s-select>
-            </div>
-
-            <div className={styles.actionRow}>
-              <s-button
-                variant="secondary"
-                onClick={runDiagnostics}
-                {...(isCheckingMetafield ? { loading: true } : {})}
-              >
-                Run setup check
-              </s-button>
-              <s-button
-                variant="secondary"
-                {...(isReloadingWishlist ? { loading: true } : {})}
-                onClick={() => {
-                  if (!selectedCustomerId) return;
-                  wishlistFetcher.load(
-                    `/app/api/wishlist?customerId=${encodeURIComponent(
-                      selectedCustomerId,
-                    )}`,
-                  );
-                }}
-              >
-                Refresh wishlist data
-              </s-button>
-            </div>
-
-            {isCheckingMetafield ? (
-              <s-banner tone="info">
-                Checking whether{" "}
-                <code>
-                  {NAMESPACE}.{KEY}
-                </code>{" "}
-                is ready for this customer.
-              </s-banner>
-            ) : null}
-
-            {!isCheckingMetafield && !diagnostics ? (
-              <s-banner tone="info">
-                Run the setup check to verify the customer metafield and access
-                status before testing.
-              </s-banner>
-            ) : null}
-
-            {!isCheckingMetafield && diagnostics ? (
-              <div className={styles.statusGrid}>
-                <article className={styles.statusCard}>
-                  <span className={styles.statusLabel}>
-                    Wishlist definition
+                <label className={styles.checkboxTile}>
+                  <input
+                    type="checkbox"
+                    checked={wishlistRequiresLogin}
+                    onChange={(event) =>
+                      setWishlistRequiresLogin(event.currentTarget.checked)
+                    }
+                  />
+                  <span>
+                    Require customer login before shoppers can save products to
+                    wishlist
                   </span>
-                  <strong className={styles.statusValue}>
-                    {metafieldExists ? DEFINITION_NAME : "Not found"}
-                  </strong>
-                  <p className={styles.statusText}>
-                    Expected definition:{" "}
-                    <code>
-                      {NAMESPACE}.{KEY}
-                    </code>
-                  </p>
-                  {metafieldExists
-                    ? statusPill("success", "Definition is ready")
-                    : statusPill("critical", `Create ${DEFINITION_NAME}`)}
-                </article>
+                </label>
 
-                <article className={styles.statusCard}>
-                  <span className={styles.statusLabel}>Customer access</span>
-                  <strong className={styles.statusValue}>
-                    {protectedAccessApproved === true
-                      ? "Approved"
-                      : protectedAccessApproved === false
-                        ? "Approval needed"
-                        : "Waiting for check"}
-                  </strong>
-                  <p className={styles.statusText}>
-                    Protected customer data must be approved before Admin API
-                    customer reads and writes can work.
-                  </p>
-                  {protectedAccessApproved === true
-                    ? statusPill("success", "Customer access ready")
-                    : protectedAccessApproved === false
-                      ? statusPill("warning", "Request approval")
-                      : statusPill("neutral", "Run the check")}
-                </article>
+                <div className={`${styles.callout} ${styles.calloutInfo}`}>
+                  Button colors and styles are configured in the Theme Editor on
+                  the app block or embed, so this step focuses only on storefront
+                  behavior.
+                </div>
 
-                <article className={styles.statusCard}>
-                  <span className={styles.statusLabel}>
-                    Customer wishlist value
-                  </span>
-                  <strong className={styles.statusValue}>
-                    {customerValueExists ? "Present" : "Not created yet"}
-                  </strong>
-                  <p className={styles.statusText}>
-                    This shows whether the selected customer already has saved
-                    wishlist data.
-                  </p>
-                  {customerValueExists
-                    ? statusPill("success", "Customer has wishlist data")
-                    : statusPill("neutral", "No saved value yet")}
-                </article>
-              </div>
-            ) : null}
+                <div className={styles.buttonRow}>
+                  <ActionButton
+                    action={{
+                      label: "Save storefront rules",
+                      onClick: saveStorefrontSettings,
+                      loading: isSavingSettings,
+                    }}
+                  />
+                </div>
+              </article>
 
-            {!isCheckingMetafield && diagnostics?.errors?.length ? (
-              <div className={styles.bannerWrap}>
-                <s-banner tone="warning">{diagnostics.errors[0]}</s-banner>
-              </div>
-            ) : null}
+              <article id="wishlist-page" className={styles.stepCard}>
+                <div className={styles.stepHeader}>
+                  <div>
+                    <span className={styles.stepIndex}>Step 3</span>
+                    <h3 className={styles.stepTitle}>
+                      Publish the wishlist destination page
+                    </h3>
+                  </div>
+                  <StatusPill
+                    tone={
+                      pageStepComplete
+                        ? "success"
+                        : hasWriteOnlineStorePagesScope
+                          ? "warning"
+                          : "critical"
+                    }
+                  >
+                    {pageStepComplete
+                      ? "Page is live"
+                      : hasWriteOnlineStorePagesScope
+                        ? "Ready to create"
+                        : "Scope required"}
+                  </StatusPill>
+                </div>
+                <p className={styles.stepText}>
+                  Give shoppers one reliable place to review everything they have
+                  saved. This turns wishlist from a button feature into a complete
+                  storefront flow.
+                </p>
+
+                {!hasWriteOnlineStorePagesScope ? (
+                  <div className={`${styles.callout} ${styles.calloutWarning}`}>
+                    Add the <code>write_online_store_pages</code> scope and
+                    reinstall the app before publishing the wishlist page.
+                  </div>
+                ) : null}
+
+                {pageStepComplete ? (
+                  <div className={`${styles.callout} ${styles.calloutSuccess}`}>
+                    Wishlist page detected at <code>/pages/{wishlistPage.handle}</code>.
+                  </div>
+                ) : null}
+
+                <div className={styles.fieldGrid}>
+                  <label className={styles.field}>
+                    <span className={styles.fieldLabel}>Page title</span>
+                    <input
+                      className={styles.fieldInput}
+                      type="text"
+                      value={wishlistPageTitle}
+                      onChange={(event) =>
+                        setWishlistPageTitle(event.currentTarget.value)
+                      }
+                      placeholder="Wishlist"
+                    />
+                  </label>
+
+                  <label className={styles.field}>
+                    <span className={styles.fieldLabel}>Page handle</span>
+                    <input
+                      className={styles.fieldInput}
+                      type="text"
+                      value={wishlistPageHandle}
+                      onChange={(event) =>
+                        setWishlistPageHandle(event.currentTarget.value)
+                      }
+                      placeholder="wishlist"
+                    />
+                    <span className={styles.fieldHint}>
+                      Final URL: <code>{wishlistPagePreviewPath}</code>
+                    </span>
+                  </label>
+                </div>
+
+                <div className={styles.buttonRow}>
+                  <ActionButton
+                    action={{
+                      label: pageStepComplete
+                        ? "Update wishlist page"
+                        : "Create wishlist page",
+                      onClick: saveWishlistPage,
+                      loading: isCreatingWishlistPage,
+                      disabled: !hasWriteOnlineStorePagesScope,
+                    }}
+                  />
+                  <ActionButton
+                    action={
+                      wishlistPageUrl
+                        ? {
+                            label: "Open live page",
+                            href: wishlistPageUrl,
+                            target: "_blank",
+                            rel: "noreferrer",
+                          }
+                        : {
+                            label: "Open live page",
+                            disabled: true,
+                          }
+                    }
+                    secondary
+                  />
+                </div>
+              </article>
+
+              <article id="theme-placement" className={styles.stepCard}>
+                <div className={styles.stepHeader}>
+                  <div>
+                    <span className={styles.stepIndex}>Step 4</span>
+                    <h3 className={styles.stepTitle}>
+                      Place the wishlist button in your theme
+                    </h3>
+                  </div>
+                  <StatusPill
+                    tone={
+                      themeStepComplete
+                        ? "success"
+                        : hasThemeEditorLinks
+                          ? "warning"
+                          : "neutral"
+                    }
+                  >
+                    {themeStepComplete
+                      ? "Placement confirmed"
+                      : hasThemeEditorLinks
+                        ? "Merchant confirmation needed"
+                        : "Theme editor unavailable"}
+                  </StatusPill>
+                </div>
+                <p className={styles.stepText}>
+                  Merchants should only see one clear deployment choice at a time:
+                  use the product app block for JSON themes, or enable the app
+                  embed for liquid themes that need a fallback.
+                </p>
+
+                <div className={styles.pathGrid}>
+                  <article className={styles.pathCard}>
+                    <span className={styles.metricLabel}>Recommended</span>
+                    <h4 className={styles.pathTitle}>Product page app block</h4>
+                    <p className={styles.pathText}>
+                      Best for Online Store 2.0 product templates that support
+                      sections and blocks.
+                    </p>
+                    <ActionButton
+                      action={
+                        productPageButtonEditorUrl
+                          ? {
+                              label: "Open product block settings",
+                              href: productPageButtonEditorUrl,
+                              target: "_top",
+                              rel: "noreferrer",
+                            }
+                          : {
+                              label: "Open product block settings",
+                              disabled: true,
+                            }
+                      }
+                    />
+                  </article>
+
+                  <article className={styles.pathCard}>
+                    <span className={styles.metricLabel}>Fallback</span>
+                    <h4 className={styles.pathTitle}>Product page app embed</h4>
+                    <p className={styles.pathText}>
+                      Use this when liquid product templates do not support app
+                      blocks.
+                    </p>
+                    <ActionButton
+                      action={
+                        productPageEmbedEditorUrl
+                          ? {
+                              label: "Open app embed settings",
+                              href: productPageEmbedEditorUrl,
+                              target: "_top",
+                              rel: "noreferrer",
+                            }
+                          : {
+                              label: "Open app embed settings",
+                              disabled: true,
+                            }
+                      }
+                      secondary
+                    />
+                  </article>
+                </div>
+
+                <div className={`${styles.callout} ${styles.calloutInfo}`}>
+                  Once the button is visible in the theme preview, confirm the
+                  step here so your activation score reflects the true merchant
+                  rollout state.
+                </div>
+
+                <div className={styles.buttonRow}>
+                  <ActionButton
+                    action={{
+                      label: themePlacementConfirmed
+                        ? "Mark placement as not confirmed"
+                        : "Confirm theme placement",
+                      onClick: () =>
+                        handleThemePlacementConfirmation(!themePlacementConfirmed),
+                    }}
+                  />
+                </div>
+              </article>
+
+              <article id="qa-lab" className={styles.stepCard}>
+                <div className={styles.stepHeader}>
+                  <div>
+                    <span className={styles.stepIndex}>Step 5</span>
+                    <h3 className={styles.stepTitle}>
+                      Run the merchant QA lab
+                    </h3>
+                  </div>
+                  <StatusPill
+                    tone={
+                      qaStepComplete
+                        ? "success"
+                        : testDataReady
+                          ? "warning"
+                          : "critical"
+                    }
+                  >
+                    {qaStepComplete
+                      ? "Validated with saved item"
+                      : testDataReady
+                        ? "Ready to test"
+                        : "Missing store data"}
+                  </StatusPill>
+                </div>
+                <p className={styles.stepText}>
+                  Simulate the real shopper flow with a test customer and product.
+                  This is the moment merchants gain confidence that install
+                  actually became value.
+                </p>
+
+                {!testDataReady ? (
+                  <div className={styles.emptyState}>
+                    <h4 className={styles.emptyTitle}>QA needs a customer and a product</h4>
+                    <p className={styles.emptyText}>
+                      Add at least one customer and one product in Shopify Admin,
+                      then come back here to simulate the save and remove flow.
+                    </p>
+                  </div>
+                ) : null}
+
+                <div className={styles.fieldGrid}>
+                  <label className={styles.field}>
+                    <span className={styles.fieldLabel}>Customer</span>
+                    <s-select
+                      label="Customer"
+                      value={selectedCustomerId}
+                      onChange={(event) =>
+                        setSelectedCustomerId(event.currentTarget.value)
+                      }
+                      {...(customers.length === 0 ? { disabled: true } : {})}
+                    >
+                      {customers.length === 0 ? (
+                        <option value="">No customers available</option>
+                      ) : (
+                        customers.map((customer) => (
+                          <option key={customer.id} value={customer.id}>
+                            {formatCustomerLabel(customer)}
+                          </option>
+                        ))
+                      )}
+                    </s-select>
+                  </label>
+
+                  <label className={styles.field}>
+                    <span className={styles.fieldLabel}>Product</span>
+                    <s-select
+                      label="Product"
+                      value={selectedProductId}
+                      onChange={(event) =>
+                        setSelectedProductId(event.currentTarget.value)
+                      }
+                      {...(products.length === 0 ? { disabled: true } : {})}
+                    >
+                      {products.length === 0 ? (
+                        <option value="">No products available</option>
+                      ) : (
+                        products.map((product) => (
+                          <option key={product.id} value={product.id}>
+                            {formatProductLabel(product)}
+                          </option>
+                        ))
+                      )}
+                    </s-select>
+                  </label>
+                </div>
+
+                <div className={styles.metricGrid}>
+                  <article className={styles.inlineMetric}>
+                    <span className={styles.metricLabel}>Active customer</span>
+                    <strong className={styles.metricValue}>
+                      {selectedCustomerLabel}
+                    </strong>
+                    <p className={styles.metricText}>
+                      This customer currently has {wishlistCount} saved{" "}
+                      {wishlistCount === 1 ? "item" : "items"}.
+                    </p>
+                  </article>
+                  <article className={styles.inlineMetric}>
+                    <span className={styles.metricLabel}>Active product</span>
+                    <strong className={styles.metricValue}>
+                      {selectedProductLabel}
+                    </strong>
+                    <p className={styles.metricText}>
+                      {productIsSaved
+                        ? "This product is already saved in wishlist."
+                        : "This product is not saved yet."}
+                    </p>
+                  </article>
+                </div>
+
+                <div className={styles.buttonRow}>
+                  <ActionButton
+                    action={{
+                      label: productIsSaved
+                        ? "Remove from wishlist"
+                        : "Add to wishlist",
+                      onClick: handleToggleWishlist,
+                      loading: isMutating,
+                      disabled: !selectedCustomerId || !selectedProductId,
+                    }}
+                  />
+                  <ActionButton
+                    action={{
+                      label: "Refresh wishlist snapshot",
+                      onClick: () => {
+                        if (!selectedCustomerId) return;
+                        wishlistFetcher.load(
+                          `/app/api/wishlist?customerId=${encodeURIComponent(
+                            selectedCustomerId,
+                          )}`,
+                        );
+                      },
+                      loading: isReloadingWishlist,
+                      disabled: !selectedCustomerId,
+                    }}
+                    secondary
+                  />
+                </div>
+              </article>
+            </section>
           </div>
-        </s-section>
 
-        <s-section heading="Wishlist test">
-          <div className={styles.surface}>
-            <div className={styles.sectionHeader}>
-              <div>
-                <h2 className={styles.sectionTitle}>
-                  Try the add and remove flow
-                </h2>
-                <p className={styles.sectionText}>
-                  Select a product and simulate the same save action a shopper
-                  would take on the storefront.
+          <aside className={styles.railColumn}>
+            <div className={styles.railSticky}>
+              <section className={styles.railPanel}>
+                <p className={styles.sectionEyebrow}>Phase B · Live side panel</p>
+                <h3 className={styles.railTitle}>System health and launch status</h3>
+                <p className={styles.railText}>
+                  This panel stays visible so merchants always know what is live,
+                  what is blocked, and what the next best action is.
                 </p>
-              </div>
-              {productIsSaved
-                ? statusPill("success", "Selected product saved")
-                : statusPill("neutral", "Selected product not saved")}
-            </div>
 
-            <div className={styles.formRow}>
-              <s-select
-                label="Product to test"
-                value={selectedProductId}
-                onChange={(event) =>
-                  setSelectedProductId(event.currentTarget.value)
-                }
-              >
-                {products.map((product) => (
-                  <option key={product.id} value={product.id}>
-                    {product.title}
-                  </option>
-                ))}
-              </s-select>
-            </div>
+                <div className={styles.scoreCard}>
+                  <div className={styles.scoreHeader}>
+                    <span className={styles.metricLabel}>Setup completion</span>
+                    <strong className={styles.scoreValue}>{progressPercent}%</strong>
+                  </div>
+                  <div className={styles.progressTrack}>
+                    <span
+                      className={styles.progressFill}
+                      style={{ width: `${progressPercent}%` }}
+                    />
+                  </div>
+                  <div className={styles.progressList}>
+                    {progressItems.map((item) => (
+                      <div key={item.title} className={styles.progressRow}>
+                        <span
+                          className={`${styles.progressDot} ${
+                            item.complete ? styles.progressDotComplete : ""
+                          }`}
+                        />
+                        <div>
+                          <strong className={styles.progressTitle}>
+                            {item.title}
+                          </strong>
+                          <p className={styles.progressText}>{item.detail}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </section>
 
-            <div className={styles.actionRow}>
-              <s-button
-                onClick={handleToggleWishlist}
-                {...(isMutating ? { loading: true } : {})}
-              >
-                {productIsSaved ? "Remove from wishlist" : "Add to wishlist"}
-              </s-button>
-            </div>
-          </div>
-        </s-section>
+              <section className={styles.railPanel}>
+                <p className={styles.sectionEyebrow}>Phase C · Snapshot copy</p>
+                <h3 className={styles.railTitle}>Current storefront snapshot</h3>
+                <div className={styles.snapshotList}>
+                  <div className={styles.snapshotRow}>
+                    <span className={styles.snapshotLabel}>Storefront mode</span>
+                    <strong className={styles.snapshotValue}>
+                      {wishlistRequiresLogin ? "Login required" : "Guest wishlist"}
+                    </strong>
+                  </div>
+                  <div className={styles.snapshotRow}>
+                    <span className={styles.snapshotLabel}>Wishlist page</span>
+                    <strong className={styles.snapshotValue}>
+                      {pageStepComplete ? wishlistPagePreviewPath : "Not live yet"}
+                    </strong>
+                  </div>
+                  <div className={styles.snapshotRow}>
+                    <span className={styles.snapshotLabel}>Selected customer</span>
+                    <strong className={styles.snapshotValue}>
+                      {selectedCustomerLabel}
+                    </strong>
+                  </div>
+                  <div className={styles.snapshotRow}>
+                    <span className={styles.snapshotLabel}>Selected product</span>
+                    <strong className={styles.snapshotValue}>
+                      {selectedProductLabel}
+                    </strong>
+                  </div>
+                  <div className={styles.snapshotRow}>
+                    <span className={styles.snapshotLabel}>Saved items</span>
+                    <strong className={styles.snapshotValue}>
+                      {wishlistCount}
+                    </strong>
+                  </div>
+                </div>
+              </section>
 
-        <s-section heading="Current snapshot">
-          <div className={styles.surface}>
-            <div className={styles.sectionHeader}>
-              <div>
-                <h2 className={styles.sectionTitle}>
-                  See the current wishlist state
-                </h2>
-                <p className={styles.sectionText}>
-                  Review the selected customer, the product under test, and the
-                  items currently stored in the wishlist.
-                </p>
-              </div>
-            </div>
-
-            <div className={styles.snapshotGrid}>
-              <article className={styles.statusCard}>
-                <span className={styles.statusLabel}>Selected customer</span>
-                <strong className={styles.statusValue}>
-                  {selectedCustomer?.displayName ||
-                    selectedCustomer?.email ||
-                    "Not selected"}
-                </strong>
-              </article>
-
-              <article className={styles.statusCard}>
-                <span className={styles.statusLabel}>Selected product</span>
-                <strong className={styles.statusValue}>
-                  {selectedProduct?.title || "Not selected"}
-                </strong>
-              </article>
-
-              <article className={styles.statusCard}>
-                <span className={styles.statusLabel}>Saved wishlist items</span>
-                <strong className={styles.statusValue}>{wishlistCount}</strong>
-                <p className={styles.statusText}>
-                  {productIsSaved
-                    ? "The selected product is already in this wishlist."
-                    : "The selected product has not been saved yet."}
-                </p>
-              </article>
-            </div>
-
-            <article className={styles.statusCard}>
-              <span className={styles.statusLabel}>Saved products</span>
-              <strong className={styles.statusValue}>Wishlist contents</strong>
-
-              {savedProductTitles.length > 0 ? (
-                <div className={styles.savedList}>
-                  {savedProductTitles.map((title) => (
-                    <span key={title}>{statusPill("success", title)}</span>
+              <section className={styles.railPanel}>
+                <p className={styles.sectionEyebrow}>Phase D · Hierarchy</p>
+                <h3 className={styles.railTitle}>Live health checks</h3>
+                <div className={styles.healthList}>
+                  {healthItems.map((item) => (
+                    <div key={item.label} className={styles.healthRow}>
+                      <div>
+                        <strong className={styles.healthLabel}>{item.label}</strong>
+                        <p className={styles.healthText}>{item.value}</p>
+                      </div>
+                      <StatusPill tone={item.tone}>{item.value}</StatusPill>
+                    </div>
                   ))}
                 </div>
-              ) : (
-                <p className={styles.statusText}>
-                  No products are saved for this customer yet.
-                </p>
-              )}
-            </article>
-          </div>
-        </s-section>
+              </section>
+
+              <section className={styles.railPanel}>
+                <p className={styles.sectionEyebrow}>Phase E · First value</p>
+                <h3 className={styles.railTitle}>Wishlist snapshot</h3>
+                {wishlistLabels.length > 0 ? (
+                  <div className={styles.savedList}>
+                    {wishlistLabels.map((label) => (
+                      <span key={label} className={styles.savedItem}>
+                        {label}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <div className={styles.emptyStateCompact}>
+                    Wishlist is empty for the active customer. Use the QA lab to
+                    save the first product and prove the flow end to end.
+                  </div>
+                )}
+              </section>
+            </div>
+          </aside>
+        </div>
       </div>
     </s-page>
   );
 }
 
-export const headers = (headersArgs) => {
-  return boundary.headers(headersArgs);
-};
+export function ErrorBoundary() {
+  return boundary.error(useRouteError());
+}
