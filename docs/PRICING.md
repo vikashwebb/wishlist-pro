@@ -4,8 +4,8 @@
 
 | Plan | Price | Includes |
 |------|--------|----------|
-| **Free** | $0 | Product/collection wishlist buttons, guest wishlist, wishlist page, theme styling |
-| **Pro** | **$5.99 USD / month** (7-day trial) | **Login-only storefront mode** (Analytics & CSV export are currently open to all plans) |
+| **Free** | $0 | Product/collection wishlist buttons, guest wishlist, wishlist page, theme styling, launch checklist |
+| **Pro** | **$5.99 USD / month** (7-day trial) | **Merchant QA lab & health checks**, login-only mode (Analytics & CSV export are currently open to all plans) |
 
 Billing uses Shopify’s [Billing API](https://shopify.dev/docs/apps/launch/billing). Charges appear on the merchant’s Shopify invoice.
 
@@ -38,8 +38,8 @@ Set plans that align with Free + Pro $5.99/mo so the store listing matches what 
 
 ### 3. What merchants see
 
-- **Free:** Full app including Analytics and CSV export (for now). Login-only toggle still requires Pro.
-- **Pro:** Login-only mode in Storefront workspace (+ billing for future gated features).
+- **Free:** Storefront wishlist, theme blocks, launch checklist. QA lab and health checks are visible with a Pro upgrade overlay.
+- **Pro:** Merchant QA lab, live health checks, login-only mode (+ analytics/export open for testing).
 - Upgrade: **Pricing** in app nav → **Start Pro trial** → Shopify-hosted approval page (returns to `/app/pricing`).
 
 Development stores use **test charges** (`isTest: true` when `NODE_ENV !== production`).

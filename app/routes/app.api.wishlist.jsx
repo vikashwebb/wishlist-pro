@@ -27,7 +27,14 @@ export const loader = async ({ request }) => {
 };
 
 export const action = async ({ request }) => {
-  const { admin } = await authenticate.admin(request);
+  const { admin, billing, session } = await authenticate.admin(request);
+  const { assertProQaHealthAccess } = await import("../billing.server");
+  const access = await assertProQaHealthAccess(billing, session.shop);
+
+  if (!access.allowed) {
+    return json({ error: access.message }, { status: 403 });
+  }
+
   const formData = await request.formData();
   const customerId = formData.get("customerId")?.toString().trim();
   const productId = formData.get("productId")?.toString().trim();

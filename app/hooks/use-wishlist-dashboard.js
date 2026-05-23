@@ -308,14 +308,19 @@ export function useWishlistDashboard() {
   const qaStepComplete =
     !!selectedCustomerId && !!selectedProductId && wishlistCount > 0;
   const testDataReady = customers.length > 0 && products.length > 0;
-  const completedSteps = [
-    customerDataStepComplete,
-    storefrontStepComplete,
-    pageStepComplete,
-    themeStepComplete,
-    qaStepComplete,
-  ].filter(Boolean).length;
-  const progressPercent = Math.round((completedSteps / 5) * 100);
+  const launchSteps = isPro
+    ? [
+        customerDataStepComplete,
+        storefrontStepComplete,
+        pageStepComplete,
+        themeStepComplete,
+        qaStepComplete,
+      ]
+    : [storefrontStepComplete, pageStepComplete, themeStepComplete];
+  const completedSteps = launchSteps.filter(Boolean).length;
+  const progressPercent = Math.round(
+    (completedSteps / launchSteps.length) * 100,
+  );
   const readinessLabel =
     progressPercent === 100
       ? "Launch ready"
@@ -393,17 +398,29 @@ export function useWishlistDashboard() {
     );
   };
 
-  const nextSetupHref = !customerDataStepComplete
-    ? "/app/setup"
-    : !storefrontStepComplete || !pageStepComplete
-      ? "/app/storefront"
-      : !themeStepComplete
-        ? "/app/theme"
-        : !qaStepComplete
-          ? "/app/setup#qa-lab"
-          : "/app/analytics";
+  const nextSetupHref =
+    isPro && !customerDataStepComplete
+      ? "/app/setup"
+      : !storefrontStepComplete || !pageStepComplete
+        ? "/app/storefront"
+        : !themeStepComplete
+          ? "/app/theme"
+          : isPro && !qaStepComplete
+            ? "/app/setup#qa-lab"
+            : "/app/analytics";
 
-  const primaryHeroAction = !diagnosticsFresh || customerAccessBlocked
+  const primaryHeroAction = !isPro
+    ? !storefrontStepComplete || !pageStepComplete
+      ? { label: "Continue storefront setup", href: "/app/storefront" }
+      : !themeStepComplete && productPageButtonEditorUrl
+        ? {
+            label: "Open product theme editor",
+            href: productPageButtonEditorUrl,
+            target: "_top",
+            rel: "noreferrer",
+          }
+        : { label: "Unlock QA lab & health checks", href: "/app/pricing" }
+    : !diagnosticsFresh || customerAccessBlocked
     ? {
         label: "Run live system check",
         onClick: runDiagnostics,
@@ -516,18 +533,22 @@ export function useWishlistDashboard() {
   ];
 
   const progressItems = [
-    {
-      title: "Data foundation",
-      href: "/app/setup",
-      complete: customerDataStepComplete,
-      detail: customerDataStepComplete
-        ? "Metafield definition is ready and customer access works."
-        : customerAccessBlocked
-          ? "Protected customer access still needs approval."
-          : diagnosticsFresh
-            ? "Definition or access still needs attention."
-            : "Run the live system check.",
-    },
+    ...(isPro
+      ? [
+          {
+            title: "Data foundation",
+            href: "/app/setup",
+            complete: customerDataStepComplete,
+            detail: customerDataStepComplete
+              ? "Metafield definition is ready and customer access works."
+              : customerAccessBlocked
+                ? "Protected customer access still needs approval."
+                : diagnosticsFresh
+                  ? "Definition or access still needs attention."
+                  : "Run the live system check.",
+          },
+        ]
+      : []),
     {
       title: "Storefront rules",
       href: "/app/storefront",
@@ -556,22 +577,30 @@ export function useWishlistDashboard() {
         ? "Theme button placement confirmed."
         : "Open Theme Editor and confirm once placed.",
     },
-    {
-      title: "Merchant QA",
-      href: "/app/setup#qa-lab",
-      complete: qaStepComplete,
-      detail: qaStepComplete
-        ? "A wishlist item is saved for the active test customer."
-        : "Use the QA lab to validate add and remove flows.",
-    },
+    ...(isPro
+      ? [
+          {
+            title: "Merchant QA",
+            href: "/app/setup#qa-lab",
+            complete: qaStepComplete,
+            detail: qaStepComplete
+              ? "A wishlist item is saved for the active test customer."
+              : "Use the QA lab to validate add and remove flows.",
+          },
+        ]
+      : []),
   ];
 
   const setupPages = [
     {
       href: "/app/setup",
       title: "Setup & QA",
-      description: "Verify metafields, scopes, and run the merchant QA lab.",
-      complete: customerDataStepComplete && qaStepComplete,
+      description: isPro
+        ? "Verify metafields, scopes, and run the merchant QA lab."
+        : "Pro: live health checks and merchant QA lab (preview on this page).",
+      complete: isPro
+        ? customerDataStepComplete && qaStepComplete
+        : storefrontStepComplete && pageStepComplete,
     },
     {
       href: "/app/storefront",

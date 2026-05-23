@@ -10,12 +10,13 @@ const FREE_FEATURES = [
   "Product & collection wishlist buttons",
   "Auto-created wishlist page",
   "Theme blocks & icon styling",
-  "Merchant QA lab (add / remove test saves)",
-  "Setup health checks & launch checklist",
+  "Setup launch checklist",
 ];
 
 const PRO_FEATURES = [
   "Everything in Free",
+  "Merchant QA lab (add / remove test saves)",
+  "Live health checks & metafield diagnostics",
   "Login-only wishlist mode",
   "Analytics dashboard & charts",
   "CSV export (customer, product, or full)",
@@ -26,7 +27,7 @@ const COMPARE_ROWS = [
   { feature: "Storefront wishlist buttons", free: true, pro: true },
   { feature: "Guest wishlist", free: true, pro: true },
   { feature: "Wishlist page", free: true, pro: true },
-  { feature: "Merchant QA lab & health checks", free: true, pro: true },
+  { feature: "Merchant QA lab & health checks", free: false, pro: true },
   { feature: "Login-only mode", free: false, pro: true },
   { feature: "Analytics dashboard", free: false, pro: true },
   { feature: "CSV export", free: false, pro: true },
@@ -152,8 +153,9 @@ export default function PricingPage() {
           <p className={styles.eyebrow}>Plans</p>
           <h1 className={styles.heroTitle}>Simple pricing for every store</h1>
           <p className={styles.heroText}>
-            Every plan includes storefront wishlist tools and the merchant QA
-            lab. Upgrade to Pro for login-only mode, analytics, and exports.
+            Every plan includes storefront wishlist tools and the launch
+            checklist. Upgrade to Pro for the merchant QA lab, health checks,
+            login-only mode, analytics, and exports.
           </p>
           <span className={styles.currentPlan}>
             {isPro ? "You are on Wishlist Pro" : "You are on the Free plan"}

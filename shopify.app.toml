@@ -2,11 +2,16 @@
 
 client_id = "ff8daa11716d4200164ee8824032e194"
 name = "wishlist-pro"
+# Placeholder — CLI sets the Cloudflare tunnel URL during `shopify app dev` when
+# automatically_update_urls_on_dev is true. Set production URL in Partner Dashboard.
 application_url = "https://example.com"
 embedded = true
 
 [build]
+# true: local dev iframe hits your tunnel (localhost). false: iframe uses application_url above (breaks dev).
 automatically_update_urls_on_dev = true
+# false: `shopify app deploy` does not overwrite Partner Dashboard URLs from this file.
+include_config_on_deploy = false
 
 [webhooks]
 api_version = "2026-04"

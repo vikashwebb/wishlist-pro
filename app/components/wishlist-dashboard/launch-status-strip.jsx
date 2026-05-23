@@ -66,7 +66,13 @@ export function LaunchStatusStrip({ d }) {
       </div>
 
       <div className={styles.statusStripActions}>
-        <ActionButton action={runCheckAction} secondary />
+        {d.isPro ? (
+          <ActionButton action={runCheckAction} secondary />
+        ) : (
+          <AppLink className={styles.linkButton} href="/app/pricing">
+            Unlock Pro checks
+          </AppLink>
+        )}
         <AppLink className={styles.statusStripDashboardLink} href="/app#launch-monitor">
           View full status
         </AppLink>

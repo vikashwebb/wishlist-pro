@@ -3,8 +3,8 @@ import { boundary } from "@shopify/shopify-app-react-router/server";
 import { AppProvider } from "@shopify/shopify-app-react-router/react";
 
 export const loader = async ({ request }) => {
-  const { authenticate } = await import("../shopify.server");
-  await authenticate.admin(request);
+  const { authenticateAppAdmin } = await import("../shopify.server");
+  await authenticateAppAdmin(request);
 
   // eslint-disable-next-line no-undef
   return { apiKey: process.env.SHOPIFY_API_KEY || "" };

@@ -7,7 +7,14 @@ import { authenticate } from "../shopify.server";
 import { logWishlist, logWishlistError } from "../utils/logger.server";
 
 export const loader = async ({ request }) => {
-  const { admin } = await authenticate.admin(request);
+  const { admin, billing, session } = await authenticate.admin(request);
+  const { assertProQaHealthAccess } = await import("../billing.server");
+  const access = await assertProQaHealthAccess(billing, session.shop);
+
+  if (!access.allowed) {
+    return json({ error: access.message }, { status: 403 });
+  }
+
   const { searchParams } = new URL(request.url);
   const customerId = searchParams.get("customerId");
 

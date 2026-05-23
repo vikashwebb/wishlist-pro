@@ -82,3 +82,24 @@ export const unauthenticated = shopify.unauthenticated;
 export const login = shopify.login;
 export const registerWebhooks = shopify.registerWebhooks;
 export const sessionStorage = shopify.sessionStorage;
+
+/**
+ * Admin auth for /app/* routes: runs billing.check on load and optionally
+ * redirects to /app/pricing when BILLING_REDIRECT_ON_LOAD=true.
+ */
+export async function authenticateAppAdmin(request) {
+  const context = await authenticate.admin(request);
+
+  try {
+    const { enforceAppBillingOnLoad } = await import("./billing.server");
+    await enforceAppBillingOnLoad(request, context);
+  } catch (error) {
+    const { isRedirectResponse } = await import("./billing.server");
+    if (isRedirectResponse(error)) {
+      throw error;
+    }
+    console.error("wishlist.billing.enforce.error", error);
+  }
+
+  return context;
+}

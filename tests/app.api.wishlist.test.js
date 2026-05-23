@@ -1,15 +1,21 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { readWishlist, writeWishlist, authenticate } = vi.hoisted(() => ({
-  readWishlist: vi.fn(),
-  writeWishlist: vi.fn(),
-  authenticate: vi.fn(),
-}));
+const { readWishlist, writeWishlist, authenticate, assertProQaHealthAccess } =
+  vi.hoisted(() => ({
+    readWishlist: vi.fn(),
+    writeWishlist: vi.fn(),
+    authenticate: vi.fn(),
+    assertProQaHealthAccess: vi.fn(),
+  }));
 
 vi.mock("../app/shopify.server.js", () => ({
   authenticate: {
     admin: authenticate,
   },
+}));
+
+vi.mock("../app/billing.server.js", () => ({
+  assertProQaHealthAccess,
 }));
 
 vi.mock("../app/models/wishlist.server.js", async () => {
@@ -32,8 +38,10 @@ describe("admin wishlist API", () => {
     vi.clearAllMocks();
     authenticate.mockResolvedValue({
       admin: { graphql: vi.fn() },
+      billing: {},
       session: { shop: "demo.myshopify.com" },
     });
+    assertProQaHealthAccess.mockResolvedValue({ allowed: true });
   });
 
   it("requires customerId on GET", async () => {
@@ -111,6 +119,28 @@ describe("admin wishlist API", () => {
       CUSTOMER_GID,
       [PRODUCT_B],
     );
+  });
+
+  it("requires Pro for wishlist mutations", async () => {
+    assertProQaHealthAccess.mockResolvedValueOnce({
+      allowed: false,
+      message: "Merchant QA lab and health checks require Wishlist Pro.",
+    });
+
+    const formData = new FormData();
+    formData.append("customerId", CUSTOMER_GID);
+    formData.append("productId", PRODUCT_A);
+    formData.append("intent", "add");
+
+    const response = await action({
+      request: new Request("https://example.com/app/api/wishlist", {
+        method: "POST",
+        body: formData,
+      }),
+    });
+
+    expect(response.status).toBe(403);
+    expect(writeWishlist).not.toHaveBeenCalled();
   });
 
   it("rejects invalid intents", async () => {

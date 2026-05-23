@@ -1,6 +1,11 @@
 /* eslint-disable react/prop-types */
 import { AppLink } from "../app-link";
+import { ProFeatureGate } from "./pro-feature-gate";
 import { ActionButton, StatusPill, dashboardStyles as styles } from "./shared";
+
+const QA_GATE_TITLE = "Merchant QA lab";
+const QA_GATE_DESCRIPTION =
+  "Upgrade to Pro to run add/remove tests with real customers and products, plus live system checks.";
 
 const QA_STEPS = [
   {
@@ -17,11 +22,21 @@ const QA_STEPS = [
   },
 ];
 
+function wrapQaGate(isPro, children) {
+  return (
+    <ProFeatureGate isPro={isPro} title={QA_GATE_TITLE} description={QA_GATE_DESCRIPTION}>
+      {children}
+    </ProFeatureGate>
+  );
+}
+
 export function MerchantQaPanel({ d, variant = "full" }) {
   const complete = d?.qaStepComplete;
+  const isPro = d?.isPro;
 
   if (variant === "compact" && complete) {
-    return (
+    return wrapQaGate(
+      isPro,
       <article className={`${styles.qaPanel} ${styles.qaPanelSuccess}`}>
         <div className={styles.qaPanelCompactRow}>
           <StatusPill tone="success">QA validated</StatusPill>
@@ -33,35 +48,37 @@ export function MerchantQaPanel({ d, variant = "full" }) {
             Open QA lab
           </AppLink>
         </div>
-      </article>
+      </article>,
     );
   }
 
   if (variant === "compact") {
-    return (
+    return wrapQaGate(
+      isPro,
       <article className={styles.qaPanel}>
         <div className={styles.qaPanelCompactRow}>
           <div className={styles.qaPanelCompactCopy}>
             <span className={styles.qaPanelBadge}>Before you launch</span>
             <p className={styles.qaPanelCompactTitle}>Run merchant QA testing</p>
             <p className={styles.qaPanelCompactText}>
-              Validate add and remove flows with a real customer — included on
-              every plan.
+              Validate add and remove flows with a real customer — included with
+              Wishlist Pro.
             </p>
           </div>
           <AppLink className={styles.linkButton} href="/app/setup#qa-lab">
             Open QA lab
           </AppLink>
         </div>
-      </article>
+      </article>,
     );
   }
 
-  return (
+  return wrapQaGate(
+    isPro,
     <section className={styles.qaPanel} aria-label="Merchant QA testing">
       <div className={styles.qaPanelHeader}>
         <span className={styles.qaPanelBadge}>
-          {complete ? "QA complete" : "Included on all plans"}
+          {complete ? "QA complete" : "Wishlist Pro"}
         </span>
         <h2 className={styles.qaPanelTitle}>Merchant QA testing</h2>
         <p className={styles.qaPanelText}>
@@ -100,6 +117,6 @@ export function MerchantQaPanel({ d, variant = "full" }) {
           }}
         />
       </div>
-    </section>
+    </section>,
   );
 }
