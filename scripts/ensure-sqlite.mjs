@@ -45,6 +45,12 @@ function upsertEnvVar(filePath, key, value) {
   }
 }
 
-upsertEnvVar(path.join(root, ".env"), "DATABASE_URL", databaseUrl);
+// Do not override DATABASE_URL when already set (e.g. Vercel production env).
+if (!process.env.DATABASE_URL) {
+  upsertEnvVar(path.join(root, ".env"), "DATABASE_URL", databaseUrl);
+  process.env.DATABASE_URL = databaseUrl;
+} else {
+  console.log(`Using existing DATABASE_URL from environment`);
+}
 
 console.log(`SQLite database: ${dbPath}`);

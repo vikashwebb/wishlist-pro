@@ -10,8 +10,6 @@ embedded = true
 [build]
 # true: local dev iframe hits your tunnel (localhost). false: iframe uses application_url above (breaks dev).
 automatically_update_urls_on_dev = true
-# false: `shopify app deploy` does not overwrite Partner Dashboard URLs from this file.
-include_config_on_deploy = false
 
 [webhooks]
 api_version = "2026-04"

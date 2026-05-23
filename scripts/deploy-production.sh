@@ -11,11 +11,8 @@ rm -rf node_modules build .react-router
 echo "→ Installing dependencies…"
 npm ci
 
-echo "→ Prisma generate + migrate…"
-npm run setup
-
-echo "→ Running production build…"
-npm run build
+echo "→ Prisma generate + migrate + production build (tests + typecheck)…"
+npm run build:production
 
 echo "→ Deploying app to Shopify…"
 npm run deploy
