@@ -1,0 +1,94 @@
+.proGateStandalone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 11rem;
+  padding: 1.5rem 1.25rem;
+  border: 1px solid rgb(15 23 42 / 0.08);
+  border-radius: 20px;
+  background: linear-gradient(135deg, #f8fafc 0%, #fff 100%);
+  box-shadow: 0 10px 28px rgb(15 23 42 / 0.05);
+}
+
+.proGateCard {
+  display: grid;
+  gap: 0.65rem;
+  justify-items: center;
+  max-width: 22rem;
+  padding: 1.15rem 1.25rem;
+  border: 1px solid rgb(15 23 42 / 0.08);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 18px 44px rgb(15 23 42 / 0.1);
+  text-align: center;
+}
+
+.proGateBadge {
+  display: inline-flex;
+  padding: 0.28rem 0.62rem;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #1d6b59;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.proGateTitle {
+  margin: 0;
+  color: #0f172a;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.proGateText {
+  margin: 0;
+  color: rgb(15 23 42 / 0.68);
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+.proGateLinkButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.25rem;
+  padding: 0.6rem 0.95rem;
+  border: 1px solid #1d6b59;
+  border-radius: 999px;
+  background: #1d6b59;
+  color: #fff;
+  text-decoration: none;
+  font-weight: 700;
+  line-height: 1.2;
+  box-shadow: 0 10px 24px rgb(29 107 89 / 0.18);
+}
+
+.proGateRail {
+  min-height: 9rem;
+  border-radius: 16px;
+}
+
+.proGateRail .proGateCard {
+  max-width: 18rem;
+  padding: 0.95rem 1rem;
+}
+
+.proGateRail .proGateTitle {
+  font-size: 0.92rem;
+}
+
+.proGateRail .proGateText {
+  font-size: 0.8rem;
+}
+
+.analyticsGate {
+  min-height: 14rem;
+  border-radius: 24px;
+}
+
+.qaGate {
+  margin-bottom: 0.25rem;
+}

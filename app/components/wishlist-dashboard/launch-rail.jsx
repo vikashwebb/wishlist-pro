@@ -1,6 +1,7 @@
 /* eslint-disable react/prop-types */
 import { AppLink } from "../app-link";
-import { ProFeatureGate } from "./pro-feature-gate";
+import { ProFeatureGate } from "../pro-feature-gate";
+import gateStyles from "../../styles/pro-feature-gate.module.css";
 import {
   ActionButton,
   StatusPill,
@@ -135,51 +136,55 @@ export function LaunchRail({ d }) {
 
           <div className={styles.railDivider} />
 
-          <ProFeatureGate
-            isPro={d.isPro}
-            className={styles.proGateRail}
-            title="Health checks & QA preview"
-            description="Upgrade to Pro to run system checks and preview the active QA customer's wishlist."
-          >
-            <section className={styles.railSection}>
-              <div className={styles.railSectionHeader}>
-                <h4 className={styles.railSectionTitle}>System checks</h4>
-                <ActionButton action={runCheckAction} secondary />
-              </div>
-              <div className={styles.railHealthList}>
-                {d.healthItems.map((item) => (
-                  <HealthCheckRow
-                    key={item.label}
-                    label={item.label}
-                    status={item.value}
-                    tone={item.tone}
-                  />
-                ))}
-              </div>
-            </section>
-
-            <div className={styles.railDivider} />
-
-            <section className={styles.railSection}>
-              <h4 className={styles.railSectionTitle}>QA wishlist preview</h4>
-              {d.wishlistLabels.length > 0 ? (
-                <div className={styles.railSavedScroll}>
-                  <div className={styles.savedList}>
-                    {d.wishlistLabels.map((entry) => (
-                      <span key={entry.id} className={styles.savedItem}>
-                        {entry.label}
-                      </span>
-                    ))}
-                  </div>
+          {d.isPro ? (
+            <>
+              <section className={styles.railSection}>
+                <div className={styles.railSectionHeader}>
+                  <h4 className={styles.railSectionTitle}>System checks</h4>
+                  <ActionButton action={runCheckAction} secondary />
                 </div>
-              ) : (
-                <p className={styles.railEmptyNote}>
-                  No saved products yet for the active QA customer. Add one in
-                  Setup &amp; QA.
-                </p>
-              )}
-            </section>
-          </ProFeatureGate>
+                <div className={styles.railHealthList}>
+                  {d.healthItems.map((item) => (
+                    <HealthCheckRow
+                      key={item.label}
+                      label={item.label}
+                      status={item.value}
+                      tone={item.tone}
+                    />
+                  ))}
+                </div>
+              </section>
+
+              <div className={styles.railDivider} />
+
+              <section className={styles.railSection}>
+                <h4 className={styles.railSectionTitle}>QA wishlist preview</h4>
+                {d.wishlistLabels.length > 0 ? (
+                  <div className={styles.railSavedScroll}>
+                    <div className={styles.savedList}>
+                      {d.wishlistLabels.map((entry) => (
+                        <span key={entry.id} className={styles.savedItem}>
+                          {entry.label}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <p className={styles.railEmptyNote}>
+                    No saved products yet for the active QA customer. Add one in
+                    Setup &amp; QA.
+                  </p>
+                )}
+              </section>
+            </>
+          ) : (
+            <ProFeatureGate
+              isPro={false}
+              className={gateStyles.proGateRail}
+              title="Health checks & QA preview"
+              description="Upgrade to Pro to run system checks and preview the active QA customer's wishlist."
+            />
+          )}
         </div>
       </div>
     </aside>

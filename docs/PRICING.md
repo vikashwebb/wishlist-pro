@@ -38,8 +38,8 @@ Set plans that align with Free + Pro $5.99/mo so the store listing matches what 
 
 ### 3. What merchants see
 
-- **Free:** Storefront wishlist, theme blocks, launch checklist. QA lab and health checks are visible with a Pro upgrade overlay.
-- **Pro:** Merchant QA lab, live health checks, login-only mode (+ analytics/export open for testing).
+- **Free:** Storefront wishlist, theme blocks, launch checklist. QA lab, health checks, and Analytics are visible with a Pro upgrade overlay (preview only).
+- **Pro:** Merchant QA lab, live health checks, analytics dashboard, CSV export, login-only mode.
 - Upgrade: **Pricing** in app nav → **Start Pro trial** → Shopify-hosted approval page (returns to `/app/pricing`).
 
 Development stores use **test charges** (`isTest: true` when `NODE_ENV !== production`).

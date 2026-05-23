@@ -1,6 +1,7 @@
 /* eslint-disable react/prop-types */
 import { AppLink } from "../app-link";
-import { ProFeatureGate } from "./pro-feature-gate";
+import { ProFeatureGate } from "../pro-feature-gate";
+import gateStyles from "../../styles/pro-feature-gate.module.css";
 import { ActionButton, StatusPill, dashboardStyles as styles } from "./shared";
 
 const QA_GATE_TITLE = "Merchant QA lab";
@@ -22,21 +23,23 @@ const QA_STEPS = [
   },
 ];
 
-function wrapQaGate(isPro, children) {
-  return (
-    <ProFeatureGate isPro={isPro} title={QA_GATE_TITLE} description={QA_GATE_DESCRIPTION}>
-      {children}
-    </ProFeatureGate>
-  );
-}
-
 export function MerchantQaPanel({ d, variant = "full" }) {
   const complete = d?.qaStepComplete;
   const isPro = d?.isPro;
 
+  if (!isPro) {
+    return (
+      <ProFeatureGate
+        isPro={false}
+        title={QA_GATE_TITLE}
+        description={QA_GATE_DESCRIPTION}
+        className={`${styles.qaPanel} ${gateStyles.qaGate}`}
+      />
+    );
+  }
+
   if (variant === "compact" && complete) {
-    return wrapQaGate(
-      isPro,
+    return (
       <article className={`${styles.qaPanel} ${styles.qaPanelSuccess}`}>
         <div className={styles.qaPanelCompactRow}>
           <StatusPill tone="success">QA validated</StatusPill>
@@ -48,13 +51,12 @@ export function MerchantQaPanel({ d, variant = "full" }) {
             Open QA lab
           </AppLink>
         </div>
-      </article>,
+      </article>
     );
   }
 
   if (variant === "compact") {
-    return wrapQaGate(
-      isPro,
+    return (
       <article className={styles.qaPanel}>
         <div className={styles.qaPanelCompactRow}>
           <div className={styles.qaPanelCompactCopy}>
@@ -69,12 +71,11 @@ export function MerchantQaPanel({ d, variant = "full" }) {
             Open QA lab
           </AppLink>
         </div>
-      </article>,
+      </article>
     );
   }
 
-  return wrapQaGate(
-    isPro,
+  return (
     <section className={styles.qaPanel} aria-label="Merchant QA testing">
       <div className={styles.qaPanelHeader}>
         <span className={styles.qaPanelBadge}>
@@ -117,6 +118,6 @@ export function MerchantQaPanel({ d, variant = "full" }) {
           }}
         />
       </div>
-    </section>,
+    </section>
   );
 }

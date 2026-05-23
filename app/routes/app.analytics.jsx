@@ -3,6 +3,8 @@ import { useLoaderData, useRouteError } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { AppLink } from "../components/app-link";
 import { AnalyticsExportPanel } from "../components/analytics-export-panel";
+import { ProFeatureGate } from "../components/pro-feature-gate";
+import gateStyles from "../styles/pro-feature-gate.module.css";
 import {
   AreaTrendChart,
   DonutChart,
@@ -44,11 +46,27 @@ export const loader = async ({ request }) => {
   const { loadWishlistAnalyticsReport } = await import(
     "../models/wishlist-analytics.server"
   );
-  const { admin, session } = await authenticate.admin(request);
+  const { hasProSubscription } = await import("../billing.server");
+  const { admin, session, billing } = await authenticate.admin(request);
   const settings = await getShopSettings(session.shop);
+  const isPro = await hasProSubscription(billing, session.shop);
+
+  if (!isPro) {
+    return {
+      isPro: false,
+      shopDomain: session.shop,
+      settings,
+      available: true,
+      protectedCustomerAccessBlocked: false,
+      analytics: null,
+      error: null,
+    };
+  }
+
   const report = await loadWishlistAnalyticsReport(admin);
 
   return {
+    isPro: true,
     shopDomain: session.shop,
     settings,
     ...report,
@@ -63,6 +81,7 @@ export default function AnalyticsPage() {
     error,
     shopDomain,
     settings,
+    isPro,
   } = useLoaderData();
 
   if (!available) {
@@ -110,6 +129,35 @@ export default function AnalyticsPage() {
               Open Setup &amp; QA
             </AppLink>
           </article>
+        </div>
+      </s-page>
+    );
+  }
+
+  if (!isPro || !analytics) {
+    return (
+      <s-page heading="Wishlist analytics">
+        <div className={styles.page}>
+          <section className={styles.hero}>
+            <div className={styles.heroTopRow}>
+              <div>
+                <p className={styles.eyebrow}>Store intelligence</p>
+                <span className={styles.heroBadge}>Wishlist Pro</span>
+                <h1 className={styles.heroTitle}>Understand what shoppers are saving</h1>
+                <p className={styles.heroText}>
+                  Live wishlist insights from customer metafields. Upgrade to Pro to
+                  view charts, top products, engaged customers, and CSV exports.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <ProFeatureGate
+            isPro={false}
+            className={gateStyles.analyticsGate}
+            title="Wishlist analytics & export"
+            description="Upgrade to Pro for live charts, customer insights, top products, and CSV exports with date filters."
+          />
         </div>
       </s-page>
     );

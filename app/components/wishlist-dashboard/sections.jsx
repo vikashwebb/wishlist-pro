@@ -1,7 +1,6 @@
 /* eslint-disable react/prop-types */
 import { AppLink } from "../app-link";
 import { DEFINITION_NAME, KEY, NAMESPACE } from "../../models/wishlist";
-import { ProFeatureGate } from "./pro-feature-gate";
 import {
   ActionButton,
   DashboardSelect,
@@ -11,21 +10,8 @@ import {
   dashboardStyles as styles,
 } from "./shared";
 
-const HEALTH_GATE_TITLE = "Live health checks";
-const HEALTH_GATE_DESCRIPTION =
-  "Upgrade to Pro to run metafield diagnostics, verify protected customer access, and inspect QA customer data.";
-
-const QA_LAB_GATE_TITLE = "Merchant QA lab";
-const QA_LAB_GATE_DESCRIPTION =
-  "Upgrade to Pro to simulate add and remove flows with a test customer and product before launch.";
-
 function DataFoundationSection({ d }) {
   return (
-    <ProFeatureGate
-      isPro={d.isPro}
-      title={HEALTH_GATE_TITLE}
-      description={HEALTH_GATE_DESCRIPTION}
-    >
 <article id="data-foundation" className={styles.stepCard}>
                 <div className={styles.stepHeader}>
                   <div>
@@ -185,7 +171,6 @@ function DataFoundationSection({ d }) {
                   />
                 </div>
               </article>
-    </ProFeatureGate>
   );
 }
 
@@ -487,11 +472,6 @@ function ThemePlacementSection({ d }) {
 
 function QaLabSection({ d }) {
   return (
-    <ProFeatureGate
-      isPro={d.isPro}
-      title={QA_LAB_GATE_TITLE}
-      description={QA_LAB_GATE_DESCRIPTION}
-    >
 <article id="qa-lab" className={styles.stepCard}>
                 <div className={styles.stepHeader}>
                   <div>
@@ -629,7 +609,6 @@ function QaLabSection({ d }) {
                   />
                 </div>
               </article>
-    </ProFeatureGate>
   );
 }
 

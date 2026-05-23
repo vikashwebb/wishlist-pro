@@ -33,6 +33,17 @@ export function hasDemoProAccess(shop) {
 export const PRO_QA_HEALTH_MESSAGE =
   "Merchant QA lab and health checks require Wishlist Pro. Upgrade on the Pricing page.";
 
+export const PRO_ANALYTICS_MESSAGE =
+  "Analytics and CSV export require Wishlist Pro. Upgrade on the Pricing page.";
+
+export async function assertProAnalyticsAccess(billing, shop) {
+  const isPro = await hasProSubscription(billing, shop);
+  if (!isPro) {
+    return { allowed: false, message: PRO_ANALYTICS_MESSAGE };
+  }
+  return { allowed: true };
+}
+
 export async function assertProQaHealthAccess(billing, shop) {
   const isPro = await hasProSubscription(billing, shop);
   if (!isPro) {
@@ -41,7 +52,11 @@ export async function assertProQaHealthAccess(billing, shop) {
   return { allowed: true };
 }
 
-const BILLING_EXEMPT_PATHS = ["/app/pricing", "/app/billing"];
+const BILLING_EXEMPT_PATHS = [
+  "/app/pricing",
+  "/app/billing",
+  "/app/analytics",
+];
 
 function isBillingExemptPath(pathname) {
   return BILLING_EXEMPT_PATHS.some(

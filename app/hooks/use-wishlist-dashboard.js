@@ -617,8 +617,10 @@ export function useWishlistDashboard() {
     {
       href: "/app/analytics",
       title: "Analytics",
-      description: "See top products, engaged customers, and adoption metrics.",
-      complete: progressPercent === 100,
+      description: isPro
+        ? "See top products, engaged customers, and adoption metrics."
+        : "Pro: charts, exports, and adoption metrics (preview on Analytics).",
+      complete: isPro && progressPercent === 100,
     },
   ];
 

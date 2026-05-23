@@ -5,7 +5,17 @@ import {
 import { authenticate } from "../shopify.server";
 
 export const loader = async ({ request }) => {
-  const { admin, session } = await authenticate.admin(request);
+  const { admin, billing, session } = await authenticate.admin(request);
+  const { assertProAnalyticsAccess } = await import("../billing.server");
+  const access = await assertProAnalyticsAccess(billing, session.shop);
+
+  if (!access.allowed) {
+    return new Response(access.message, {
+      status: 403,
+      headers: { "Content-Type": "text/plain; charset=utf-8" },
+    });
+  }
+
   const { searchParams } = new URL(request.url);
 
   try {
