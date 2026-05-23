@@ -6,10 +6,12 @@
 %}
 
 {% unless product %}
-  {% comment %}Wishlist button only renders on product templates with a product.{% endcomment %}
+  {% comment %}Product page embed only renders when a product is available.{% endcomment %}
 {% else %}
 <div
   data-wishlist-pdp
+  data-wishlist-auto-insert="true"
+  class="wishlist-pro-inline wishlist-pro-inline--pending"
   data-wishlist-config='{
     "productId": {{ product.admin_graphql_api_id | json }},
     "productHandle": {{ product.handle | json }},
@@ -21,10 +23,13 @@
     "loginUrl": {{ routes.account_login_url | json }},
     "addLabel": {{ block.settings.add_label | json }},
     "addedLabel": {{ block.settings.added_label | json }},
+    "loginText": {{ block.settings.login_text | json }},
+    "targetSelector": {{ block.settings.target_selector | json }},
     "buttonStyle": {{ block.settings.button_style | json }},
     "buttonAccentColor": {{ block.settings.button_accent_color | json }},
     "buttonTextColor": {{ block.settings.button_text_color | json }},
-    "buttonIconColor": {{ block.settings.button_icon_color | json }}
+    "buttonIconColor": {{ block.settings.button_icon_color | json }},
+    "buttonIcon": {{ block.settings.button_icon | json }}
   }'
 >
   <button
@@ -33,22 +38,16 @@
     data-wishlist-button
     aria-pressed="false"
   >
-    <span class="wishlist-pro-button__icon" aria-hidden="true">♥</span>
+    {% render 'wishlist-button-icon', icon_type: block.settings.button_icon %}
     <span data-wishlist-label>{{ block.settings.add_label }}</span>
   </button>
-
-  {% unless customer %}
-    <p class="wishlist-pro-login-note" data-wishlist-login-note hidden>
-      {{ block.settings.login_text }}
-    </p>
-  {% endunless %}
 </div>
 {% endunless %}
 
 {% schema %}
 {
-  "name": "Wishlist button",
-  "target": "section",
+  "name": "Product wishlist (auto)",
+  "target": "body",
   "stylesheet": "wishlist.css",
   "javascript": "wishlist-pdp.js",
   "enabled_on": {
@@ -72,6 +71,25 @@
       "id": "login_text",
       "label": "Logged out helper text",
       "default": "Sign in to save this product."
+    },
+    {
+      "type": "text",
+      "id": "target_selector",
+      "label": "Optional custom target selector",
+      "info": "Use this if your theme needs a custom product-page anchor.",
+      "default": ".product-form, product-form, .product__info-wrapper, .product-info"
+    },
+    {
+      "type": "select",
+      "id": "button_icon",
+      "label": "Icon",
+      "default": "heart",
+      "options": [
+        { "value": "heart", "label": "Heart (filled)" },
+        { "value": "heart-outline", "label": "Heart (outline)" },
+        { "value": "bookmark", "label": "Bookmark" },
+        { "value": "star", "label": "Star" }
+      ]
     },
     {
       "type": "select",

@@ -1,6 +1,7 @@
 /* eslint-disable react/prop-types */
-import { useLoaderData, useRouteError } from "react-router";
+import { Link, useLoaderData, useRouteError } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
+import { PRO_PLAN_PRICE } from "../billing.constants";
 import { AppLink } from "../components/app-link";
 import {
   AreaTrendChart,
@@ -8,8 +9,6 @@ import {
   HorizontalBarChart,
   VerticalBarChart,
 } from "../components/analytics-charts";
-import { getShopSettings } from "../models/shop-settings.server";
-import { loadWishlistAnalyticsReport } from "../models/wishlist-analytics.server";
 import styles from "../styles/app-analytics.module.css";
 
 function formatPercent(value) {
@@ -41,22 +40,107 @@ function MetricCard({ label, value, hint }) {
 
 export const loader = async ({ request }) => {
   const { authenticate } = await import("../shopify.server");
-  const { admin, session } = await authenticate.admin(request);
-  const [report, settings] = await Promise.all([
-    loadWishlistAnalyticsReport(admin),
+  const { hasProSubscription } = await import("../billing.server");
+  const { getShopSettings } = await import("../models/shop-settings.server");
+  const { loadWishlistAnalyticsReport } = await import(
+    "../models/wishlist-analytics.server"
+  );
+  const { hasDemoProAccess } = await import("../billing.server");
+  const { admin, session, billing } = await authenticate.admin(request);
+  const demoPro = hasDemoProAccess(session.shop);
+  const [isPro, settings] = await Promise.all([
+    hasProSubscription(billing, session.shop),
     getShopSettings(session.shop),
   ]);
 
+  if (!isPro) {
+    return {
+      isPro: false,
+      demoPro,
+      shopDomain: session.shop,
+      settings,
+      available: false,
+      analytics: null,
+      error: null,
+      protectedCustomerAccessBlocked: false,
+    };
+  }
+
+  const report = await loadWishlistAnalyticsReport(admin);
+
   return {
+    isPro: true,
+    demoPro,
     shopDomain: session.shop,
     settings,
     ...report,
   };
 };
 
+function ProUpgradePanel() {
+  return (
+    <section className={styles.upgradeCard}>
+      <p className={styles.eyebrow}>Wishlist Pro</p>
+      <h2 className={styles.upgradeTitle}>Unlock analytics & export</h2>
+      <p className={styles.upgradeText}>
+        Pro includes wishlist analytics, CSV export, and login-only storefront mode.
+        Free plan keeps guest wishlists, theme blocks, and the wishlist page.
+      </p>
+      <ul className={styles.upgradeList}>
+        <li>Adoption, activity, and top product charts</li>
+        <li>Export customers and products to CSV</li>
+        <li>Require login before shoppers can save</li>
+      </ul>
+      <p className={styles.upgradePrice}>
+        <strong>${PRO_PLAN_PRICE.amount}/month</strong> · {PRO_PLAN_PRICE.trialDays}-day free
+        trial
+      </p>
+      <Link className={styles.upgradeButton} to="/app/billing" reloadDocument>
+        Start Pro trial
+      </Link>
+      <AppLink className={styles.upgradeLink} href="/app">
+        Back to dashboard
+      </AppLink>
+    </section>
+  );
+}
+
 export default function AnalyticsPage() {
-  const { available, protectedCustomerAccessBlocked, analytics, error, shopDomain, settings } =
-    useLoaderData();
+  const {
+    isPro,
+    demoPro,
+    available,
+    protectedCustomerAccessBlocked,
+    analytics,
+    error,
+    shopDomain,
+    settings,
+  } = useLoaderData();
+
+  if (!isPro) {
+    return (
+      <s-page heading="Wishlist analytics">
+        <div className={styles.page}>
+          <section className={styles.hero}>
+            <p className={styles.eyebrow}>Store intelligence</p>
+            <h1 className={styles.heroTitle}>Analytics is a Pro feature</h1>
+            <p className={styles.heroText}>
+              Upgrade to see what shoppers save, export wishlist data, and enable
+              login-only mode on the storefront.
+            </p>
+            {shopDomain ? (
+              <p className={styles.heroHint}>
+                Demo store: <code>{shopDomain}</code> — add{" "}
+                <code>DEMO_PRO_SHOPS={shopDomain}</code> or{" "}
+                <code>DEMO_PRO_ACCESS=true</code> on Vercel, then redeploy.
+              </p>
+            ) : null}
+          </section>
+          <ProUpgradePanel />
+        </div>
+      </s-page>
+    );
+  }
 
   if (!available) {
     return (
@@ -65,6 +149,9 @@ export default function AnalyticsPage() {
           <section className={styles.hero}>
             <p className={styles.eyebrow}>Store intelligence</p>
             <h1 className={styles.heroTitle}>Wishlist analytics unavailable</h1>
+            {demoPro ? (
+              <p className={styles.heroBadge}>Demo Pro active — data access still required</p>
+            ) : null}
             <p className={styles.heroText}>
               {protectedCustomerAccessBlocked
                 ? "Approve protected customer data access in Partner Dashboard, reinstall the app, then return here."
@@ -73,12 +160,34 @@ export default function AnalyticsPage() {
           </section>
           <article className={`${styles.insightCard} ${styles.insightCardWarning}`}>
             <p className={styles.insightTitle}>What you can do next</p>
-            <p className={styles.insightText}>
-              Run the setup health check, confirm customer metafields are writable,
-              and test a wishlist save on the storefront.
-            </p>
-            <AppLink className={styles.linkButton} href="/app">
-              Back to dashboard
+            {protectedCustomerAccessBlocked ? (
+              <ol className={styles.stepsList}>
+                <li>
+                  Open{" "}
+                  <a
+                    href="https://partners.shopify.com"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Partner Dashboard
+                  </a>{" "}
+                  → your app → <strong>API access requests</strong> → approve
+                  customer data.
+                </li>
+                <li>Uninstall Wishlist Pro on the store, then install again.</li>
+                <li>
+                  Save a wishlist on the storefront (guest login sync or Setup QA lab),
+                  then refresh this page.
+                </li>
+              </ol>
+            ) : (
+              <p className={styles.insightText}>
+                Run the setup health check, confirm customer metafields are writable,
+                and test a wishlist save on the storefront.
+              </p>
+            )}
+            <AppLink className={styles.linkButton} href="/app/setup">
+              Open Setup &amp; QA
             </AppLink>
           </article>
         </div>
@@ -99,12 +208,21 @@ export default function AnalyticsPage() {
     <s-page heading="Wishlist analytics">
       <div className={styles.page}>
         <section className={styles.hero}>
-          <p className={styles.eyebrow}>Store intelligence</p>
-          <h1 className={styles.heroTitle}>Understand what shoppers are saving</h1>
-          <p className={styles.heroText}>
-            Live wishlist insights from customer metafields. Use this page to find
-            popular products, active customers, and overall adoption.
-          </p>
+          <div className={styles.heroTopRow}>
+            <div>
+              <p className={styles.eyebrow}>Store intelligence</p>
+              <h1 className={styles.heroTitle}>Understand what shoppers are saving</h1>
+              <p className={styles.heroText}>
+                Live wishlist insights from customer metafields. Use this page to find
+                popular products, active customers, and overall adoption.
+              </p>
+            </div>
+            <div className={styles.heroActions}>
+              <a className={styles.exportButton} href="/app/api/analytics-export">
+                Export CSV
+              </a>
+            </div>
+          </div>
         </section>
 
         {summary.truncated ? (
@@ -310,3 +428,7 @@ export default function AnalyticsPage() {
 export function ErrorBoundary() {
   return boundary.error(useRouteError());
 }
+
+export const headers = (headersArgs) => {
+  return boundary.headers(headersArgs);
+};

@@ -20,7 +20,8 @@
     "buttonStyle": {{ block.settings.button_style | json }},
     "buttonAccentColor": {{ block.settings.button_accent_color | json }},
     "buttonTextColor": {{ block.settings.button_text_color | json }},
-    "buttonIconColor": {{ block.settings.button_icon_color | json }}
+    "buttonIconColor": {{ block.settings.button_icon_color | json }},
+    "buttonIcon": {{ block.settings.button_icon | json }}
   }
 </script>
 
@@ -57,6 +58,18 @@
       "id": "product_link_selector",
       "label": "Product link selector",
       "default": "a[href*='/products/'], a.product-card__link, a.full-unstyled-link, a.card__heading a"
+    },
+    {
+      "type": "select",
+      "id": "button_icon",
+      "label": "Icon",
+      "default": "heart",
+      "options": [
+        { "value": "heart", "label": "Heart (filled)" },
+        { "value": "heart-outline", "label": "Heart (outline)" },
+        { "value": "bookmark", "label": "Bookmark" },
+        { "value": "star", "label": "Star" }
+      ]
     },
     {
       "type": "select",

@@ -2,9 +2,11 @@ import "@shopify/shopify-app-react-router/adapters/node";
 import {
   ApiVersion,
   AppDistribution,
+  BillingInterval,
   shopifyApp,
 } from "@shopify/shopify-app-react-router/server";
 import { PrismaSessionStorage } from "@shopify/shopify-app-session-storage-prisma";
+import { PRO_PLAN, PRO_PLAN_PRICE } from "./billing.constants";
 import prisma from "./db.server";
 
 const shopify = shopifyApp({
@@ -16,6 +18,18 @@ const shopify = shopifyApp({
   authPathPrefix: "/auth",
   sessionStorage: new PrismaSessionStorage(prisma),
   distribution: AppDistribution.AppStore,
+  billing: {
+    [PRO_PLAN]: {
+      trialDays: PRO_PLAN_PRICE.trialDays,
+      lineItems: [
+        {
+          amount: PRO_PLAN_PRICE.amount,
+          currencyCode: PRO_PLAN_PRICE.currencyCode,
+          interval: BillingInterval.Every30Days,
+        },
+      ],
+    },
+  },
   future: {
     expiringOfflineAccessTokens: true,
   },

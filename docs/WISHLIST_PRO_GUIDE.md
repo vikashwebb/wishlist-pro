@@ -85,7 +85,8 @@ Important files:
 
 Theme blocks:
 
-- [`extensions/wishlist-theme/blocks/pdp-wishlist-button.liquid`](/Users/dinesh/Documents/shopfiy-apps/wishlist-pro/extensions/wishlist-theme/blocks/pdp-wishlist-button.liquid)
+- [`extensions/wishlist-theme/blocks/wishlist-product-button.liquid`](/Users/dinesh/Documents/shopfiy-apps/wishlist-pro/extensions/wishlist-theme/blocks/wishlist-product-button.liquid)
+- [`extensions/wishlist-theme/blocks/wishlist-product-embed.liquid`](/Users/dinesh/Documents/shopfiy-apps/wishlist-pro/extensions/wishlist-theme/blocks/wishlist-product-embed.liquid)
 - [`extensions/wishlist-theme/blocks/wishlist-product-cards.liquid`](/Users/dinesh/Documents/shopfiy-apps/wishlist-pro/extensions/wishlist-theme/blocks/wishlist-product-cards.liquid)
 - [`extensions/wishlist-theme/blocks/wishlist-page.liquid`](/Users/dinesh/Documents/shopfiy-apps/wishlist-pro/extensions/wishlist-theme/blocks/wishlist-page.liquid)
 
@@ -95,7 +96,7 @@ The product-page wishlist button is already available as a theme app block.
 
 Block file:
 
-- [`extensions/wishlist-theme/blocks/pdp-wishlist-button.liquid`](/Users/dinesh/Documents/shopfiy-apps/wishlist-pro/extensions/wishlist-theme/blocks/pdp-wishlist-button.liquid)
+- [`extensions/wishlist-theme/blocks/wishlist-product-button.liquid`](/Users/dinesh/Documents/shopfiy-apps/wishlist-pro/extensions/wishlist-theme/blocks/wishlist-product-button.liquid)
 
 What it does:
 
@@ -111,15 +112,15 @@ How to add it in Shopify:
 3. Click `Customize` on the active theme.
 4. Open a product template.
 5. In the product information section, click `Add block`.
-6. Choose the app block named `Wishlist button`.
+6. Choose the app block named `Product wishlist button`.
 7. Place it where you want on the product details page.
 8. Save the theme.
 
 How to add it from the app for JSON themes:
 
 1. Open the embedded Wishlist Pro dashboard.
-2. Go to the `Product page button` section.
-3. Click `Add app block for JSON themes`.
+2. Go to the product page wishlist button section.
+3. Click `Open product block settings`.
 4. Shopify opens the product template in Theme Editor and pre-adds the app
    block in the Apps section.
 5. Review the placement and save the theme.
@@ -127,10 +128,10 @@ How to add it from the app for JSON themes:
 If the theme uses a liquid product template:
 
 1. Open the embedded Wishlist Pro dashboard.
-2. Go to the `Product page button` section.
-3. Click `Activate embed for liquid themes`.
+2. Go to the product page wishlist button section.
+3. Click `Open app embed settings`.
 4. Shopify opens `Theme settings` > `App embeds`.
-5. Enable the `Product page button` embed and save the theme.
+5. Enable `Product wishlist (auto)` and save the theme.
 
 Available block settings:
 

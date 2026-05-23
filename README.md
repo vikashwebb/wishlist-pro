@@ -14,6 +14,7 @@ It includes:
 
 - Product guide: [docs/WISHLIST_PRO_GUIDE.md](/Users/dinesh/Documents/shopfiy-apps/wishlist-pro/docs/WISHLIST_PRO_GUIDE.md)
 - Local setup: [WISHLIST_SETUP.md](/Users/dinesh/Documents/shopfiy-apps/wishlist-pro/WISHLIST_SETUP.md)
+- **Full QA checklist:** [docs/QA_CHECKLIST.md](/Users/dinesh/Documents/shopfiy-apps/wishlist-pro/docs/QA_CHECKLIST.md)
 
 ## Quick Start
 
@@ -23,6 +24,8 @@ npx prisma generate
 npx prisma migrate deploy
 npm run dev
 ```
+
+Sessions and shop settings are stored in `.data/dev.sqlite` (no external database required for local dev).
 
 ## Useful Commands
 

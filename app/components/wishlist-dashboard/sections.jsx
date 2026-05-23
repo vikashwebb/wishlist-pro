@@ -205,8 +205,18 @@ function StorefrontRulesSection({ d }) {
                   <span>
                     Require customer login before shoppers can save products to
                     wishlist
+                    {!d.isPro ? (
+                      <strong className={styles.proTag}> · Pro</strong>
+                    ) : null}
                   </span>
                 </label>
+
+                {!d.isPro ? (
+                  <div className={`${styles.callout} ${styles.calloutInfo}`}>
+                    Login-only mode is included with Wishlist Pro ($5.99/mo). Upgrade
+                    from the Analytics page to enable it.
+                  </div>
+                ) : null}
 
                 <div className={`${styles.callout} ${styles.calloutInfo}`}>
                   Button colors and styles are configured in the Theme Editor on
@@ -273,29 +283,11 @@ function WishlistPageSection({ d }) {
                 ) : null}
 
                 <div className={`${styles.callout} ${styles.calloutInfo}`}>
-                  Enable <strong>Wishlist page loader</strong> for the wishlist page
-                  UI. Guest saves merge when shoppers visit pages that load wishlist
-                  scripts (product page, collection cards, wishlist page). Do
-                  not add the <strong>Wishlist page</strong> app block on the same
-                  page — the app already injects the wishlist UI into the page
-                  content.
-                </div>
-                <div className={styles.buttonRow}>
-                  <ActionButton
-                    action={
-                      d.wishlistPageEmbedEditorUrl
-                        ? {
-                            label: "Enable wishlist page loader",
-                            href: d.wishlistPageEmbedEditorUrl,
-                            target: "_top",
-                            rel: "noreferrer",
-                          }
-                        : {
-                            label: "Enable wishlist page loader",
-                            disabled: true,
-                          }
-                    }
-                  />
+                  Creating or updating the wishlist page includes the wishlist UI
+                  and scripts in the page content. Do not add the{" "}
+                  <strong>Wishlist page</strong> app block on the same page. Guest
+                  saves merge when shoppers visit pages that load wishlist scripts
+                  (product page, collection cards, wishlist page).
                 </div>
 
                 <div className={styles.fieldGrid}>
@@ -396,7 +388,9 @@ function ThemePlacementSection({ d }) {
                 <div className={styles.pathGrid}>
                   <article className={styles.pathCard}>
                     <span className={styles.metricLabel}>Recommended</span>
-                    <h4 className={styles.pathTitle}>Product page app block</h4>
+                    <h4 className={styles.pathTitle}>
+                      Product page wishlist button
+                    </h4>
                     <p className={styles.pathText}>
                       Best for Online Store 2.0 product templates that support
                       sections and blocks.
@@ -420,7 +414,9 @@ function ThemePlacementSection({ d }) {
 
                   <article className={styles.pathCard}>
                     <span className={styles.metricLabel}>Fallback</span>
-                    <h4 className={styles.pathTitle}>Product page app embed</h4>
+                    <h4 className={styles.pathTitle}>
+                      Product page wishlist button (auto-insert)
+                    </h4>
                     <p className={styles.pathText}>
                       Use this when liquid product templates do not support app
                       blocks.

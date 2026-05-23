@@ -1,0 +1,7 @@
+{%- liquid
+  assign icon_type = icon_type | default: 'heart'
+  unless icon_type == 'heart' or icon_type == 'heart-outline' or icon_type == 'bookmark' or icon_type == 'star'
+    assign icon_type = 'heart'
+  endunless
+-%}
+<span class="wishlist-pro-button__icon" data-icon="{{ icon_type }}" aria-hidden="true"></span>

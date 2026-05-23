@@ -15,6 +15,8 @@ npx prisma generate
 npx prisma migrate deploy
 ```
 
+OAuth sessions and shop settings are stored in **`.data/dev.sqlite`** (SQLite). No separate database server is required.
+
 Create `.env` values through the CLI when prompted by:
 
 ```bash
@@ -76,9 +78,9 @@ Expected local flow:
 3. The CLI shows an install preview URL.
 4. Open the app from the connected development store admin.
 
-## 5. OAuth and session storage
+## 5. OAuth and session storage (SQLite)
 
-This app already uses Shopify's default React Router flow:
+This app uses Shopify's default React Router flow with **Prisma + SQLite**:
 
 - [`app/shopify.server.js`](/Users/dinesh/Documents/shopfiy-apps/wishlist-pro/app/shopify.server.js)
 - [`app/routes/auth.$.jsx`](/Users/dinesh/Documents/shopfiy-apps/wishlist-pro/app/routes/auth.$.jsx)
@@ -87,8 +89,22 @@ This app already uses Shopify's default React Router flow:
 What matters:
 
 - `authenticate.admin(request)` handles install/auth/session validation.
-- Prisma stores offline and online sessions in SQLite.
+- The `Session` table stores offline/online OAuth sessions (access and refresh tokens).
+- The `ShopSettings` table stores per-shop wishlist configuration.
+- Data file: `.data/dev.sqlite` (created by `npm run setup`; `DATABASE_URL` is written to `.env` automatically).
 - The OAuth callback path is `/auth/callback`.
+
+**Vercel / serverless:** SQLite does not persist reliably on Vercel (ephemeral filesystem, multiple instances). Use local SQLite for dev; for production on Vercel, use hosted MySQL/Postgres or a single always-on host (Fly.io, Railway app + volume).
+
+### "attempt to write a readonly database"
+
+SQLite needs a **writable** file and folder. If you see this error:
+
+1. Run `npm run setup` (creates `.data/dev.sqlite` and sets `DATABASE_URL` in `.env`).
+2. Stop the dev server, then restart with `npm run dev` or `shopify app dev`.
+3. If the project lives in **iCloud Documents**, either move it out of iCloud or set in `.env`:
+   `DATABASE_URL="file:/tmp/wishlist-pro-dev.sqlite"`
+4. Remove stale locks: `rm -f prisma/dev.sqlite-wal prisma/dev.sqlite-shm .data/dev.sqlite-wal .data/dev.sqlite-shm`
 
 ## 6. Wishlist API route
 

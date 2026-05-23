@@ -324,6 +324,11 @@
   color: #1d4ed8;
 }
 
+.proTag {
+  color: #1d6b59;
+  font-weight: 700;
+}
+
 .calloutSuccess {
   background: #ecfdf5;
   color: #166534;

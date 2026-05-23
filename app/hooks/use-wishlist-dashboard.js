@@ -21,6 +21,7 @@ export function useWishlistDashboard() {
     initialWishlistItems,
     initialDiagnostics,
     initialWishlistPage,
+    isPro,
   } = useLoaderData();
 
   const wishlistFetcher = useFetcher();
@@ -265,19 +266,13 @@ export function useWishlistDashboard() {
   const productPageButtonEditorUrl =
     themeEditorBaseUrl && appApiKey
       ? `${themeEditorBaseUrl}?template=product&addAppBlockId=${encodeURIComponent(
-          `${appApiKey}/pdp-wishlist-button`,
+          `${appApiKey}/wishlist-product-button`,
         )}&target=newAppsSection`
       : null;
   const productPageEmbedEditorUrl =
     themeEditorBaseUrl && appApiKey
       ? `${themeEditorBaseUrl}?context=apps&template=product&activateAppId=${encodeURIComponent(
-          `${appApiKey}/pdp-wishlist-embed`,
-        )}`
-      : null;
-  const wishlistPageEmbedEditorUrl =
-    themeEditorBaseUrl && appApiKey
-      ? `${themeEditorBaseUrl}?context=apps&template=page&activateAppId=${encodeURIComponent(
-          `${appApiKey}/wishlist-page-embed`,
+          `${appApiKey}/wishlist-product-embed`,
         )}`
       : null;
   const hasThemeEditorLinks = Boolean(themeEditorBaseUrl && appApiKey);
@@ -602,6 +597,7 @@ export function useWishlistDashboard() {
     customers,
     products,
     customerAccessBlocked,
+    isPro,
     shopDomain,
     selectedCustomerId,
     setSelectedCustomerId,
@@ -630,7 +626,6 @@ export function useWishlistDashboard() {
     wishlistPagePreviewPath,
     productPageButtonEditorUrl,
     productPageEmbedEditorUrl,
-    wishlistPageEmbedEditorUrl,
     hasThemeEditorLinks,
     diagnosticsFresh,
     diagnosticsErrors,

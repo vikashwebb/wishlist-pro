@@ -7,6 +7,33 @@
     return !!config.requireLogin;
   }
 
+  var ICON_TYPES = ["heart", "heart-outline", "bookmark", "star"];
+
+  function normalizeIconType(value) {
+    return ICON_TYPES.indexOf(value) >= 0 ? value : "heart";
+  }
+
+  function iconMarkup(iconType) {
+    return (
+      '<span class="wishlist-pro-button__icon" data-icon="' +
+      normalizeIconType(iconType) +
+      '" aria-hidden="true"></span>'
+    );
+  }
+
+  function applyButtonIcon(button, config) {
+    var icon = button.querySelector(".wishlist-pro-button__icon");
+    var type = normalizeIconType(config && config.buttonIcon);
+
+    if (!icon) {
+      button.insertAdjacentHTML("afterbegin", iconMarkup(type));
+      return;
+    }
+
+    icon.setAttribute("data-icon", type);
+    icon.textContent = "";
+  }
+
   function applyDefaultAppearance(config) {
     if (typeof config.buttonStyle !== "string") {
       config.buttonStyle = "outline";
@@ -22,6 +49,10 @@
 
     if (typeof config.buttonIconColor !== "string") {
       config.buttonIconColor = "#0f172a";
+    }
+
+    if (typeof config.buttonIcon !== "string") {
+      config.buttonIcon = "heart";
     }
 
     return config;
@@ -57,6 +88,7 @@
       "--wishlist-button-icon",
       config.buttonIconColor || "#0f172a",
     );
+    applyButtonIcon(button, config);
   }
 
   function emptyState() {
@@ -408,7 +440,7 @@
     button.setAttribute("aria-pressed", "false");
     button.setAttribute("data-wishlist-button", "true");
     button.innerHTML =
-      '<span class="wishlist-pro-button__icon" aria-hidden="true">♥</span>' +
+      iconMarkup(config.buttonIcon) +
       "<span data-wishlist-label>" +
       labels.add +
       "</span>";

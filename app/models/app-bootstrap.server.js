@@ -86,7 +86,9 @@ async function getInitialDiagnostics(admin, customerId) {
 
 export async function loadWishlistDashboardBootstrap({ request }) {
   const { authenticate } = await import("../shopify.server");
-  const { admin, session } = await authenticate.admin(request);
+  const { hasProSubscription } = await import("../billing.server");
+  const { admin, session, billing } = await authenticate.admin(request);
+  const isPro = await hasProSubscription(billing, session.shop);
   // eslint-disable-next-line no-undef
   const appApiKey = process.env.SHOPIFY_API_KEY || "";
 
@@ -146,6 +148,7 @@ export async function loadWishlistDashboardBootstrap({ request }) {
       customers,
       products,
       settings,
+      isPro,
       shopDomain: session.shop,
       mainThemeId: await getMainThemeId(admin, accessScopes),
       appApiKey,
@@ -200,6 +203,7 @@ export async function loadWishlistDashboardBootstrap({ request }) {
       customers: [],
       products: fallbackJson.data?.products?.nodes ?? [],
       settings,
+      isPro,
       shopDomain: session.shop,
       mainThemeId: await getMainThemeId(admin, accessScopes),
       appApiKey,

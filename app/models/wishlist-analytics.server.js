@@ -39,6 +39,7 @@ export function buildWishlistAnalytics(customers = [], options = {}) {
       displayName: customer.displayName || customer.email || customer.id,
       email: customer.email || null,
       itemCount: items.length,
+      productIds: items,
       updatedAt,
     });
 
@@ -97,6 +98,20 @@ export function buildWishlistAnalytics(customers = [], options = {}) {
     customersWithWishlist,
   });
 
+  const exportProductCounts = [...productCounts.values()]
+    .sort((left, right) => {
+      if (right.customerIds.size !== left.customerIds.size) {
+        return right.customerIds.size - left.customerIds.size;
+      }
+
+      return right.saveCount - left.saveCount;
+    })
+    .map((entry) => ({
+      productId: entry.productId,
+      saveCount: entry.saveCount,
+      customerCount: entry.customerIds.size,
+    }));
+
   return {
     summary: {
       customersScanned: customers.length,
@@ -111,6 +126,8 @@ export function buildWishlistAnalytics(customers = [], options = {}) {
     topCustomers,
     recentActivity,
     charts,
+    exportCustomers: customerRows,
+    exportProductCounts,
   };
 }
 

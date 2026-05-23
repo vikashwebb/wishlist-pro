@@ -18,3 +18,16 @@ CREATE TABLE "Session" (
     "refreshToken" TEXT,
     "refreshTokenExpires" DATETIME
 );
+
+-- CreateTable
+CREATE TABLE "ShopSettings" (
+    "shop" TEXT NOT NULL PRIMARY KEY,
+    "wishlistRequiresLogin" BOOLEAN NOT NULL DEFAULT false,
+    "wishlistPageTitle" TEXT NOT NULL DEFAULT 'Wishlist',
+    "wishlistPageHandle" TEXT NOT NULL DEFAULT 'wishlist',
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL
+);
+
+-- CreateIndex
+CREATE INDEX "Session_shop_idx" ON "Session"("shop");
