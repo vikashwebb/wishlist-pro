@@ -1,14 +1,23 @@
 /* eslint-disable react/prop-types */
 import { LaunchRail } from "./launch-rail";
+import { LaunchStatusStrip } from "./launch-status-strip";
 import { dashboardStyles as styles } from "./shared";
 
-export function DashboardLayout({ d, intro, children }) {
+/**
+ * @param {"full" | "compact"} rail
+ * - full: home only — side panel with checklist, config, and health
+ * - compact: workspace pages — slim status strip + full-width content
+ */
+export function DashboardLayout({ d, intro, children, rail = "compact" }) {
+  const showFullRail = rail === "full";
+
   return (
     <div className={styles.page}>
       {intro}
-      <div className={styles.mainGrid}>
+      {!showFullRail ? <LaunchStatusStrip d={d} /> : null}
+      <div className={showFullRail ? styles.mainGrid : styles.mainSingle}>
         {children}
-        <LaunchRail d={d} />
+        {showFullRail ? <LaunchRail d={d} /> : null}
       </div>
     </div>
   );

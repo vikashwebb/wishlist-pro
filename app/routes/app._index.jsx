@@ -4,8 +4,9 @@ import { boundary } from "@shopify/shopify-app-react-router/server";
 import { loadWishlistDashboardBootstrap } from "../models/app-bootstrap.server";
 import { DashboardLayout } from "../components/wishlist-dashboard/dashboard-layout";
 import { AppLink } from "../components/app-link";
+import { HeroLaunchStatus } from "../components/wishlist-dashboard/hero-launch-status";
+import { MerchantQaPanel } from "../components/wishlist-dashboard/merchant-qa-panel";
 import {
-  ActionButton,
   StatusPill,
   dashboardStyles as styles,
 } from "../components/wishlist-dashboard/shared";
@@ -28,30 +29,14 @@ export default function HomePage() {
           blocks, validate with QA, and review analytics — each in its own workspace.
         </p>
 
-        <div className={styles.heroSignalRow}>
-          <div className={styles.progressBadge}>
-            <strong>{d.progressPercent}%</strong>
-            <span>{d.readinessLabel}</span>
-          </div>
-          <StatusPill tone={d.qaStepComplete ? "success" : "warning"}>
-            {d.qaStepComplete ? "First value reached" : "Activation in progress"}
-          </StatusPill>
-          <StatusPill tone={d.wishlistRequiresLogin ? "warning" : "success"}>
-            {d.wishlistRequiresLogin ? "Login required mode" : "Guest wishlist enabled"}
-          </StatusPill>
-        </div>
-
-        <div className={styles.progressTrack}>
-          <span
-            className={styles.progressFill}
-            style={{ width: `${d.progressPercent}%` }}
-          />
-        </div>
-
-        <div className={styles.heroActions}>
-          <ActionButton action={d.primaryHeroAction} />
-          <ActionButton action={d.secondaryHeroAction} secondary />
-        </div>
+        <HeroLaunchStatus
+          progressPercent={d.progressPercent}
+          readinessLabel={d.readinessLabel}
+          qaStepComplete={d.qaStepComplete}
+          wishlistRequiresLogin={d.wishlistRequiresLogin}
+          primaryAction={d.primaryHeroAction}
+          secondaryAction={d.secondaryHeroAction}
+        />
       </div>
     </section>
   );
@@ -60,6 +45,7 @@ export default function HomePage() {
     <s-page heading="Wishlist Pro">
       <DashboardLayout
         d={d}
+        rail="full"
         intro={intro}
         children={
           <section className={styles.stageSection}>
@@ -70,6 +56,8 @@ export default function HomePage() {
                 Work through setup in order, or jump to the area you need.
               </p>
             </div>
+
+            <MerchantQaPanel d={d} variant="compact" />
 
             <div className={styles.pageNavGrid}>
               {d.setupPages.map((page) => (

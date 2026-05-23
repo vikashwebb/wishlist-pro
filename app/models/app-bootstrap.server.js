@@ -1,4 +1,8 @@
 import { getShopSettings } from "./shop-settings.server";
+import {
+  hasOnlineStorePagesScope,
+  provisionWishlistInfrastructure,
+} from "./shop-provision.server";
 import { getWishlistDiagnostics, readWishlist } from "./wishlist.server";
 import { ensureWishlistPageBodyCurrent } from "./wishlist-page.server";
 
@@ -138,10 +142,25 @@ export async function loadWishlistDashboardBootstrap({ request }) {
     }
 
     const settings = await getShopSettings(session.shop);
-    const [initialWishlistPage, initialDiagnostics] = await Promise.all([
-      getInitialWishlistPage(admin, accessScopes, settings),
-      getInitialDiagnostics(admin, initialSelectedCustomerId || undefined),
-    ]);
+    const provision = await provisionWishlistInfrastructure(admin, {
+      settings,
+      accessScopes,
+    });
+
+    if (provision.errors.length > 0) {
+      console.error("wishlist.provision.bootstrap.errors", provision.errors);
+    }
+
+    let initialWishlistPage = provision.wishlistPage;
+    if (!initialWishlistPage && hasOnlineStorePagesScope(accessScopes)) {
+      const pageResult = await getInitialWishlistPage(admin, accessScopes, settings);
+      initialWishlistPage = pageResult;
+    }
+
+    const initialDiagnostics = await getInitialDiagnostics(
+      admin,
+      initialSelectedCustomerId || undefined,
+    );
 
     return {
       accessScopes,
@@ -192,10 +211,22 @@ export async function loadWishlistDashboardBootstrap({ request }) {
         (scope) => scope.handle,
       ) ?? [];
     const settings = await getShopSettings(session.shop);
-    const [initialWishlistPage, initialDiagnosticsRaw] = await Promise.all([
-      getInitialWishlistPage(admin, accessScopes, settings),
-      getInitialDiagnostics(admin),
-    ]);
+    const provision = await provisionWishlistInfrastructure(admin, {
+      settings,
+      accessScopes,
+    });
+
+    if (provision.errors.length > 0) {
+      console.error("wishlist.provision.bootstrap.errors", provision.errors);
+    }
+
+    let initialWishlistPage = provision.wishlistPage;
+    if (!initialWishlistPage && hasOnlineStorePagesScope(accessScopes)) {
+      const pageResult = await getInitialWishlistPage(admin, accessScopes, settings);
+      initialWishlistPage = pageResult;
+    }
+
+    const initialDiagnosticsRaw = await getInitialDiagnostics(admin);
     const initialDiagnostics = markCustomerAccessBlocked(initialDiagnosticsRaw);
 
     return {

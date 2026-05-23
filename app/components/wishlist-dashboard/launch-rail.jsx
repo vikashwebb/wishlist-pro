@@ -1,110 +1,178 @@
 /* eslint-disable react/prop-types */
 import { AppLink } from "../app-link";
-import { StatusPill, dashboardStyles as styles } from "./shared";
+import {
+  ActionButton,
+  StatusPill,
+  dashboardStyles as styles,
+} from "./shared";
+
+function RailSummaryStat({ label, value, tone = "neutral" }) {
+  return (
+    <div className={`${styles.railSummaryStat} ${styles[`railSummaryStat_${tone}`]}`}>
+      <span className={styles.railSummaryLabel}>{label}</span>
+      <strong className={styles.railSummaryValue}>{value}</strong>
+    </div>
+  );
+}
+
+function TimelineStep({ complete, title, detail, href }) {
+  return (
+    <li className={styles.railTimelineItem}>
+      <span
+        className={`${styles.railTimelineMarker} ${
+          complete ? styles.railTimelineMarkerComplete : ""
+        }`}
+        aria-hidden="true"
+      />
+      <div className={styles.railTimelineCopy}>
+        <AppLink className={styles.railTimelineTitle} href={href}>
+          {title}
+        </AppLink>
+        <p className={styles.railTimelineDetail}>{detail}</p>
+      </div>
+    </li>
+  );
+}
+
+function ConfigTile({ label, value }) {
+  return (
+    <div className={styles.railMetricTile}>
+      <span className={styles.railMetricLabel}>{label}</span>
+      <strong className={styles.railMetricValue}>{value}</strong>
+    </div>
+  );
+}
+
+function HealthCheckRow({ label, status, tone }) {
+  return (
+    <div className={styles.railHealthItem}>
+      <span className={styles.railHealthLabel}>{label}</span>
+      <StatusPill tone={tone}>{status}</StatusPill>
+    </div>
+  );
+}
 
 export function LaunchRail({ d }) {
+  const healthPassCount = d.healthItems.filter((item) => item.tone === "success").length;
+  const healthTone =
+    healthPassCount === d.healthItems.length
+      ? "success"
+      : healthPassCount > 0
+        ? "warning"
+        : "neutral";
+
+  const runCheckAction = {
+    label: d.diagnosticsFresh ? "Re-run system check" : "Run system check",
+    onClick: d.runDiagnostics,
+    loading: d.isCheckingMetafield,
+  };
+
   return (
     <aside className={styles.railColumn}>
       <div className={styles.railSticky}>
-        <section className={styles.railPanel}>
-          <p className={styles.sectionEyebrow}>Live side panel</p>
-          <h3 className={styles.railTitle}>System health and launch status</h3>
-          <p className={styles.railText}>
-            Track what is live, what is blocked, and what to do next.
-          </p>
-
-                    <div className={styles.scoreCard}>
-            <div className={styles.scoreHeader}>
-              <span className={styles.metricLabel}>Setup completion</span>
-              <strong className={styles.scoreValue}>{d.progressPercent}%</strong>
-            </div>
-            <div className={styles.progressTrack}>
-              <span
-                className={styles.progressFill}
-                style={{ width: `${d.progressPercent}%` }}
+        <div id="launch-monitor" className={styles.railShell}>
+          <header className={styles.railShellHeader}>
+            <p className={styles.sectionEyebrow}>Live monitor</p>
+            <h3 className={styles.railTitle}>Store status at a glance</h3>
+            <p className={styles.railText}>
+              Checklist, configuration, and system health — updated as you work
+              through setup.
+            </p>
+            <div className={styles.railSummary}>
+              <RailSummaryStat
+                label="Setup"
+                value={`${d.progressPercent}%`}
+                tone={d.progressPercent === 100 ? "success" : "warning"}
+              />
+              <RailSummaryStat
+                label="Health checks"
+                value={`${healthPassCount}/${d.healthItems.length}`}
+                tone={healthTone}
               />
             </div>
-            <div className={styles.progressList}>
+          </header>
+
+          <div className={styles.railDivider} />
+
+          <section className={styles.railSection}>
+            <h4 className={styles.railSectionTitle}>Launch checklist</h4>
+            <ol className={styles.railTimeline}>
               {d.progressItems.map((item) => (
-                <div key={item.title} className={styles.progressRow}>
-                  <span
-                    className={`${styles.progressDot} ${
-                      item.complete ? styles.progressDotComplete : ""
-                    }`}
-                  />
-                  <div>
-                    <AppLink className={styles.progressTitle} href={item.href}>
-                      {item.title}
-                    </AppLink>
-                    <p className={styles.progressText}>{item.detail}</p>
-                  </div>
-                </div>
+                <TimelineStep
+                  key={item.title}
+                  complete={item.complete}
+                  title={item.title}
+                  detail={item.detail}
+                  href={item.href}
+                />
+              ))}
+            </ol>
+          </section>
+
+          <div className={styles.railDivider} />
+
+          <section className={styles.railSection}>
+            <h4 className={styles.railSectionTitle}>Configuration</h4>
+            <div className={styles.railMetricGrid}>
+              <ConfigTile
+                label="Storefront"
+                value={d.wishlistRequiresLogin ? "Login required" : "Guest mode"}
+              />
+              <ConfigTile
+                label="Wishlist page"
+                value={d.pageStepComplete ? "Published" : "Not live"}
+              />
+              <ConfigTile label="QA customer" value={d.selectedCustomerLabel} />
+              <ConfigTile label="Saved items" value={String(d.wishlistCount)} />
+            </div>
+            {d.pageStepComplete ? (
+              <p className={styles.railFootnote}>
+                Page URL: <code>{d.wishlistPagePreviewPath}</code>
+              </p>
+            ) : null}
+          </section>
+
+          <div className={styles.railDivider} />
+
+          <section className={styles.railSection}>
+            <div className={styles.railSectionHeader}>
+              <h4 className={styles.railSectionTitle}>System checks</h4>
+              <ActionButton action={runCheckAction} secondary />
+            </div>
+            <div className={styles.railHealthList}>
+              {d.healthItems.map((item) => (
+                <HealthCheckRow
+                  key={item.label}
+                  label={item.label}
+                  status={item.value}
+                  tone={item.tone}
+                />
               ))}
             </div>
-          </div>
-        </section>
+          </section>
 
-        <section className={styles.railPanel}>
-          <p className={styles.sectionEyebrow}>Storefront snapshot</p>
-          <h3 className={styles.railTitle}>Current configuration</h3>
-                    <div className={styles.snapshotList}>
-            <div className={styles.snapshotRow}>
-              <span className={styles.snapshotLabel}>Storefront mode</span>
-              <strong className={styles.snapshotValue}>
-                {d.wishlistRequiresLogin ? "Login required" : "Guest wishlist"}
-              </strong>
-            </div>
-            <div className={styles.snapshotRow}>
-              <span className={styles.snapshotLabel}>Wishlist page</span>
-              <strong className={styles.snapshotValue}>
-                {d.pageStepComplete ? d.wishlistPagePreviewPath : "Not live yet"}
-              </strong>
-            </div>
-            <div className={styles.snapshotRow}>
-              <span className={styles.snapshotLabel}>Selected customer</span>
-              <strong className={styles.snapshotValue}>{d.selectedCustomerLabel}</strong>
-            </div>
-            <div className={styles.snapshotRow}>
-              <span className={styles.snapshotLabel}>Saved items</span>
-              <strong className={styles.snapshotValue}>{d.wishlistCount}</strong>
-            </div>
-          </div>
-        </section>
+          <div className={styles.railDivider} />
 
-        <section className={styles.railPanel}>
-          <p className={styles.sectionEyebrow}>Health checks</p>
-          <h3 className={styles.railTitle}>Live health checks</h3>
-          <div className={styles.healthList}>
-            {d.healthItems.map((item) => (
-              <div key={item.label} className={styles.healthRow}>
-                <div>
-                  <strong className={styles.healthLabel}>{item.label}</strong>
-                  <p className={styles.healthText}>{item.value}</p>
+          <section className={styles.railSection}>
+            <h4 className={styles.railSectionTitle}>QA wishlist preview</h4>
+            {d.wishlistLabels.length > 0 ? (
+              <div className={styles.railSavedScroll}>
+                <div className={styles.savedList}>
+                  {d.wishlistLabels.map((entry) => (
+                    <span key={entry.id} className={styles.savedItem}>
+                      {entry.label}
+                    </span>
+                  ))}
                 </div>
-                <StatusPill tone={item.tone}>{item.value}</StatusPill>
               </div>
-            ))}
-          </div>
-        </section>
-
-        <section className={styles.railPanel}>
-          <p className={styles.sectionEyebrow}>Wishlist snapshot</p>
-          <h3 className={styles.railTitle}>Saved products</h3>
-                    {d.wishlistLabels.length > 0 ? (
-            <div className={styles.savedList}>
-              {d.wishlistLabels.map((entry) => (
-                <span key={entry.id} className={styles.savedItem}>
-                  {entry.label}
-                </span>
-              ))}
-            </div>
-          ) : (
-            <div className={styles.emptyStateCompact}>
-              Wishlist is empty for the active customer. Use the QA lab to save the
-              first product.
-            </div>
-          )}
-        </section>
+            ) : (
+              <p className={styles.railEmptyNote}>
+                No saved products yet for the active QA customer. Add one in Setup
+                &amp; QA.
+              </p>
+            )}
+          </section>
+        </div>
       </div>
     </aside>
   );

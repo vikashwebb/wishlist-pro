@@ -1,4 +1,5 @@
 /* eslint-disable react/prop-types */
+import { AppLink } from "../app-link";
 import { DEFINITION_NAME, KEY, NAMESPACE } from "../../models/wishlist";
 import {
   ActionButton,
@@ -40,9 +41,10 @@ function DataFoundationSection({ d }) {
                   </StatusPill>
                 </div>
                 <p className={styles.stepText}>
-                  Confirm that the wishlist metafield definition exists, Shopify
-                  scopes are active, and the selected customer can actually read
-                  and write wishlist data.
+                  Wishlist Pro creates the customer metafield definition automatically
+                  when you install or open the app. This step confirms scopes,
+                  protected customer access, and that your QA customer can read and
+                  write wishlist data.
                 </p>
 
                 {d.customerAccessBlocked ? (
@@ -213,8 +215,8 @@ function StorefrontRulesSection({ d }) {
 
                 {!d.isPro ? (
                   <div className={`${styles.callout} ${styles.calloutInfo}`}>
-                    Login-only mode is included with Wishlist Pro ($5.99/mo). Upgrade
-                    from the Analytics page to enable it.
+                    Login-only mode is included with Wishlist Pro ($5.99/mo).{" "}
+                    <AppLink href="/app/pricing">View pricing</AppLink> to upgrade.
                   </div>
                 ) : null}
 
@@ -244,7 +246,7 @@ function WishlistPageSection({ d }) {
                   <div>
                     <span className={styles.stepIndex}>Step 3</span>
                     <h3 className={styles.stepTitle}>
-                      Publish the wishlist destination page
+                      Wishlist destination page
                     </h3>
                   </div>
                   <StatusPill
@@ -259,14 +261,15 @@ function WishlistPageSection({ d }) {
                     {d.pageStepComplete
                       ? "Page is live"
                       : d.hasWriteOnlineStorePagesScope
-                        ? "Ready to create"
+                        ? "Creating…"
                         : "Scope required"}
                   </StatusPill>
                 </div>
                 <p className={styles.stepText}>
-                  Give shoppers one reliable place to review everything they have
-                  saved. This turns wishlist from a button feature into a complete
-                  storefront flow.
+                  The app creates a published page at{" "}
+                  <code>{d.wishlistPagePreviewPath}</code> automatically when page
+                  permissions are granted. Customize the title or URL below only if
+                  you need something different.
                 </p>
 
                 {!d.hasWriteOnlineStorePagesScope ? (
@@ -278,7 +281,13 @@ function WishlistPageSection({ d }) {
 
                 {d.pageStepComplete ? (
                   <div className={`${styles.callout} ${styles.calloutSuccess}`}>
-                    Wishlist page detected at <code>/pages/{d.wishlistPage.handle}</code>.
+                    Wishlist page is live at <code>/pages/{d.wishlistPage.handle}</code>.
+                    No manual publish step required.
+                  </div>
+                ) : d.hasWriteOnlineStorePagesScope ? (
+                  <div className={`${styles.callout} ${styles.calloutInfo}`}>
+                    The page is created automatically on install. Refresh this
+                    screen if it does not appear within a few seconds.
                   </div>
                 ) : null}
 
@@ -325,8 +334,8 @@ function WishlistPageSection({ d }) {
                   <ActionButton
                     action={{
                       label: d.pageStepComplete
-                        ? "Update wishlist page"
-                        : "Create wishlist page",
+                        ? "Save page changes"
+                        : "Create wishlist page now",
                       onClick: d.saveWishlistPage,
                       loading: d.isCreatingWishlistPage,
                       disabled: !d.hasWriteOnlineStorePagesScope,

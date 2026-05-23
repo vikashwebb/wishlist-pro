@@ -16,7 +16,7 @@ export const loader = async ({ request }) => {
   return billing.request({
     plan: PRO_PLAN,
     isTest: isBillingTestMode(),
-    returnUrl: proUpgradeReturnUrl(session.shop, "/app/analytics"),
+    returnUrl: proUpgradeReturnUrl(session.shop, "/app/pricing"),
   });
 };
 

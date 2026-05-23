@@ -5,15 +5,12 @@
 }
 
 .hero {
-  display: grid;
-  grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.9fr);
-  gap: 1rem;
-  padding: 1.6rem;
+  padding: 1.6rem 1.6rem 1.4rem;
   border: 1px solid rgb(15 23 42 / 0.08);
   border-radius: 28px;
   background:
-    radial-gradient(circle at top right, rgb(253 230 138 / 0.3), transparent 30%),
-    radial-gradient(circle at left top, rgb(191 219 254 / 0.35), transparent 24%),
+    radial-gradient(circle at top right, rgb(253 230 138 / 0.28), transparent 32%),
+    radial-gradient(circle at left top, rgb(191 219 254 / 0.32), transparent 26%),
     linear-gradient(140deg, #fcfcf8 0%, #f7fafc 46%, #f8f6ef 100%);
   box-shadow: 0 24px 64px rgb(15 23 42 / 0.08);
 }
@@ -73,7 +70,6 @@
   line-height: 1.65;
 }
 
-.heroSignalRow,
 .heroActions,
 .buttonRow,
 .savedList {
@@ -82,27 +78,225 @@
   gap: 0.75rem;
 }
 
-.progressBadge {
-  display: inline-grid;
-  gap: 0.2rem;
-  min-width: 7.5rem;
-  padding: 0.85rem 1rem;
-  border: 1px solid rgb(15 23 42 / 0.08);
-  border-radius: 18px;
-  background: rgb(255 255 255 / 0.78);
+.heroStatusPanel {
+  display: grid;
+  gap: 1.15rem;
+  margin-top: 0.35rem;
+  padding: 1.2rem 1.25rem;
+  border: 1px solid rgb(15 23 42 / 0.07);
+  border-radius: 22px;
+  background: rgb(255 255 255 / 0.72);
+  backdrop-filter: blur(8px);
 }
 
-.progressBadge strong,
+.heroStatusHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.25rem;
+}
+
+.heroStatusEyebrow {
+  margin: 0 0 0.35rem;
+  color: #7c5a31;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.heroStatusHeadline {
+  margin: 0;
+  color: #0f172a;
+  font-size: clamp(1.35rem, 2.5vw, 1.75rem);
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.heroStatusSubline {
+  margin: 0.55rem 0 0;
+  max-width: 42ch;
+  color: rgb(15 23 42 / 0.68);
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+.heroRing {
+  position: relative;
+  flex-shrink: 0;
+  width: 6.5rem;
+  height: 6.5rem;
+}
+
+.heroRingSvg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.heroRingTrack {
+  fill: none;
+  stroke: rgb(15 23 42 / 0.08);
+  stroke-width: 8;
+}
+
+.heroRingFill {
+  fill: none;
+  stroke: #1d6b59;
+  stroke-linecap: round;
+  stroke-width: 8;
+  transition: stroke-dashoffset 0.4s ease;
+}
+
+.heroRingLabel {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  text-align: center;
+  gap: 0.1rem;
+}
+
+.heroRingLabel strong {
+  color: #0f172a;
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.heroRingLabel span {
+  color: rgb(15 23 42 / 0.55);
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.heroStatusGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.heroStatusCard {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.65rem;
+  align-items: center;
+  padding: 0.9rem 1rem;
+  border: 1px solid rgb(15 23 42 / 0.06);
+  border-radius: 16px;
+  background: #fff;
+}
+
+.heroStatusCard_success {
+  border-color: rgb(29 107 89 / 0.18);
+  background: linear-gradient(180deg, #f7fdfb 0%, #fff 100%);
+}
+
+.heroStatusCard_pending {
+  border-color: rgb(245 158 11 / 0.22);
+  background: linear-gradient(180deg, #fffbeb 0%, #fff 100%);
+}
+
+.heroStatusCard_attention {
+  border-color: rgb(59 130 246 / 0.18);
+  background: linear-gradient(180deg, #eff6ff 0%, #fff 100%);
+}
+
+.heroStatusIcon {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 999px;
+  background: rgb(15 23 42 / 0.06);
+}
+
+.heroStatusCard_success .heroStatusIcon {
+  background: #d1fae5;
+}
+
+.heroStatusCard_success .heroStatusIcon::after {
+  content: "";
+  display: block;
+  width: 0.32rem;
+  height: 0.55rem;
+  margin-top: -0.08rem;
+  border-right: 1.75px solid #1d6b59;
+  border-bottom: 1.75px solid #1d6b59;
+  transform: rotate(45deg);
+}
+
+.heroStatusCard_pending .heroStatusIcon {
+  background: #fef3c7;
+}
+
+.heroStatusCard_pending .heroStatusIcon::after {
+  content: "!";
+  color: #b45309;
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.heroStatusCard_attention .heroStatusIcon {
+  background: #dbeafe;
+}
+
+.heroStatusCard_attention .heroStatusIcon::after {
+  content: "i";
+  color: #1d4ed8;
+  font-size: 0.72rem;
+  font-weight: 800;
+  font-style: italic;
+  line-height: 1;
+}
+
+.heroStatusCopy {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.heroStatusTitle {
+  color: #0f172a;
+  font-size: 0.92rem;
+  line-height: 1.3;
+}
+
+.heroStatusDescription {
+  margin: 0;
+  color: rgb(15 23 42 / 0.62);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.heroStatusProgress {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.heroStatusProgressLabels {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  color: rgb(15 23 42 / 0.65);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.heroStatusProgressLabels strong {
+  color: #1d6b59;
+  font-size: 0.9rem;
+}
+
 .scoreValue {
   color: #0f172a;
   font-size: 1.35rem;
   line-height: 1;
-}
-
-.progressBadge span {
-  color: rgb(15 23 42 / 0.68);
-  font-size: 0.88rem;
-  font-weight: 600;
 }
 
 .progressTrack {
@@ -158,6 +352,120 @@
 .mainGrid {
   grid-template-columns: minmax(0, 1.34fr) minmax(300px, 0.82fr);
   align-items: start;
+}
+
+.mainSingle {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.statusStrip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.15rem;
+  border: 1px solid rgb(15 23 42 / 0.08);
+  border-radius: 20px;
+  background: linear-gradient(135deg, #fff 0%, #f8fafc 100%);
+  box-shadow: 0 10px 28px rgb(15 23 42 / 0.05);
+}
+
+.statusStripBody {
+  display: grid;
+  gap: 0.65rem;
+  flex: 1 1 16rem;
+  min-width: 0;
+}
+
+.statusStripTop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.statusStripEyebrow {
+  margin: 0;
+  color: #7c5a31;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.statusStripStats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 1.35rem;
+}
+
+.statusStripStat {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.statusStripStat strong {
+  color: #0f172a;
+  font-size: 1.05rem;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.statusStripStat span {
+  color: rgb(15 23 42 / 0.55);
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.statusStripProgress {
+  max-width: 28rem;
+}
+
+.statusStripNext {
+  margin: 0;
+  color: rgb(15 23 42 / 0.68);
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.statusStripNextLink {
+  color: #1d6b59;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.statusStripNextLink:hover {
+  text-decoration: underline;
+}
+
+.statusStripActions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.55rem;
+  flex-shrink: 0;
+}
+
+.statusStripDashboardLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.55rem 0.85rem;
+  border-radius: 12px;
+  background: rgb(29 107 89 / 0.1);
+  color: #1d6b59;
+  font-size: 0.86rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.statusStripDashboardLink:hover {
+  background: rgb(29 107 89 / 0.16);
 }
 
 .journeyColumn {
@@ -363,8 +671,262 @@
 .railSticky {
   position: sticky;
   top: 1rem;
+}
+
+.railShell {
   display: grid;
-  gap: 1rem;
+  gap: 1.1rem;
+  padding: 1.2rem;
+  border: 1px solid rgb(15 23 42 / 0.08);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at top right, rgb(191 219 254 / 0.2), transparent 38%),
+    linear-gradient(180deg, #fff 0%, #f9fafb 100%);
+  box-shadow: 0 16px 40px rgb(15 23 42 / 0.06);
+}
+
+.railShellHeader {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.railSummary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  margin-top: 0.35rem;
+}
+
+.railSummaryStat {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid rgb(15 23 42 / 0.06);
+  border-radius: 14px;
+  background: rgb(255 255 255 / 0.85);
+}
+
+.railSummaryStat_success {
+  border-color: rgb(29 107 89 / 0.2);
+  background: linear-gradient(180deg, #f0fdf4 0%, #fff 100%);
+}
+
+.railSummaryStat_warning {
+  border-color: rgb(245 158 11 / 0.22);
+  background: linear-gradient(180deg, #fffbeb 0%, #fff 100%);
+}
+
+.railSummaryStat_neutral {
+  background: #f8fafc;
+}
+
+.railSummaryLabel {
+  color: rgb(15 23 42 / 0.55);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.railSummaryValue {
+  color: #0f172a;
+  font-size: 1.15rem;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.railDivider {
+  height: 1px;
+  background: rgb(15 23 42 / 0.08);
+}
+
+.railSection {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.railSectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.railSectionTitle {
+  margin: 0;
+  color: #7c5a31;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.railTimeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0;
+}
+
+.railTimelineItem {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.7rem;
+  padding: 0 0 0.85rem;
+  position: relative;
+}
+
+.railTimelineItem:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  left: 0.58rem;
+  top: 1.35rem;
+  bottom: 0.15rem;
+  width: 2px;
+  background: rgb(15 23 42 / 0.1);
+  transform: translateX(-50%);
+}
+
+.railTimelineItem:last-child {
+  padding-bottom: 0;
+}
+
+.railTimelineMarker {
+  position: relative;
+  z-index: 1;
+  display: block;
+  flex-shrink: 0;
+  width: 1.15rem;
+  height: 1.15rem;
+  margin-top: 0.12rem;
+  border-radius: 999px;
+  border: 2px solid rgb(15 23 42 / 0.16);
+  background: #fff;
+}
+
+.railTimelineMarkerComplete {
+  border-color: #1d6b59;
+  background: #1d6b59;
+  box-shadow: 0 0 0 4px rgb(29 107 89 / 0.12);
+}
+
+.railTimelineMarkerComplete::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 45%;
+  width: 0.28rem;
+  height: 0.48rem;
+  border-right: 1.5px solid #fff;
+  border-bottom: 1.5px solid #fff;
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.railTimelineCopy {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.railTimelineTitle {
+  color: #0f172a;
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1.35;
+  text-decoration: none;
+}
+
+.railTimelineTitle:hover {
+  color: #1d6b59;
+  text-decoration: underline;
+}
+
+.railTimelineDetail {
+  margin: 0;
+  color: rgb(15 23 42 / 0.6);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.railMetricGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.55rem;
+}
+
+.railMetricTile {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid rgb(15 23 42 / 0.06);
+  border-radius: 12px;
+  background: rgb(255 255 255 / 0.9);
+}
+
+.railMetricLabel {
+  color: rgb(15 23 42 / 0.55);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.railMetricValue {
+  color: #0f172a;
+  font-size: 0.82rem;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.railFootnote {
+  margin: 0;
+  color: rgb(15 23 42 / 0.62);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.railHealthList {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.railHealthItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid rgb(15 23 42 / 0.06);
+}
+
+.railHealthItem:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.railHealthLabel {
+  color: #0f172a;
+  font-size: 0.84rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.railSavedScroll {
+  max-height: 7.5rem;
+  overflow-y: auto;
+  padding-right: 0.15rem;
+}
+
+.railEmptyNote {
+  margin: 0;
+  padding: 0.75rem 0.85rem;
+  border-radius: 12px;
+  background: #f8fafc;
+  color: rgb(15 23 42 / 0.68);
+  font-size: 0.82rem;
+  line-height: 1.5;
 }
 
 .railPanel {
@@ -481,8 +1043,149 @@ code {
   font-size: 0.92em;
 }
 
+.qaPanel {
+  display: grid;
+  gap: 1rem;
+  padding: 1.2rem 1.25rem;
+  border: 1px solid rgb(15 23 42 / 0.08);
+  border-radius: 20px;
+  background: linear-gradient(135deg, #fff 0%, #f8fafc 100%);
+  box-shadow: 0 10px 28px rgb(15 23 42 / 0.05);
+}
+
+.qaPanelSuccess {
+  border-color: rgb(29 107 89 / 0.2);
+  background: linear-gradient(135deg, #f7fdfb 0%, #fff 100%);
+}
+
+.qaPanelHeader {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.qaPanelBadge {
+  display: inline-flex;
+  width: fit-content;
+  padding: 0.28rem 0.62rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.qaPanelTitle {
+  margin: 0;
+  color: #0f172a;
+  font-size: 1.12rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.qaPanelText {
+  margin: 0;
+  max-width: 52ch;
+  color: rgb(15 23 42 / 0.68);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.qaPanelSteps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.qaPanelStep {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.65rem;
+  align-items: start;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid rgb(15 23 42 / 0.06);
+  border-radius: 14px;
+  background: #fff;
+}
+
+.qaPanelStepIndex {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 999px;
+  background: #1d6b59;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.qaPanelStep strong {
+  display: block;
+  margin-bottom: 0.15rem;
+  color: #0f172a;
+  font-size: 0.84rem;
+}
+
+.qaPanelStep span {
+  color: rgb(15 23 42 / 0.62);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.qaPanelActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  align-items: center;
+}
+
+.qaPanelLink {
+  color: #1d6b59;
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.qaPanelLink:hover {
+  text-decoration: underline;
+}
+
+.qaPanelCompactRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+}
+
+.qaPanelCompactCopy {
+  display: grid;
+  gap: 0.2rem;
+  flex: 1 1 14rem;
+  min-width: 0;
+}
+
+.qaPanelCompactTitle {
+  margin: 0;
+  color: #0f172a;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.qaPanelCompactText {
+  margin: 0;
+  color: rgb(15 23 42 / 0.65);
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
 @media only screen and (max-width: 64rem) {
-  .hero,
   .mainGrid,
   .controlGrid {
     grid-template-columns: 1fr;
@@ -492,8 +1195,23 @@ code {
     max-width: none;
   }
 
+  .heroStatusGrid {
+    grid-template-columns: 1fr;
+  }
+
   .railSticky {
     position: static;
+  }
+}
+
+@media only screen and (max-width: 48rem) {
+  .heroStatusHeader {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .heroRing {
+    margin: 0 auto;
   }
 }
 
@@ -501,8 +1219,29 @@ code {
   .hero,
   .stageSection,
   .stepCard,
-  .railPanel {
+  .railPanel,
+  .statusStrip,
+  .qaPanel {
     padding: 1rem;
+  }
+
+  .qaPanelSteps {
+    grid-template-columns: 1fr;
+  }
+
+  .qaPanelCompactRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .qaPanelActions .linkButton,
+  .qaPanelCompactRow .linkButton {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .statusStripActions {
+    width: 100%;
   }
 
   .stepHeader,
@@ -514,7 +1253,8 @@ code {
   }
 
   .heroActions,
-  .buttonRow {
+  .buttonRow,
+  .qaPanelActions {
     align-items: stretch;
   }
 }

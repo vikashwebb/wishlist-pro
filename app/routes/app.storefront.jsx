@@ -3,6 +3,7 @@ import { useRouteError } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { loadWishlistDashboardBootstrap } from "../models/app-bootstrap.server";
 import { DashboardLayout } from "../components/wishlist-dashboard/dashboard-layout";
+import { MerchantQaPanel } from "../components/wishlist-dashboard/merchant-qa-panel";
 import {
   StorefrontRulesSection,
   WishlistPageSection,
@@ -35,6 +36,8 @@ export default function StorefrontPage() {
         intro={intro}
         children={
           <section className={styles.stageSection}>
+            <MerchantQaPanel d={d} variant="compact" />
+
             <div className={styles.sectionIntro}>
               <p className={styles.sectionEyebrow}>Shopper experience</p>
               <h2 className={styles.sectionTitle}>Access rules & destination page</h2>

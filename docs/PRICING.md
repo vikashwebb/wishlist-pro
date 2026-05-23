@@ -5,7 +5,7 @@
 | Plan | Price | Includes |
 |------|--------|----------|
 | **Free** | $0 | Product/collection wishlist buttons, guest wishlist, wishlist page, theme styling |
-| **Pro** | **$5.99 USD / month** (7-day trial) | Analytics, **CSV export**, login-only storefront mode |
+| **Pro** | **$5.99 USD / month** (7-day trial) | **Login-only storefront mode** (Analytics & CSV export are currently open to all plans) |
 
 Billing uses Shopify’s [Billing API](https://shopify.dev/docs/apps/launch/billing). Charges appear on the merchant’s Shopify invoice.
 
@@ -21,8 +21,8 @@ Billing uses Shopify’s [Billing API](https://shopify.dev/docs/apps/launch/bill
 | [`app/billing.server.js`](../app/billing.server.js) | Pro subscription checks and upgrade URLs |
 | [`app/shopify.server.js`](../app/shopify.server.js) | `billing` block passed to `shopifyApp()` |
 | [`app/routes/app.billing.jsx`](../app/routes/app.billing.jsx) | “Start Pro trial” → Shopify approval URL (GET loader) |
-| [`app/routes/app.api.analytics-export.jsx`](../app/routes/app.api.analytics-export.jsx) | Pro-only CSV download |
-| [`app/routes/app.analytics.jsx`](../app/routes/app.analytics.jsx) | Analytics gated to Pro; upgrade UI |
+| [`app/routes/app.api.analytics-export.jsx`](../app/routes/app.api.analytics-export.jsx) | CSV download (no plan gate while testing) |
+| [`app/routes/app.analytics.jsx`](../app/routes/app.analytics.jsx) | Analytics dashboard (no plan gate while testing) |
 
 To change price or trial, edit `PRO_PLAN_PRICE` in `app/billing.constants.js` and redeploy the app.
 
@@ -38,9 +38,9 @@ Set plans that align with Free + Pro $5.99/mo so the store listing matches what 
 
 ### 3. What merchants see
 
-- **Free:** Full app except Analytics (upgrade screen) and login-only toggle (blocked with message).
-- **Pro:** Analytics page + **Export CSV** button + login-only mode in Storefront workspace.
-- Upgrade: **Analytics** → **Start Pro trial** → Shopify-hosted approval page.
+- **Free:** Full app including Analytics and CSV export (for now). Login-only toggle still requires Pro.
+- **Pro:** Login-only mode in Storefront workspace (+ billing for future gated features).
+- Upgrade: **Pricing** in app nav → **Start Pro trial** → Shopify-hosted approval page (returns to `/app/pricing`).
 
 Development stores use **test charges** (`isTest: true` when `NODE_ENV !== production`).
 
@@ -100,6 +100,19 @@ Set on **Vercel → Environment Variables → Production**, then **Redeploy** (r
 Pro unlocks: Analytics, CSV export, login-only mode.
 
 Remove these before App Store launch unless you intend free Pro for listed shops.
+
+---
+
+## CSV export in embedded admin
+
+Use **Export report** on the Analytics page:
+
+- **Date range** — filters by customer wishlist `updatedAt` (max **62 days**, no future dates).
+- **Customer-based** — one row per customer with product names, handles, and summary metrics.
+- **Product-based** — one row per product with customer names/emails who saved it.
+- **Full** — both sections in one file.
+
+The app downloads via authenticated `fetch` (session token + embedded `host`/`shop` params). Do not open `/app/api/analytics-export` in a new tab — that drops embedded context and can show `accounts.shopify.com refused to connect`.
 
 ---
 

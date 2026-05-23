@@ -36,6 +36,42 @@ const shopify = shopifyApp({
   ...(process.env.SHOP_CUSTOM_DOMAIN
     ? { customShopDomains: [process.env.SHOP_CUSTOM_DOMAIN] }
     : {}),
+  hooks: {
+    afterAuth: async ({ session, admin }) => {
+      try {
+        const { getShopSettings } = await import("./models/shop-settings.server");
+        const { provisionWishlistInfrastructure } = await import(
+          "./models/shop-provision.server"
+        );
+        const settings = await getShopSettings(session.shop);
+        const scopeResponse = await admin.graphql(
+          `#graphql
+            query WishlistProvisionScopes {
+              currentAppInstallation {
+                accessScopes {
+                  handle
+                }
+              }
+            }`,
+        );
+        const scopeJson = await scopeResponse.json();
+        const accessScopes =
+          scopeJson.data?.currentAppInstallation?.accessScopes?.map(
+            (scope) => scope.handle,
+          ) ?? [];
+        const provision = await provisionWishlistInfrastructure(admin, {
+          settings,
+          accessScopes,
+        });
+
+        if (provision.errors.length > 0) {
+          console.error("wishlist.provision.afterAuth.errors", provision.errors);
+        }
+      } catch (error) {
+        console.error("wishlist.provision.afterAuth.error", error);
+      }
+    },
+  },
 });
 
 export default shopify;

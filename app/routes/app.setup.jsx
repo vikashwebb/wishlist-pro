@@ -1,9 +1,11 @@
 /* eslint-disable react/prop-types */
 import { useEffect } from "react";
-import { useRouteError } from "react-router";
+import { useLocation, useRouteError } from "react-router";
+import { scrollToAppHash } from "../utils/app-navigation";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { loadWishlistDashboardBootstrap } from "../models/app-bootstrap.server";
 import { DashboardLayout } from "../components/wishlist-dashboard/dashboard-layout";
+import { MerchantQaPanel } from "../components/wishlist-dashboard/merchant-qa-panel";
 import {
   DataFoundationSection,
   QaLabSection,
@@ -15,11 +17,11 @@ export const loader = loadWishlistDashboardBootstrap;
 
 export default function SetupPage() {
   const d = useWishlistDashboard();
+  const location = useLocation();
 
   useEffect(() => {
-    if (typeof window === "undefined" || window.location.hash !== "#qa-lab") return;
-    document.getElementById("qa-lab")?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, []);
+    scrollToAppHash(location.hash);
+  }, [location.hash]);
 
   const intro = (
     <section className={styles.hero}>
@@ -41,6 +43,8 @@ export default function SetupPage() {
         intro={intro}
         children={
           <section className={styles.stageSection}>
+            <MerchantQaPanel d={d} variant="full" />
+
             <div className={styles.sectionIntro}>
               <p className={styles.sectionEyebrow}>Foundation</p>
               <h2 className={styles.sectionTitle}>Data health & QA lab</h2>

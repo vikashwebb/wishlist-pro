@@ -521,7 +521,7 @@ export function useWishlistDashboard() {
       href: "/app/setup",
       complete: customerDataStepComplete,
       detail: customerDataStepComplete
-        ? "Customer data pipeline verified."
+        ? "Metafield definition is ready and customer access works."
         : customerAccessBlocked
           ? "Protected customer access still needs approval."
           : diagnosticsFresh
@@ -543,9 +543,9 @@ export function useWishlistDashboard() {
       href: "/app/storefront",
       complete: pageStepComplete,
       detail: pageStepComplete
-        ? `Live at /pages/${wishlistPage?.handle}`
+        ? `Live at /pages/${wishlistPage?.handle} (created automatically).`
         : hasWriteOnlineStorePagesScope
-          ? `Ready to publish at ${wishlistPagePreviewPath}`
+          ? `Auto-creates at ${wishlistPagePreviewPath} when you open the app.`
           : "Page write scope is missing.",
     },
     {

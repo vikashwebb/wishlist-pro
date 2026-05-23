@@ -1,8 +1,8 @@
 /* eslint-disable react/prop-types */
-import { Link, useLoaderData, useRouteError } from "react-router";
+import { useLoaderData, useRouteError } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
-import { PRO_PLAN_PRICE } from "../billing.constants";
 import { AppLink } from "../components/app-link";
+import { AnalyticsExportPanel } from "../components/analytics-export-panel";
 import {
   AreaTrendChart,
   DonutChart,
@@ -40,75 +40,23 @@ function MetricCard({ label, value, hint }) {
 
 export const loader = async ({ request }) => {
   const { authenticate } = await import("../shopify.server");
-  const { hasProSubscription } = await import("../billing.server");
   const { getShopSettings } = await import("../models/shop-settings.server");
   const { loadWishlistAnalyticsReport } = await import(
     "../models/wishlist-analytics.server"
   );
-  const { hasDemoProAccess } = await import("../billing.server");
-  const { admin, session, billing } = await authenticate.admin(request);
-  const demoPro = hasDemoProAccess(session.shop);
-  const [isPro, settings] = await Promise.all([
-    hasProSubscription(billing, session.shop),
-    getShopSettings(session.shop),
-  ]);
-
-  if (!isPro) {
-    return {
-      isPro: false,
-      demoPro,
-      shopDomain: session.shop,
-      settings,
-      available: false,
-      analytics: null,
-      error: null,
-      protectedCustomerAccessBlocked: false,
-    };
-  }
-
+  const { admin, session } = await authenticate.admin(request);
+  const settings = await getShopSettings(session.shop);
   const report = await loadWishlistAnalyticsReport(admin);
 
   return {
-    isPro: true,
-    demoPro,
     shopDomain: session.shop,
     settings,
     ...report,
   };
 };
 
-function ProUpgradePanel() {
-  return (
-    <section className={styles.upgradeCard}>
-      <p className={styles.eyebrow}>Wishlist Pro</p>
-      <h2 className={styles.upgradeTitle}>Unlock analytics & export</h2>
-      <p className={styles.upgradeText}>
-        Pro includes wishlist analytics, CSV export, and login-only storefront mode.
-        Free plan keeps guest wishlists, theme blocks, and the wishlist page.
-      </p>
-      <ul className={styles.upgradeList}>
-        <li>Adoption, activity, and top product charts</li>
-        <li>Export customers and products to CSV</li>
-        <li>Require login before shoppers can save</li>
-      </ul>
-      <p className={styles.upgradePrice}>
-        <strong>${PRO_PLAN_PRICE.amount}/month</strong> · {PRO_PLAN_PRICE.trialDays}-day free
-        trial
-      </p>
-      <Link className={styles.upgradeButton} to="/app/billing" reloadDocument>
-        Start Pro trial
-      </Link>
-      <AppLink className={styles.upgradeLink} href="/app">
-        Back to dashboard
-      </AppLink>
-    </section>
-  );
-}
-
 export default function AnalyticsPage() {
   const {
-    isPro,
-    demoPro,
     available,
     protectedCustomerAccessBlocked,
     analytics,
@@ -117,31 +65,6 @@ export default function AnalyticsPage() {
     settings,
   } = useLoaderData();
 
-  if (!isPro) {
-    return (
-      <s-page heading="Wishlist analytics">
-        <div className={styles.page}>
-          <section className={styles.hero}>
-            <p className={styles.eyebrow}>Store intelligence</p>
-            <h1 className={styles.heroTitle}>Analytics is a Pro feature</h1>
-            <p className={styles.heroText}>
-              Upgrade to see what shoppers save, export wishlist data, and enable
-              login-only mode on the storefront.
-            </p>
-            {shopDomain ? (
-              <p className={styles.heroHint}>
-                Demo store: <code>{shopDomain}</code> — add{" "}
-                <code>DEMO_PRO_SHOPS={shopDomain}</code> or{" "}
-                <code>DEMO_PRO_ACCESS=true</code> on Vercel, then redeploy.
-              </p>
-            ) : null}
-          </section>
-          <ProUpgradePanel />
-        </div>
-      </s-page>
-    );
-  }
-
   if (!available) {
     return (
       <s-page heading="Wishlist analytics">
@@ -149,9 +72,6 @@ export default function AnalyticsPage() {
           <section className={styles.hero}>
             <p className={styles.eyebrow}>Store intelligence</p>
             <h1 className={styles.heroTitle}>Wishlist analytics unavailable</h1>
-            {demoPro ? (
-              <p className={styles.heroBadge}>Demo Pro active — data access still required</p>
-            ) : null}
             <p className={styles.heroText}>
               {protectedCustomerAccessBlocked
                 ? "Approve protected customer data access in Partner Dashboard, reinstall the app, then return here."
@@ -217,13 +137,10 @@ export default function AnalyticsPage() {
                 popular products, active customers, and overall adoption.
               </p>
             </div>
-            <div className={styles.heroActions}>
-              <a className={styles.exportButton} href="/app/api/analytics-export">
-                Export CSV
-              </a>
-            </div>
           </div>
         </section>
+
+        <AnalyticsExportPanel buttonClassName={styles.exportButton} />
 
         {summary.truncated ? (
           <article className={`${styles.insightCard} ${styles.insightCardWarning}`}>
