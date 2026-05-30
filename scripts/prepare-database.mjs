@@ -58,17 +58,34 @@ function loadDatabaseUrlFromDotEnv() {
 }
 
 function resolveDatabaseUrl() {
+  if (process.env.VERCEL) {
+    const vercelUrl = "file:/tmp/wishlist-pro.sqlite";
+    const current = process.env.DATABASE_URL?.trim() || "";
+    const invalidOnVercel =
+      !current ||
+      current.includes(".data") ||
+      current.includes("dev.sqlite") ||
+      !current.startsWith("file:/tmp/");
+
+    if (invalidOnVercel) {
+      console.warn(
+        `Vercel: using ${vercelUrl} (set DATABASE_URL=${vercelUrl} in project env).`,
+      );
+      process.env.DATABASE_URL = vercelUrl;
+    }
+
+    return process.env.DATABASE_URL;
+  }
+
   loadDatabaseUrlFromDotEnv();
 
   if (process.env.DATABASE_URL) {
     return process.env.DATABASE_URL;
   }
 
-  if (process.env.VERCEL || process.env.NODE_ENV === "production") {
+  if (process.env.NODE_ENV === "production") {
     const fallback = "file:/tmp/wishlist-pro.sqlite";
-    console.warn(
-      `DATABASE_URL is not set. Using fallback ${fallback} (set DATABASE_URL in Vercel for a stable path).`,
-    );
+    console.warn(`DATABASE_URL is not set. Using fallback ${fallback}.`);
     process.env.DATABASE_URL = fallback;
     return fallback;
   }

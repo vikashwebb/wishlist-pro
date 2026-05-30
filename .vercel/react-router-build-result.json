@@ -12,6 +12,7 @@
     "routeIdToServerBundleId": {
       "routes/webhooks.app.scopes_update": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "routes/webhooks.app.uninstalled": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/privacy[.]html": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "routes/proxy.wishlist": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "routes/proxy.wishlist.config": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "routes/proxy.wishlist.status": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
@@ -57,6 +58,15 @@
         "parentId": "root",
         "file": "app/routes/webhooks.app.uninstalled.jsx",
         "path": "webhooks/app/uninstalled",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/privacy[.]html": {
+        "id": "routes/privacy[.]html",
+        "parentId": "root",
+        "file": "app/routes/privacy[.]html.jsx",
+        "path": "privacy.html",
         "config": {
           "runtime": "nodejs"
         }
@@ -124,7 +134,7 @@
       "routes/privacy": {
         "id": "routes/privacy",
         "parentId": "root",
-        "file": "app/routes/privacy/route.jsx",
+        "file": "app/routes/privacy.jsx",
         "path": "privacy",
         "config": {
           "runtime": "nodejs"
@@ -299,6 +309,12 @@
         "file": "routes/webhooks.app.uninstalled.jsx",
         "path": "webhooks/app/uninstalled"
       },
+      "routes/privacy[.]html": {
+        "id": "routes/privacy[.]html",
+        "parentId": "root",
+        "file": "routes/privacy[.]html.jsx",
+        "path": "privacy.html"
+      },
       "routes/proxy.wishlist": {
         "id": "routes/proxy.wishlist",
         "parentId": "root",
@@ -350,7 +366,7 @@
       "routes/privacy": {
         "id": "routes/privacy",
         "parentId": "root",
-        "file": "routes/privacy/route.jsx",
+        "file": "routes/privacy.jsx",
         "path": "privacy"
       },
       "routes/_index": {
@@ -468,6 +484,11 @@
             "path": "webhooks/app/uninstalled"
           },
           {
+            "id": "routes/privacy[.]html",
+            "file": "routes/privacy[.]html.jsx",
+            "path": "privacy.html"
+          },
+          {
             "id": "routes/proxy.wishlist",
             "file": "routes/proxy.wishlist.jsx",
             "path": "proxy/wishlist",
@@ -511,7 +532,7 @@
           },
           {
             "id": "routes/privacy",
-            "file": "routes/privacy/route.jsx",
+            "file": "routes/privacy.jsx",
             "path": "privacy"
           },
           {

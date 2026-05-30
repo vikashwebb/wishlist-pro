@@ -1,7 +1,10 @@
 import { handleRequest as vercelHandleRequest } from "@vercel/react-router/entry.server";
-import { addDocumentResponseHeaders } from "./shopify.server";
 
 export { streamTimeout } from "@vercel/react-router/entry.server";
+
+function isPublicLegalPage(pathname) {
+  return /^\/privacy(?:\.html)?\/?$/.test(pathname);
+}
 
 export default async function handleRequest(
   request,
@@ -10,12 +13,8 @@ export default async function handleRequest(
   reactRouterContext,
   loadContext,
 ) {
-  const pathname = new URL(request.url).pathname;
-  const isPublicLegalPage =
-    pathname === "/privacy" || pathname === "/privacy/";
-
-  // Privacy is pre-rendered static HTML — no Shopify session/DB required.
-  if (!isPublicLegalPage) {
+  if (!isPublicLegalPage(new URL(request.url).pathname)) {
+    const { addDocumentResponseHeaders } = await import("./shopify.server");
     await addDocumentResponseHeaders(request, responseHeaders);
   }
 

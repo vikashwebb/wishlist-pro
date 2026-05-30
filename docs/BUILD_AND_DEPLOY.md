@@ -49,7 +49,7 @@ shopify app dev
 
 5. Redeploy after env changes.
 
-**Privacy policy URL (`/privacy`):** Built as **pre-rendered static HTML** (`build/client/privacy/index.html`) at deploy time. The `/privacy` route skips Shopify/DB in `entry.server.jsx` so prerender succeeds. Set `SUPPORT_EMAIL` on Vercel before deploying. Fallback static file: `/privacy.html`.
+**Privacy policy URL (`/privacy`):** Built as **pre-rendered static HTML** (`build/client/privacy/index.html`) at deploy time. The `/privacy` route skips Shopify/DB in `entry.server.jsx` so prerender succeeds. Set `SUPPORT_EMAIL` on Vercel before deploying. `/privacy.html` is served by the `privacy[.]html.jsx` route at runtime (not pre-rendered, to avoid clashing with static assets).
 
 Partner Dashboard **App URL** and **redirect URL** must match `SHOPIFY_APP_URL` (we use `include_config_on_deploy = false`, so CLI deploy does not overwrite them).
 

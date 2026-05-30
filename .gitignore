@@ -8,6 +8,7 @@ node_modules
 /app/build
 /public/build/
 /public/_dev
+/public/legal/
 /app/public/build
 /prisma/dev.sqlite
 /prisma/dev.sqlite-journal
