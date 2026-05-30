@@ -1,0 +1,600 @@
+{
+  "buildManifest": {
+    "serverBundles": {
+      "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0": {
+        "id": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+        "file": "build/server/nodejs_eyJydW50aW1lIjoibm9kZWpzIn0/index.js",
+        "config": {
+          "runtime": "nodejs"
+        }
+      }
+    },
+    "routeIdToServerBundleId": {
+      "routes/webhooks.app.scopes_update": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/webhooks.app.uninstalled": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/proxy.wishlist": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/proxy.wishlist.config": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/proxy.wishlist.status": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/proxy.wishlist.toggle": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/proxy.wishlist.$file": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/proxy.wishlist.items": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/proxy.wishlist.sync": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/auth.login": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/privacy": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/_index": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/auth.$": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/app.api.analytics-export": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/app.api.wishlist-check": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/app.api.wishlist-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/app.api.settings": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/app.api.wishlist": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/app.storefront": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/app.analytics": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/app.billing": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/app.pricing": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/app._index": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/app.setup": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/app.theme": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0"
+    },
+    "routes": {
+      "root": {
+        "id": "root",
+        "file": "app/root.jsx",
+        "path": "",
+        "config": {}
+      },
+      "routes/webhooks.app.scopes_update": {
+        "id": "routes/webhooks.app.scopes_update",
+        "parentId": "root",
+        "file": "app/routes/webhooks.app.scopes_update.jsx",
+        "path": "webhooks/app/scopes_update",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/webhooks.app.uninstalled": {
+        "id": "routes/webhooks.app.uninstalled",
+        "parentId": "root",
+        "file": "app/routes/webhooks.app.uninstalled.jsx",
+        "path": "webhooks/app/uninstalled",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/proxy.wishlist": {
+        "id": "routes/proxy.wishlist",
+        "parentId": "root",
+        "file": "app/routes/proxy.wishlist.jsx",
+        "path": "proxy/wishlist",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/proxy.wishlist.config": {
+        "id": "routes/proxy.wishlist.config",
+        "parentId": "routes/proxy.wishlist",
+        "file": "app/routes/proxy.wishlist.config.jsx",
+        "path": "config",
+        "config": {}
+      },
+      "routes/proxy.wishlist.status": {
+        "id": "routes/proxy.wishlist.status",
+        "parentId": "routes/proxy.wishlist",
+        "file": "app/routes/proxy.wishlist.status.jsx",
+        "path": "status",
+        "config": {}
+      },
+      "routes/proxy.wishlist.toggle": {
+        "id": "routes/proxy.wishlist.toggle",
+        "parentId": "routes/proxy.wishlist",
+        "file": "app/routes/proxy.wishlist.toggle.jsx",
+        "path": "toggle",
+        "config": {}
+      },
+      "routes/proxy.wishlist.$file": {
+        "id": "routes/proxy.wishlist.$file",
+        "parentId": "routes/proxy.wishlist",
+        "file": "app/routes/proxy.wishlist.$file.jsx",
+        "path": ":file",
+        "config": {}
+      },
+      "routes/proxy.wishlist.items": {
+        "id": "routes/proxy.wishlist.items",
+        "parentId": "routes/proxy.wishlist",
+        "file": "app/routes/proxy.wishlist.items.jsx",
+        "path": "items",
+        "config": {}
+      },
+      "routes/proxy.wishlist.sync": {
+        "id": "routes/proxy.wishlist.sync",
+        "parentId": "routes/proxy.wishlist",
+        "file": "app/routes/proxy.wishlist.sync.jsx",
+        "path": "sync",
+        "config": {}
+      },
+      "routes/auth.login": {
+        "id": "routes/auth.login",
+        "parentId": "root",
+        "file": "app/routes/auth.login/route.jsx",
+        "path": "auth/login",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/privacy": {
+        "id": "routes/privacy",
+        "parentId": "root",
+        "file": "app/routes/privacy.jsx",
+        "path": "privacy",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/_index": {
+        "id": "routes/_index",
+        "parentId": "root",
+        "file": "app/routes/_index/route.jsx",
+        "index": true,
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/auth.$": {
+        "id": "routes/auth.$",
+        "parentId": "root",
+        "file": "app/routes/auth.$.jsx",
+        "path": "auth/*",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/app": {
+        "id": "routes/app",
+        "parentId": "root",
+        "file": "app/routes/app.jsx",
+        "path": "app",
+        "config": {}
+      },
+      "routes/app.api.analytics-export": {
+        "id": "routes/app.api.analytics-export",
+        "parentId": "routes/app",
+        "file": "app/routes/app.api.analytics-export.jsx",
+        "path": "api/analytics-export",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/app.api.wishlist-check": {
+        "id": "routes/app.api.wishlist-check",
+        "parentId": "routes/app",
+        "file": "app/routes/app.api.wishlist-check.jsx",
+        "path": "api/wishlist-check",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/app.api.wishlist-page": {
+        "id": "routes/app.api.wishlist-page",
+        "parentId": "routes/app",
+        "file": "app/routes/app.api.wishlist-page.jsx",
+        "path": "api/wishlist-page",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/app.api.settings": {
+        "id": "routes/app.api.settings",
+        "parentId": "routes/app",
+        "file": "app/routes/app.api.settings.jsx",
+        "path": "api/settings",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/app.api.wishlist": {
+        "id": "routes/app.api.wishlist",
+        "parentId": "routes/app",
+        "file": "app/routes/app.api.wishlist.jsx",
+        "path": "api/wishlist",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/app.storefront": {
+        "id": "routes/app.storefront",
+        "parentId": "routes/app",
+        "file": "app/routes/app.storefront.jsx",
+        "path": "storefront",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/app.analytics": {
+        "id": "routes/app.analytics",
+        "parentId": "routes/app",
+        "file": "app/routes/app.analytics.jsx",
+        "path": "analytics",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/app.billing": {
+        "id": "routes/app.billing",
+        "parentId": "routes/app",
+        "file": "app/routes/app.billing.jsx",
+        "path": "billing",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/app.pricing": {
+        "id": "routes/app.pricing",
+        "parentId": "routes/app",
+        "file": "app/routes/app.pricing.jsx",
+        "path": "pricing",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/app._index": {
+        "id": "routes/app._index",
+        "parentId": "routes/app",
+        "file": "app/routes/app._index.jsx",
+        "index": true,
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/app.setup": {
+        "id": "routes/app.setup",
+        "parentId": "routes/app",
+        "file": "app/routes/app.setup.jsx",
+        "path": "setup",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/app.theme": {
+        "id": "routes/app.theme",
+        "parentId": "routes/app",
+        "file": "app/routes/app.theme.jsx",
+        "path": "theme",
+        "config": {
+          "runtime": "nodejs"
+        }
+      }
+    }
+  },
+  "reactRouterConfig": {
+    "appDirectory": "/Users/dinesh/Documents/shopfiy-apps/wishlist-pro/app",
+    "basename": "/",
+    "buildDirectory": "/Users/dinesh/Documents/shopfiy-apps/wishlist-pro/build",
+    "future": {
+      "unstable_optimizeDeps": false,
+      "unstable_subResourceIntegrity": false,
+      "unstable_trailingSlashAwareDataRequests": false,
+      "unstable_previewServerPrerendering": false,
+      "v8_middleware": false,
+      "v8_splitRouteModules": false,
+      "v8_viteEnvironmentApi": false
+    },
+    "routes": {
+      "root": {
+        "id": "root",
+        "file": "root.jsx",
+        "path": ""
+      },
+      "routes/webhooks.app.scopes_update": {
+        "id": "routes/webhooks.app.scopes_update",
+        "parentId": "root",
+        "file": "routes/webhooks.app.scopes_update.jsx",
+        "path": "webhooks/app/scopes_update"
+      },
+      "routes/webhooks.app.uninstalled": {
+        "id": "routes/webhooks.app.uninstalled",
+        "parentId": "root",
+        "file": "routes/webhooks.app.uninstalled.jsx",
+        "path": "webhooks/app/uninstalled"
+      },
+      "routes/proxy.wishlist": {
+        "id": "routes/proxy.wishlist",
+        "parentId": "root",
+        "file": "routes/proxy.wishlist.jsx",
+        "path": "proxy/wishlist"
+      },
+      "routes/proxy.wishlist.config": {
+        "id": "routes/proxy.wishlist.config",
+        "parentId": "routes/proxy.wishlist",
+        "file": "routes/proxy.wishlist.config.jsx",
+        "path": "config"
+      },
+      "routes/proxy.wishlist.status": {
+        "id": "routes/proxy.wishlist.status",
+        "parentId": "routes/proxy.wishlist",
+        "file": "routes/proxy.wishlist.status.jsx",
+        "path": "status"
+      },
+      "routes/proxy.wishlist.toggle": {
+        "id": "routes/proxy.wishlist.toggle",
+        "parentId": "routes/proxy.wishlist",
+        "file": "routes/proxy.wishlist.toggle.jsx",
+        "path": "toggle"
+      },
+      "routes/proxy.wishlist.$file": {
+        "id": "routes/proxy.wishlist.$file",
+        "parentId": "routes/proxy.wishlist",
+        "file": "routes/proxy.wishlist.$file.jsx",
+        "path": ":file"
+      },
+      "routes/proxy.wishlist.items": {
+        "id": "routes/proxy.wishlist.items",
+        "parentId": "routes/proxy.wishlist",
+        "file": "routes/proxy.wishlist.items.jsx",
+        "path": "items"
+      },
+      "routes/proxy.wishlist.sync": {
+        "id": "routes/proxy.wishlist.sync",
+        "parentId": "routes/proxy.wishlist",
+        "file": "routes/proxy.wishlist.sync.jsx",
+        "path": "sync"
+      },
+      "routes/auth.login": {
+        "id": "routes/auth.login",
+        "parentId": "root",
+        "file": "routes/auth.login/route.jsx",
+        "path": "auth/login"
+      },
+      "routes/privacy": {
+        "id": "routes/privacy",
+        "parentId": "root",
+        "file": "routes/privacy.jsx",
+        "path": "privacy"
+      },
+      "routes/_index": {
+        "id": "routes/_index",
+        "parentId": "root",
+        "file": "routes/_index/route.jsx",
+        "index": true
+      },
+      "routes/auth.$": {
+        "id": "routes/auth.$",
+        "parentId": "root",
+        "file": "routes/auth.$.jsx",
+        "path": "auth/*"
+      },
+      "routes/app": {
+        "id": "routes/app",
+        "parentId": "root",
+        "file": "routes/app.jsx",
+        "path": "app"
+      },
+      "routes/app.api.analytics-export": {
+        "id": "routes/app.api.analytics-export",
+        "parentId": "routes/app",
+        "file": "routes/app.api.analytics-export.jsx",
+        "path": "api/analytics-export"
+      },
+      "routes/app.api.wishlist-check": {
+        "id": "routes/app.api.wishlist-check",
+        "parentId": "routes/app",
+        "file": "routes/app.api.wishlist-check.jsx",
+        "path": "api/wishlist-check"
+      },
+      "routes/app.api.wishlist-page": {
+        "id": "routes/app.api.wishlist-page",
+        "parentId": "routes/app",
+        "file": "routes/app.api.wishlist-page.jsx",
+        "path": "api/wishlist-page"
+      },
+      "routes/app.api.settings": {
+        "id": "routes/app.api.settings",
+        "parentId": "routes/app",
+        "file": "routes/app.api.settings.jsx",
+        "path": "api/settings"
+      },
+      "routes/app.api.wishlist": {
+        "id": "routes/app.api.wishlist",
+        "parentId": "routes/app",
+        "file": "routes/app.api.wishlist.jsx",
+        "path": "api/wishlist"
+      },
+      "routes/app.storefront": {
+        "id": "routes/app.storefront",
+        "parentId": "routes/app",
+        "file": "routes/app.storefront.jsx",
+        "path": "storefront"
+      },
+      "routes/app.analytics": {
+        "id": "routes/app.analytics",
+        "parentId": "routes/app",
+        "file": "routes/app.analytics.jsx",
+        "path": "analytics"
+      },
+      "routes/app.billing": {
+        "id": "routes/app.billing",
+        "parentId": "routes/app",
+        "file": "routes/app.billing.jsx",
+        "path": "billing"
+      },
+      "routes/app.pricing": {
+        "id": "routes/app.pricing",
+        "parentId": "routes/app",
+        "file": "routes/app.pricing.jsx",
+        "path": "pricing"
+      },
+      "routes/app._index": {
+        "id": "routes/app._index",
+        "parentId": "routes/app",
+        "file": "routes/app._index.jsx",
+        "index": true
+      },
+      "routes/app.setup": {
+        "id": "routes/app.setup",
+        "parentId": "routes/app",
+        "file": "routes/app.setup.jsx",
+        "path": "setup"
+      },
+      "routes/app.theme": {
+        "id": "routes/app.theme",
+        "parentId": "routes/app",
+        "file": "routes/app.theme.jsx",
+        "path": "theme"
+      }
+    },
+    "routeDiscovery": {
+      "mode": "initial"
+    },
+    "serverBuildFile": "index.js",
+    "serverModuleFormat": "esm",
+    "ssr": true,
+    "allowedActionOrigins": false,
+    "unstable_routeConfig": [
+      {
+        "id": "root",
+        "path": "",
+        "file": "root.jsx",
+        "children": [
+          {
+            "id": "routes/webhooks.app.scopes_update",
+            "file": "routes/webhooks.app.scopes_update.jsx",
+            "path": "webhooks/app/scopes_update"
+          },
+          {
+            "id": "routes/webhooks.app.uninstalled",
+            "file": "routes/webhooks.app.uninstalled.jsx",
+            "path": "webhooks/app/uninstalled"
+          },
+          {
+            "id": "routes/proxy.wishlist",
+            "file": "routes/proxy.wishlist.jsx",
+            "path": "proxy/wishlist",
+            "children": [
+              {
+                "id": "routes/proxy.wishlist.config",
+                "file": "routes/proxy.wishlist.config.jsx",
+                "path": "config"
+              },
+              {
+                "id": "routes/proxy.wishlist.status",
+                "file": "routes/proxy.wishlist.status.jsx",
+                "path": "status"
+              },
+              {
+                "id": "routes/proxy.wishlist.toggle",
+                "file": "routes/proxy.wishlist.toggle.jsx",
+                "path": "toggle"
+              },
+              {
+                "id": "routes/proxy.wishlist.$file",
+                "file": "routes/proxy.wishlist.$file.jsx",
+                "path": ":file"
+              },
+              {
+                "id": "routes/proxy.wishlist.items",
+                "file": "routes/proxy.wishlist.items.jsx",
+                "path": "items"
+              },
+              {
+                "id": "routes/proxy.wishlist.sync",
+                "file": "routes/proxy.wishlist.sync.jsx",
+                "path": "sync"
+              }
+            ]
+          },
+          {
+            "id": "routes/auth.login",
+            "file": "routes/auth.login/route.jsx",
+            "path": "auth/login"
+          },
+          {
+            "id": "routes/privacy",
+            "file": "routes/privacy.jsx",
+            "path": "privacy"
+          },
+          {
+            "id": "routes/_index",
+            "file": "routes/_index/route.jsx",
+            "index": true
+          },
+          {
+            "id": "routes/auth.$",
+            "file": "routes/auth.$.jsx",
+            "path": "auth/*"
+          },
+          {
+            "id": "routes/app",
+            "file": "routes/app.jsx",
+            "path": "app",
+            "children": [
+              {
+                "id": "routes/app.api.analytics-export",
+                "file": "routes/app.api.analytics-export.jsx",
+                "path": "api/analytics-export"
+              },
+              {
+                "id": "routes/app.api.wishlist-check",
+                "file": "routes/app.api.wishlist-check.jsx",
+                "path": "api/wishlist-check"
+              },
+              {
+                "id": "routes/app.api.wishlist-page",
+                "file": "routes/app.api.wishlist-page.jsx",
+                "path": "api/wishlist-page"
+              },
+              {
+                "id": "routes/app.api.settings",
+                "file": "routes/app.api.settings.jsx",
+                "path": "api/settings"
+              },
+              {
+                "id": "routes/app.api.wishlist",
+                "file": "routes/app.api.wishlist.jsx",
+                "path": "api/wishlist"
+              },
+              {
+                "id": "routes/app.storefront",
+                "file": "routes/app.storefront.jsx",
+                "path": "storefront"
+              },
+              {
+                "id": "routes/app.analytics",
+                "file": "routes/app.analytics.jsx",
+                "path": "analytics"
+              },
+              {
+                "id": "routes/app.billing",
+                "file": "routes/app.billing.jsx",
+                "path": "billing"
+              },
+              {
+                "id": "routes/app.pricing",
+                "file": "routes/app.pricing.jsx",
+                "path": "pricing"
+              },
+              {
+                "id": "routes/app._index",
+                "file": "routes/app._index.jsx",
+                "index": true
+              },
+              {
+                "id": "routes/app.setup",
+                "file": "routes/app.setup.jsx",
+                "path": "setup"
+              },
+              {
+                "id": "routes/app.theme",
+                "file": "routes/app.theme.jsx",
+                "path": "theme"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "viteConfig": {
+    "build": {
+      "assetsDir": "assets"
+    }
+  }
+}
