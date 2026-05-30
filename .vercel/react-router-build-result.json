@@ -124,7 +124,7 @@
       "routes/privacy": {
         "id": "routes/privacy",
         "parentId": "root",
-        "file": "app/routes/privacy.jsx",
+        "file": "app/routes/privacy/route.jsx",
         "path": "privacy",
         "config": {
           "runtime": "nodejs"
@@ -347,7 +347,7 @@
       "routes/privacy": {
         "id": "routes/privacy",
         "parentId": "root",
-        "file": "routes/privacy.jsx",
+        "file": "routes/privacy/route.jsx",
         "path": "privacy"
       },
       "routes/_index": {
@@ -508,7 +508,7 @@
           },
           {
             "id": "routes/privacy",
-            "file": "routes/privacy.jsx",
+            "file": "routes/privacy/route.jsx",
             "path": "privacy"
           },
           {

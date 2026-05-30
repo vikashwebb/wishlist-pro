@@ -1,5 +1,5 @@
 import { Link, useLoaderData } from "react-router";
-import styles from "../styles/public-legal.module.css";
+import styles from "../../styles/public-legal.module.css";
 
 const LAST_UPDATED = "May 30, 2026";
 
