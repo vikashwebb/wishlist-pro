@@ -5,7 +5,7 @@
   "rewrites": [
     {
       "source": "/privacy",
-      "destination": "/privacy.html"
+      "destination": "/api/privacy"
     }
   ]
 }

@@ -1,4 +1,15 @@
-<!DOCTYPE html>
+const LAST_UPDATED = "May 30, 2026";
+
+/**
+ * Shared privacy policy HTML for /privacy (Vercel API + static fallback + local dev).
+ */
+export function buildPrivacyHtml(contactEmail = "") {
+  const email = contactEmail.trim();
+  const contactBlock = email
+    ? `<p class="contact">Questions about this policy: <a href="mailto:${email}">${email}</a></p>`
+    : `<p class="contact">Questions about this policy: contact us through the support channel listed on the Wishlist Pro Shopify App Store listing.</p>`;
+
+  return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
@@ -101,7 +112,7 @@
     </div>
     <article class="card">
       <h1>Privacy Policy</h1>
-      <p class="updated">Last updated: May 30, 2026</p>
+      <p class="updated">Last updated: ${LAST_UPDATED}</p>
       <div class="content">
         <p>Wishlist Pro ("we", "our", or "the app") is a Shopify application that helps merchants offer wishlist functionality on their storefront. This policy explains what information the app processes and how that information is used.</p>
 
@@ -146,9 +157,10 @@
         <p>We may update this policy from time to time. The "Last updated" date at the top of this page will reflect changes. Continued use of the app after an update means you accept the revised policy.</p>
 
         <h2>Contact</h2>
-        <p class="contact">Questions about this policy: contact us through the support channel listed on the Wishlist Pro Shopify App Store listing.</p>
+        ${contactBlock}
       </div>
     </article>
   </div>
 </body>
-</html>
+</html>`;
+}
