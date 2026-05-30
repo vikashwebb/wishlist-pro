@@ -278,6 +278,9 @@
       "v8_splitRouteModules": false,
       "v8_viteEnvironmentApi": false
     },
+    "prerender": [
+      "/privacy"
+    ],
     "routes": {
       "root": {
         "id": "root",

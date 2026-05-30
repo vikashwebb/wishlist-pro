@@ -9,4 +9,6 @@ export default {
   ssr: true,
   routeDiscovery: { mode: "initial" },
   presets: [vercelPreset()],
+  /** Pre-rendered static HTML — served before the SSR handler (required on Vercel). */
+  prerender: ["/privacy"],
 } satisfies Config;

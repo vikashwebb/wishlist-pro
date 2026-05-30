@@ -10,7 +10,14 @@ export default async function handleRequest(
   reactRouterContext,
   loadContext,
 ) {
-  await addDocumentResponseHeaders(request, responseHeaders);
+  const pathname = new URL(request.url).pathname;
+  const isPublicLegalPage =
+    pathname === "/privacy" || pathname === "/privacy/";
+
+  // Privacy is pre-rendered static HTML — no Shopify session/DB required.
+  if (!isPublicLegalPage) {
+    await addDocumentResponseHeaders(request, responseHeaders);
+  }
 
   return vercelHandleRequest(
     request,

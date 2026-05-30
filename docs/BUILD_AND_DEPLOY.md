@@ -49,7 +49,7 @@ shopify app dev
 
 5. Redeploy after env changes.
 
-**Privacy policy URL (`/privacy`):** Production uses a **Vercel API route** (`api/privacy.js`) via `vercel.json` rewrite — it does **not** depend on React Router SSR (which was returning 404 on Vercel). Set `SUPPORT_EMAIL` on Vercel before deploying. Local dev still works via `app/routes/privacy/route.jsx`.
+**Privacy policy URL (`/privacy`):** Built as **pre-rendered static HTML** (`build/client/privacy/index.html`) at deploy time. The `/privacy` route skips Shopify/DB in `entry.server.jsx` so prerender succeeds. Set `SUPPORT_EMAIL` on Vercel before deploying. Fallback static file: `/privacy.html`.
 
 Partner Dashboard **App URL** and **redirect URL** must match `SHOPIFY_APP_URL` (we use `include_config_on_deploy = false`, so CLI deploy does not overwrite them).
 

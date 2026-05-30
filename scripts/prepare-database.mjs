@@ -9,6 +9,24 @@ import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
+function resolveProjectRoot() {
+  const candidates = [
+    process.cwd(),
+    root,
+    path.resolve(process.cwd(), ".."),
+  ];
+
+  for (const dir of candidates) {
+    if (fs.existsSync(path.join(dir, "prisma", "schema.prisma"))) {
+      return dir;
+    }
+  }
+
+  throw new Error(
+    `Could not find prisma/schema.prisma (cwd=${process.cwd()}, scriptRoot=${root})`,
+  );
+}
+
 function ensureSqliteDirectory(databaseUrl) {
   if (!databaseUrl?.startsWith("file:")) {
     return;
@@ -63,6 +81,7 @@ function resolveDatabaseUrl() {
  * - skipGenerate: true on Vercel/runtime (generate runs at build). false for local setup.
  */
 export function prepareDatabase(options = {}) {
+  const projectRoot = resolveProjectRoot();
   const databaseUrl = resolveDatabaseUrl();
 
   if (!databaseUrl) {
@@ -80,14 +99,14 @@ export function prepareDatabase(options = {}) {
 
   if (!skipGenerate) {
     execSync("npx prisma generate", {
-      cwd: root,
+      cwd: projectRoot,
       stdio: "inherit",
       env: process.env,
     });
   }
 
   execSync("npx prisma migrate deploy", {
-    cwd: root,
+    cwd: projectRoot,
     stdio: "inherit",
     env: process.env,
   });
