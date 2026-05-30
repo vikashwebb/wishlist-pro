@@ -1,5 +1,5 @@
 import { boundary } from "@shopify/shopify-app-react-router/server";
-import { PRO_PLAN } from "../billing.constants";
+import { ALL_FEATURES_FREE, PRO_PLAN } from "../billing.constants";
 
 /**
  * Starts the Pro subscription approval flow.
@@ -7,6 +7,13 @@ import { PRO_PLAN } from "../billing.constants";
  * exit the iframe to Shopify's charge confirmation page.
  */
 export const loader = async ({ request }) => {
+  if (ALL_FEATURES_FREE) {
+    const { redirect } = await import("react-router");
+    const url = new URL(request.url);
+    const search = url.searchParams.toString();
+    throw redirect(search ? `/app/pricing?${search}` : "/app/pricing");
+  }
+
   const { authenticate } = await import("../shopify.server");
   const { isBillingTestMode, proUpgradeReturnUrl } = await import(
     "../billing.server"

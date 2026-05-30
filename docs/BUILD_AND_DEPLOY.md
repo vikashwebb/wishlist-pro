@@ -51,6 +51,16 @@ shopify app dev
 
 Partner Dashboard **App URL** and **redirect URL** must match `SHOPIFY_APP_URL` (we use `include_config_on_deploy = false`, so CLI deploy does not overwrite them).
 
+### "Handling response" / app stuck loading
+
+That text is React Router’s **streaming SSR shell** — not a Shopify error. The UI stays there when:
+
+1. **Server loaders fail** — check Vercel **Runtime logs** for `wishlist.db.migrate.error`, Prisma, or missing env vars. `/auth/login` returning **500** usually means `DATABASE_URL` or Shopify env vars are wrong on Vercel.
+2. **Sessions lost** — SQLite under `/tmp` on Vercel is wiped on cold starts. Set `DATABASE_URL` and **re-open the app from Shopify Admin** (or reinstall) after each deploy until you use a persistent database.
+3. **URL mismatch** — `SHOPIFY_APP_URL`, Partner Dashboard App URL, and redirect URL must all be the same host (e.g. `https://wishlist-pro-new.vercel.app`).
+4. **Stale deploy** — redeploy after pulling so `react-router.config.ts` (`routeDiscovery: initial`) is in the built bundle.
+5. **Pro trial** — use **Start Pro trial** → `/app/billing` (full page load), not a form POST inside the iframe.
+
 ## Deploy Shopify app + theme extension
 
 Full clean deploy (local):

@@ -4,7 +4,18 @@ import { AppProvider } from "@shopify/shopify-app-react-router/react";
 
 export const loader = async ({ request }) => {
   const { authenticateAppAdmin } = await import("../shopify.server");
-  await authenticateAppAdmin(request);
+
+  try {
+    await authenticateAppAdmin(request);
+  } catch (error) {
+    // Shopify returns 410 for bot user agents (isbot). Return the app shell so
+    // App Bridge can still initialize instead of a blank "Handling response" page.
+    if (error instanceof Response && error.status === 410) {
+      // eslint-disable-next-line no-undef
+      return { apiKey: process.env.SHOPIFY_API_KEY || "" };
+    }
+    throw error;
+  }
 
   // eslint-disable-next-line no-undef
   return { apiKey: process.env.SHOPIFY_API_KEY || "" };

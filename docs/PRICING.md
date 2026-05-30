@@ -1,13 +1,53 @@
 # Wishlist Pro — Pricing & billing
 
-## Plans (Option A)
+## Current mode: all features free
+
+**`ALL_FEATURES_FREE = true`** in [`app/billing.constants.js`](../app/billing.constants.js).
+
+While this flag is on:
+
+- Every merchant gets **full Pro access** (analytics, QA lab, health checks, login-only mode, CSV export).
+- The **Pricing** page shows one active free plan and a **Pro · coming soon** preview (billing buttons are disabled).
+- **`/app/billing`** redirects to Pricing — no Shopify charge is created.
+- Pro plan code (`PRO`, $5.99/mo, 7-day trial) stays in place for a future launch.
+
+---
+
+## Plans (when paid billing launches)
 
 | Plan | Price | Includes |
 |------|--------|----------|
 | **Free** | $0 | Product/collection wishlist buttons, guest wishlist, wishlist page, theme styling, launch checklist |
-| **Pro** | **$5.99 USD / month** (7-day trial) | **Merchant QA lab & health checks**, login-only mode (Analytics & CSV export are currently open to all plans) |
+| **Pro** | **$5.99 USD / month** (7-day trial) | Merchant QA lab, health checks, login-only mode, analytics dashboard, CSV export |
 
 Billing uses Shopify’s [Billing API](https://shopify.dev/docs/apps/launch/billing). Charges appear on the merchant’s Shopify invoice.
+
+**Partner Dashboard plan handle (Pro):** `PRO` — must match `PRO_PLAN` in code.
+
+---
+
+## App Store listing (free launch)
+
+While everything is free:
+
+1. Set listing **Pricing** to **Free** (or free plan only).
+2. Do **not** require merchants to approve a paid subscription.
+3. You can skip creating a paid plan in Partner Dashboard until launch day.
+
+When you enable paid Pro, update the listing to **Free + Pro ($5.99/mo)** so it matches the Billing API.
+
+---
+
+## Enable paid Pro later (checklist)
+
+1. In Partner Dashboard → **Pricing**, add Pro plan with internal handle **`PRO`**, $5.99 USD/month, 7-day trial.
+2. In code, set `ALL_FEATURES_FREE = false` in [`app/billing.constants.js`](../app/billing.constants.js).
+3. Update [`app/routes/app.pricing.jsx`](../app/routes/app.pricing.jsx) `COMPARE_ROWS` so Pro-only features show `free: false` (QA lab, login-only, analytics, CSV).
+4. Redeploy production.
+5. Test on a **development store**: Pricing → **Start Pro trial** → approve test charge → confirm analytics/QA gates unlock only after payment.
+6. Update App Store listing pricing to match.
+
+Optional: set `BILLING_REDIRECT_ON_LOAD=true` to send non-Pro merchants to Pricing on every app load (default: off).
 
 ---
 
@@ -17,30 +57,35 @@ Billing uses Shopify’s [Billing API](https://shopify.dev/docs/apps/launch/bill
 
 | File | Purpose |
 |------|---------|
-| [`app/billing.constants.js`](../app/billing.constants.js) | Plan name (`PRO`), price ($5.99), trial (7 days) |
+| [`app/billing.constants.js`](../app/billing.constants.js) | `ALL_FEATURES_FREE`, plan name (`PRO`), price ($5.99), trial (7 days) |
 | [`app/billing.server.js`](../app/billing.server.js) | Pro subscription checks and upgrade URLs |
 | [`app/shopify.server.js`](../app/shopify.server.js) | `billing` block passed to `shopifyApp()` |
-| [`app/routes/app.billing.jsx`](../app/routes/app.billing.jsx) | “Start Pro trial” → Shopify approval URL (GET loader) |
-| [`app/routes/app.api.analytics-export.jsx`](../app/routes/app.api.analytics-export.jsx) | CSV download (no plan gate while testing) |
-| [`app/routes/app.analytics.jsx`](../app/routes/app.analytics.jsx) | Analytics dashboard (no plan gate while testing) |
+| [`app/routes/app.billing.jsx`](../app/routes/app.billing.jsx) | “Start Pro trial” → Shopify approval URL (blocked while `ALL_FEATURES_FREE`) |
+| [`app/routes/app.pricing.jsx`](../app/routes/app.pricing.jsx) | Merchant-facing plans UI |
+| [`app/routes/app.api.analytics-export.jsx`](../app/routes/app.api.analytics-export.jsx) | CSV download (Pro-gated when `ALL_FEATURES_FREE` is false) |
+| [`app/routes/app.analytics.jsx`](../app/routes/app.analytics.jsx) | Analytics dashboard (Pro-gated when `ALL_FEATURES_FREE` is false) |
 
-To change price or trial, edit `PRO_PLAN_PRICE` in `app/billing.constants.js` and redeploy the app.
+To change price or trial, edit `PRO_PLAN_PRICE` in `app/billing.constants.js` and redeploy.
 
 ### 2. Shopify Partner Dashboard (App Store listing)
 
-For a **public App Store** listing, pricing must also match in Partner Dashboard:
+For a **public App Store** listing after paid launch:
 
 1. [partners.shopify.com](https://partners.shopify.com) → **Apps** → **Wishlist Pro**
-2. **Distribution** → **Shopify App Store** (or your distribution channel)
-3. **Pricing** (or **Listing** → **Pricing details**)
+2. **Distribution** → **Shopify App Store**
+3. **Pricing** — align Free + Pro $5.99/mo with the Billing API
 
-Set plans that align with Free + Pro $5.99/mo so the store listing matches what the Billing API charges.
+### 3. What merchants see today (`ALL_FEATURES_FREE = true`)
 
-### 3. What merchants see
+- **Pricing:** “All features included — free for every store”; Pro card shows **Coming soon**.
+- **App:** Full access to analytics, QA lab, health checks, login-only mode, and exports.
+- **Billing:** No charge; `/app/billing` does not start checkout.
 
-- **Free:** Storefront wishlist, theme blocks, launch checklist. QA lab, health checks, and Analytics are visible with a Pro upgrade overlay (preview only).
-- **Pro:** Merchant QA lab, live health checks, analytics dashboard, CSV export, login-only mode.
-- Upgrade: **Pricing** in app nav → **Start Pro trial** → Shopify-hosted approval page (returns to `/app/pricing`).
+### 4. What merchants will see after paid launch (`ALL_FEATURES_FREE = false`)
+
+- **Free:** Storefront wishlist, theme blocks, launch checklist.
+- **Pro:** QA lab, health checks, analytics, CSV export, login-only mode.
+- **Upgrade:** Pricing → **Start Pro trial** → Shopify-hosted approval page (returns to `/app/pricing`).
 
 Development stores use **test charges** (`isTest: true` when `NODE_ENV !== production`).
 

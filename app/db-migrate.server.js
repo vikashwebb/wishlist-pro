@@ -5,7 +5,7 @@ const globalState = globalThis;
 if (!globalState.__wishlistDbMigratePromise) {
   globalState.__wishlistDbMigratePromise = Promise.resolve()
     .then(() => {
-      prepareDatabase();
+      prepareDatabase({ skipGenerate: true });
     })
     .catch((error) => {
       globalState.__wishlistDbMigratePromise = undefined;

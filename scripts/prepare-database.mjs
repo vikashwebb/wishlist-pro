@@ -58,7 +58,11 @@ function resolveDatabaseUrl() {
   return null;
 }
 
-export function prepareDatabase() {
+/**
+ * @param {{ skipGenerate?: boolean }} [options]
+ * - skipGenerate: true on Vercel/runtime (generate runs at build). false for local setup.
+ */
+export function prepareDatabase(options = {}) {
   const databaseUrl = resolveDatabaseUrl();
 
   if (!databaseUrl) {
@@ -69,11 +73,18 @@ export function prepareDatabase() {
 
   ensureSqliteDirectory(databaseUrl);
 
-  execSync("npx prisma generate", {
-    cwd: root,
-    stdio: "inherit",
-    env: process.env,
-  });
+  const skipGenerate =
+    options.skipGenerate ??
+    (process.env.SKIP_PRISMA_GENERATE === "true" ||
+      Boolean(process.env.VERCEL));
+
+  if (!skipGenerate) {
+    execSync("npx prisma generate", {
+      cwd: root,
+      stdio: "inherit",
+      env: process.env,
+    });
+  }
 
   execSync("npx prisma migrate deploy", {
     cwd: root,

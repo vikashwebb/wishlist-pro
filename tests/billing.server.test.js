@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  ALL_FEATURES_FREE,
   embeddedAdminAppUrl,
   hasDemoProAccess,
+  hasProSubscription,
   proUpgradeReturnUrl,
   shopHandleFromDomain,
 } from "../app/billing.server.js";
@@ -37,5 +39,12 @@ describe("billing.server", () => {
     delete process.env.DEMO_PRO_SHOPS;
     expect(hasDemoProAccess("any-store.myshopify.com")).toBe(true);
     delete process.env.DEMO_PRO_ACCESS;
+  });
+
+  it("grants pro features to all shops when ALL_FEATURES_FREE is enabled", async () => {
+    expect(ALL_FEATURES_FREE).toBe(true);
+    await expect(
+      hasProSubscription({ check: async () => ({ hasActivePayment: false }) }, "any.myshopify.com"),
+    ).resolves.toBe(true);
   });
 });

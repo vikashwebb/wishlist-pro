@@ -1,6 +1,6 @@
-import { PRO_PLAN } from "./billing.constants";
+import { ALL_FEATURES_FREE, PRO_PLAN } from "./billing.constants";
 
-export { PRO_PLAN, PRO_PLAN_PRICE } from "./billing.constants";
+export { ALL_FEATURES_FREE, PRO_PLAN, PRO_PLAN_PRICE } from "./billing.constants";
 
 export function isBillingTestMode() {
   return process.env.NODE_ENV !== "production";
@@ -113,7 +113,7 @@ export async function enforceAppBillingOnLoad(request, { billing, session }) {
 }
 
 export async function hasProSubscription(billing, shop) {
-  if (hasDemoProAccess(shop)) {
+  if (ALL_FEATURES_FREE || hasDemoProAccess(shop)) {
     return true;
   }
 
