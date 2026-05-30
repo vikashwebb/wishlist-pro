@@ -8,7 +8,7 @@
     "build": "react-router build",
     "build:app": "react-router build",
     "build:production": "npm run setup && npm run build",
-    "build:vercel": "node scripts/ensure-sqlite.mjs && node scripts/prepare-database.mjs && npm run build:app",
+    "build:vercel": "node scripts/ensure-sqlite.mjs && node scripts/prepare-database.mjs && node scripts/generate-privacy-html.mjs && npm run build:app",
     "dev": "shopify app dev",
     "config:link": "shopify app config link",
     "generate": "shopify app generate",
