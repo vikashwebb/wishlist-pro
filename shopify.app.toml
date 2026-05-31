@@ -10,8 +10,6 @@ embedded = true
 [build]
 # true: local dev iframe hits your tunnel (localhost). false: iframe uses application_url above (breaks dev).
 automatically_update_urls_on_dev = true
-# Push webhook subscriptions (including mandatory compliance webhooks) on `shopify app deploy`.
-include_config_on_deploy = true
 
 [webhooks]
 api_version = "2026-04"
