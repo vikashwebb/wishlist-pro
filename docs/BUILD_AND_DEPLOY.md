@@ -49,9 +49,9 @@ shopify app dev
 
 5. Redeploy after env changes.
 
-**Privacy policy URL (`/privacy`):** Served by `entry.server.jsx` before React Router (returns HTML directly, no Shopify session/DB). A static `public/privacy.html` is also generated at build time as a fallback. Set `SUPPORT_EMAIL` on Vercel before deploying.
-
 Partner Dashboard **App URL** and **redirect URL** must match `SHOPIFY_APP_URL` (we use `include_config_on_deploy = false`, so CLI deploy does not overwrite them).
+
+**Privacy policy:** Host outside this app (see [PRIVACY_POLICY_HOSTING.md](./PRIVACY_POLICY_HOSTING.md)). Shopify requires a public URL in the listing — do not use `/privacy` on the Vercel app URL.
 
 ### "Handling response" / app stuck loading
 
@@ -60,7 +60,7 @@ That text is React Router’s **streaming SSR shell** — not a Shopify error. T
 1. **Server loaders fail** — check Vercel **Runtime logs** for `wishlist.db.migrate.error`, Prisma, or missing env vars. `/auth/login` returning **500** usually means `DATABASE_URL` or Shopify env vars are wrong on Vercel.
 2. **Sessions lost** — SQLite under `/tmp` on Vercel is wiped on cold starts. Set `DATABASE_URL` and **re-open the app from Shopify Admin** (or reinstall) after each deploy until you use a persistent database.
 3. **URL mismatch** — `SHOPIFY_APP_URL`, Partner Dashboard App URL, and redirect URL must all be the same host (e.g. `https://wishlist-pro-new.vercel.app`).
-4. **Stale deploy** — redeploy after pulling so `react-router.config.ts` (`routeDiscovery: initial` + `@vercel/react-router` preset) is in the built bundle. New public routes like `/privacy` require a fresh Vercel deploy after merging.
+4. **Stale deploy** — redeploy after pulling so `react-router.config.ts` (`routeDiscovery: initial` + `@vercel/react-router` preset) is in the built bundle.
 5. **Pro trial** — use **Start Pro trial** → `/app/billing` (full page load), not a form POST inside the iframe.
 
 ## Deploy Shopify app + theme extension
