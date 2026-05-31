@@ -2,9 +2,9 @@
 
 client_id = "ff8daa11716d4200164ee8824032e194"
 name = "wishlist-pro"
-# Placeholder — CLI sets the Cloudflare tunnel URL during `shopify app dev` when
-# automatically_update_urls_on_dev is true. Set production URL in Partner Dashboard.
-application_url = "https://example.com"
+# Production App URL — must match Partner Dashboard + SHOPIFY_APP_URL on Vercel.
+# CLI overwrites this with your tunnel during `shopify app dev` when automatically_update_urls_on_dev = true.
+application_url = "https://wishlist-pro-new.vercel.app"
 embedded = true
 
 [build]
@@ -25,15 +25,23 @@ api_version = "2026-04"
   uri = "/webhooks/app/scopes_update"
 
   [[webhooks.subscriptions]]
-  compliance_topics = [ "customers/data_request", "customers/redact", "shop/redact" ]
-  uri = "/webhooks/compliance"
+  compliance_topics = [ "customers/data_request" ]
+  uri = "/webhooks/customers/data_request"
+
+  [[webhooks.subscriptions]]
+  compliance_topics = [ "customers/redact" ]
+  uri = "/webhooks/customers/redact"
+
+  [[webhooks.subscriptions]]
+  compliance_topics = [ "shop/redact" ]
+  uri = "/webhooks/shop/redact"
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
 scopes = "read_customers,write_customers,read_products,write_app_proxy,write_online_store_pages,read_themes"
 
 [auth]
-redirect_urls = [ "https://example.com/auth/callback" ]
+redirect_urls = [ "https://wishlist-pro-new.vercel.app/auth/callback" ]
 
 [app_proxy]
 url = "/proxy"
