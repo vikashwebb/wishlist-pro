@@ -1,3 +1,4 @@
+import "./env.server.js";
 import { PrismaClient } from "@prisma/client";
 
 function createPrismaClient() {

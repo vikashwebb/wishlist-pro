@@ -1,3 +1,4 @@
+import "./env.server.js";
 import { handleRequest as vercelHandleRequest } from "@vercel/react-router/entry.server";
 
 export { streamTimeout } from "@vercel/react-router/entry.server";
@@ -13,10 +14,20 @@ export default async function handleRequest(
   reactRouterContext,
   loadContext,
 ) {
-  if (!isPublicLegalPage(new URL(request.url).pathname)) {
-    const { addDocumentResponseHeaders } = await import("./shopify.server");
-    await addDocumentResponseHeaders(request, responseHeaders);
+  const pathname = new URL(request.url).pathname;
+
+  if (pathname === "/privecy" || pathname === "/privecy/") {
+    return Response.redirect(new URL("/privacy", request.url), 301);
   }
+
+  // Serve privacy policy without React Router matching (works on Vercel SSR catch-all).
+  if (isPublicLegalPage(pathname)) {
+    const { privacyHtmlResponse } = await import("./utils/privacy-html.server");
+    return privacyHtmlResponse();
+  }
+
+  const { addDocumentResponseHeaders } = await import("./shopify.server");
+  await addDocumentResponseHeaders(request, responseHeaders);
 
   return vercelHandleRequest(
     request,

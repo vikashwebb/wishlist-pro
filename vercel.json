@@ -6,5 +6,9 @@
     "build/server/**/*.js": {
       "includeFiles": "prisma/**"
     }
-  }
+  },
+  "rewrites": [
+    { "source": "/privacy", "destination": "/privacy.html" },
+    { "source": "/privacy/", "destination": "/privacy.html" }
+  ]
 }

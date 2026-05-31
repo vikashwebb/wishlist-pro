@@ -6,6 +6,7 @@ import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { VERCEL_DATABASE_URL } from "../app/env.server.js";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -14,6 +15,7 @@ function resolveProjectRoot() {
     process.cwd(),
     root,
     path.resolve(process.cwd(), ".."),
+    "/var/task",
   ];
 
   for (const dir of candidates) {
@@ -59,22 +61,8 @@ function loadDatabaseUrlFromDotEnv() {
 
 function resolveDatabaseUrl() {
   if (process.env.VERCEL) {
-    const vercelUrl = "file:/tmp/wishlist-pro.sqlite";
-    const current = process.env.DATABASE_URL?.trim() || "";
-    const invalidOnVercel =
-      !current ||
-      current.includes(".data") ||
-      current.includes("dev.sqlite") ||
-      !current.startsWith("file:/tmp/");
-
-    if (invalidOnVercel) {
-      console.warn(
-        `Vercel: using ${vercelUrl} (set DATABASE_URL=${vercelUrl} in project env).`,
-      );
-      process.env.DATABASE_URL = vercelUrl;
-    }
-
-    return process.env.DATABASE_URL;
+    process.env.DATABASE_URL = VERCEL_DATABASE_URL;
+    return VERCEL_DATABASE_URL;
   }
 
   loadDatabaseUrlFromDotEnv();
@@ -84,10 +72,9 @@ function resolveDatabaseUrl() {
   }
 
   if (process.env.NODE_ENV === "production") {
-    const fallback = "file:/tmp/wishlist-pro.sqlite";
-    console.warn(`DATABASE_URL is not set. Using fallback ${fallback}.`);
-    process.env.DATABASE_URL = fallback;
-    return fallback;
+    console.warn(`DATABASE_URL is not set. Using fallback ${VERCEL_DATABASE_URL}.`);
+    process.env.DATABASE_URL = VERCEL_DATABASE_URL;
+    return VERCEL_DATABASE_URL;
   }
 
   return null;

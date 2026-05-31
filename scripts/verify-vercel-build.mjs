@@ -4,29 +4,18 @@ import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
-const required = [
-  "build/client/privacy/index.html",
-  "app/routes/privacy.jsx",
-];
+const required = ["public/privacy.html", "app/routes/privacy.jsx"];
 
-const serverBundle = fs.existsSync(path.join(root, "build/server/index.js"))
-  ? "build/server/index.js"
-  : fs.readdirSync(path.join(root, "build/server"), { withFileTypes: true })
-      .find((entry) => entry.isDirectory() && entry.name.startsWith("nodejs_"));
+const entryServer = fs.readFileSync(
+  path.join(root, "app/entry.server.jsx"),
+  "utf8",
+);
 
-let serverPath = "build/server/index.js";
-if (serverBundle && typeof serverBundle === "object") {
-  serverPath = path.join("build/server", serverBundle.name, "index.js");
+if (!entryServer.includes("privacyHtmlResponse")) {
+  console.error("FAIL: entry.server.jsx must short-circuit /privacy via privacyHtmlResponse().");
+  process.exit(1);
 }
-
-if (fs.existsSync(path.join(root, serverPath))) {
-  const serverSource = fs.readFileSync(path.join(root, serverPath), "utf8");
-  if (!/privacy/.test(serverSource)) {
-    console.error("FAIL: /privacy route missing from server route manifest.");
-    process.exit(1);
-  }
-  console.log("OK: /privacy found in server route manifest.");
-}
+console.log("OK: entry.server.jsx serves /privacy before React Router.");
 
 for (const rel of required) {
   const abs = path.join(root, rel);
