@@ -2,14 +2,16 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const executeRawUnsafe = vi.fn();
 const sessionCount = vi.fn();
-
-vi.mock("../app/db.server", () => ({
-  default: {
-    $executeRawUnsafe: (...args) => executeRawUnsafe(...args),
-    session: {
-      count: (...args) => sessionCount(...args),
-    },
+const mockClient = {
+  $executeRawUnsafe: (...args) => executeRawUnsafe(...args),
+  session: {
+    count: (...args) => sessionCount(...args),
   },
+};
+
+vi.mock("../app/db.server.js", () => ({
+  syncPrismaClientForServerless: () => mockClient,
+  getPrismaClient: () => mockClient,
 }));
 
 import { ensureSqliteSchema } from "../app/ensure-sqlite-schema.server.js";

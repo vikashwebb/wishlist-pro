@@ -4,8 +4,8 @@ import path from "node:path";
 /** Writable SQLite file on Vercel/Lambda (only /tmp is writable in serverless). */
 export const SERVERLESS_SQLITE_PATH = "/tmp/wishlist-pro/data.sqlite";
 
-/** Prisma absolute SQLite URL for Linux serverless. */
-export const SERVERLESS_DATABASE_URL = `file:${SERVERLESS_SQLITE_PATH}`;
+/** Prisma absolute SQLite URL (three slashes for Linux absolute paths). */
+export const SERVERLESS_DATABASE_URL = `file://${SERVERLESS_SQLITE_PATH}`;
 
 export function isServerlessRuntime() {
   return (

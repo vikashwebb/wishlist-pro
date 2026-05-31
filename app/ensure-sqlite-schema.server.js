@@ -1,4 +1,4 @@
-import prisma from "./db.server";
+import { getPrismaClient, syncPrismaClientForServerless } from "./db.server.js";
 
 const SCHEMA_STATEMENTS = [
   `CREATE TABLE IF NOT EXISTS "Session" (
@@ -26,26 +26,20 @@ const SCHEMA_STATEMENTS = [
     "wishlistPageTitle" TEXT NOT NULL DEFAULT 'Wishlist',
     "wishlistPageHandle" TEXT NOT NULL DEFAULT 'wishlist',
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" DATETIME NOT NULL
+    "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
   )`,
   `CREATE INDEX IF NOT EXISTS "Session_shop_idx" ON "Session"("shop")`,
-  `CREATE TABLE IF NOT EXISTS "_prisma_migrations" (
-    "id" TEXT NOT NULL PRIMARY KEY,
-    "checksum" TEXT NOT NULL,
-    "finished_at" DATETIME,
-    "migration_name" TEXT NOT NULL,
-    "logs" TEXT,
-    "rolled_back_at" DATETIME,
-    "started_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "applied_steps_count" INTEGER NOT NULL DEFAULT 0
-  )`,
 ];
 
 /** Create Session/ShopSettings tables without invoking the Prisma CLI (needed on Vercel). */
 export async function ensureSqliteSchema() {
+  const prisma = syncPrismaClientForServerless();
+
   for (const statement of SCHEMA_STATEMENTS) {
     await prisma.$executeRawUnsafe(statement);
   }
 
   await prisma.session.count();
 }
+
+export { getPrismaClient };

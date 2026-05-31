@@ -12,7 +12,18 @@ import {
 } from "../components/wishlist-dashboard/shared";
 import { useWishlistDashboard } from "../hooks/use-wishlist-dashboard";
 
-export const loader = loadWishlistDashboardBootstrap;
+export const loader = async (args) => {
+  try {
+    return await loadWishlistDashboardBootstrap(args);
+  } catch (error) {
+    if (error instanceof Response) {
+      throw error;
+    }
+
+    console.error("wishlist.home.loader.error", error);
+    throw error;
+  }
+};
 
 export default function HomePage() {
   const d = useWishlistDashboard();

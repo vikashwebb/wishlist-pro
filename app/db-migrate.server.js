@@ -8,6 +8,7 @@ if (!globalState.__wishlistDbMigratePromise) {
     .then(async () => {
       bootstrapVercelSqlite();
       await ensureSqliteSchema();
+      console.log("wishlist.db.ready", process.env.DATABASE_URL);
     })
     .catch((error) => {
       globalState.__wishlistDbMigratePromise = undefined;
