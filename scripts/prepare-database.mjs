@@ -6,10 +6,8 @@ import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import {
-  SERVERLESS_DATABASE_URL,
-  getVercelTemplateDatabaseUrl,
-} from "../app/bootstrap-sqlite.server.js";
+import { SERVERLESS_DATABASE_URL } from "../app/preload.server.js";
+import { getVercelTemplateDatabaseUrl } from "../app/bootstrap-sqlite.server.js";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 

@@ -12,6 +12,7 @@
     "routeIdToServerBundleId": {
       "routes/webhooks.app.scopes_update": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "routes/webhooks.app.uninstalled": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/webhooks.compliance": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "routes/proxy.wishlist": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "routes/proxy.wishlist.config": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "routes/proxy.wishlist.status": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
@@ -56,6 +57,15 @@
         "parentId": "root",
         "file": "app/routes/webhooks.app.uninstalled.jsx",
         "path": "webhooks/app/uninstalled",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/webhooks.compliance": {
+        "id": "routes/webhooks.compliance",
+        "parentId": "root",
+        "file": "app/routes/webhooks.compliance.jsx",
+        "path": "webhooks/compliance",
         "config": {
           "runtime": "nodejs"
         }
@@ -286,6 +296,12 @@
         "file": "routes/webhooks.app.uninstalled.jsx",
         "path": "webhooks/app/uninstalled"
       },
+      "routes/webhooks.compliance": {
+        "id": "routes/webhooks.compliance",
+        "parentId": "root",
+        "file": "routes/webhooks.compliance.jsx",
+        "path": "webhooks/compliance"
+      },
       "routes/proxy.wishlist": {
         "id": "routes/proxy.wishlist",
         "parentId": "root",
@@ -447,6 +463,11 @@
             "id": "routes/webhooks.app.uninstalled",
             "file": "routes/webhooks.app.uninstalled.jsx",
             "path": "webhooks/app/uninstalled"
+          },
+          {
+            "id": "routes/webhooks.compliance",
+            "file": "routes/webhooks.compliance.jsx",
+            "path": "webhooks/compliance"
           },
           {
             "id": "routes/proxy.wishlist",

@@ -19,6 +19,7 @@
     "start": "node scripts/prepare-database.mjs && react-router-serve ./build/server/index.js",
     "docker-start": "node scripts/prepare-database.mjs && npm run start",
     "setup": "node scripts/ensure-sqlite.mjs && node scripts/prepare-database.mjs",
+    "postinstall": "prisma generate",
     "db:migrate": "node scripts/prepare-database.mjs",
     "lint": "eslint --ignore-path .gitignore --cache --cache-location ./node_modules/.cache/eslint .",
     "shopify": "shopify",
