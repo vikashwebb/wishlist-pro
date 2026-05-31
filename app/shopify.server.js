@@ -47,6 +47,12 @@ async function getShopify() {
         hooks: {
           afterAuth: async ({ session, admin }) => {
             try {
+              await shopifyInstance.registerWebhooks({ session });
+            } catch (error) {
+              console.error("wishlist.registerWebhooks.error", error);
+            }
+
+            try {
               const { getShopSettings } = await import("./models/shop-settings.server");
               const { provisionWishlistInfrastructure } = await import(
                 "./models/shop-provision.server"

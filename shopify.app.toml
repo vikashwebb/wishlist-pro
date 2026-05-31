@@ -10,6 +10,8 @@ embedded = true
 [build]
 # true: local dev iframe hits your tunnel (localhost). false: iframe uses application_url above (breaks dev).
 automatically_update_urls_on_dev = true
+# Push webhook subscriptions (including mandatory compliance webhooks) on `shopify app deploy`.
+include_config_on_deploy = true
 
 [webhooks]
 api_version = "2026-04"
@@ -21,6 +23,10 @@ api_version = "2026-04"
   [[webhooks.subscriptions]]
   topics = [ "app/scopes_update" ]
   uri = "/webhooks/app/scopes_update"
+
+  [[webhooks.subscriptions]]
+  compliance_topics = [ "customers/data_request", "customers/redact", "shop/redact" ]
+  uri = "/webhooks/compliance"
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
