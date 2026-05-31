@@ -1,29 +1,36 @@
-import "./env.server.js";
+import "./preload.server.js";
 import { PrismaClient } from "@prisma/client";
 
 function createPrismaClient() {
-  return new PrismaClient();
+  return new PrismaClient({
+    datasources: {
+      db: {
+        url: process.env.DATABASE_URL,
+      },
+    },
+  });
 }
 
 function hasShopSettingsDelegate(client) {
   return typeof client?.shopSettings?.findUnique === "function";
 }
 
-function shouldReusePrismaClient(client) {
-  return hasShopSettingsDelegate(client);
-}
-
-let prisma;
-
-if (process.env.NODE_ENV !== "production" || process.env.VERCEL) {
-  if (!shouldReusePrismaClient(global.prismaGlobal)) {
+function getOrCreateClient() {
+  if (!hasShopSettingsDelegate(global.prismaGlobal)) {
     global.prismaGlobal?.$disconnect?.().catch(() => {});
     global.prismaGlobal = createPrismaClient();
   }
 
-  prisma = global.prismaGlobal;
-} else {
-  prisma = createPrismaClient();
+  return global.prismaGlobal;
 }
 
-export default prisma;
+export default new Proxy(
+  {},
+  {
+    get(_target, prop) {
+      const client = getOrCreateClient();
+      const value = client[prop];
+      return typeof value === "function" ? value.bind(client) : value;
+    },
+  },
+);

@@ -1,12 +1,17 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  SERVERLESS_DATABASE_URL,
+  SERVERLESS_SQLITE_PATH,
+  isServerlessRuntime,
+  prepareServerlessSqliteFile,
+} from "./preload.server.js";
 
-/** Writable SQLite path on Vercel serverless (ephemeral per instance). */
-export const VERCEL_DATABASE_URL = "file:/tmp/wishlist-pro.sqlite";
+/** @deprecated use SERVERLESS_DATABASE_URL */
+export const VERCEL_DATABASE_URL = SERVERLESS_DATABASE_URL;
 
 const appRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const RUNTIME_DB_PATH = "/tmp/wishlist-pro.sqlite";
 const TEMPLATE_FILENAME = "vercel-template.sqlite";
 
 function resolveTemplatePaths() {
@@ -31,17 +36,16 @@ function resolveTemplatePaths() {
   return paths;
 }
 
-/** Copy build-time migrated SQLite template into writable /tmp on Vercel. */
+/** Copy build-time migrated SQLite template into writable /tmp on serverless. */
 export function bootstrapVercelSqlite() {
-  if (!process.env.VERCEL || process.env.VERCEL_BUILD === "true") {
-    return VERCEL_DATABASE_URL;
+  if (!isServerlessRuntime() || process.env.VERCEL_BUILD === "true") {
+    return process.env.DATABASE_URL ?? SERVERLESS_DATABASE_URL;
   }
 
-  fs.mkdirSync("/tmp", { recursive: true });
-  process.env.DATABASE_URL = VERCEL_DATABASE_URL;
+  prepareServerlessSqliteFile();
 
-  if (fs.existsSync(RUNTIME_DB_PATH)) {
-    return VERCEL_DATABASE_URL;
+  if (fs.existsSync(SERVERLESS_SQLITE_PATH) && fs.statSync(SERVERLESS_SQLITE_PATH).size > 0) {
+    return SERVERLESS_DATABASE_URL;
   }
 
   for (const templatePath of resolveTemplatePaths()) {
@@ -49,16 +53,17 @@ export function bootstrapVercelSqlite() {
       continue;
     }
 
-    fs.copyFileSync(templatePath, RUNTIME_DB_PATH);
-    console.log(`wishlist.db.bootstrap copied ${templatePath} -> ${RUNTIME_DB_PATH}`);
-    return VERCEL_DATABASE_URL;
+    fs.copyFileSync(templatePath, SERVERLESS_SQLITE_PATH);
+    console.log(
+      `wishlist.db.bootstrap copied ${templatePath} -> ${SERVERLESS_SQLITE_PATH}`,
+    );
+    return SERVERLESS_DATABASE_URL;
   }
 
-  fs.writeFileSync(RUNTIME_DB_PATH, Buffer.alloc(0));
   console.warn(
-    "wishlist.db.bootstrap created empty /tmp database; schema init will run on first request",
+    "wishlist.db.bootstrap using empty /tmp database; schema init runs on first request",
   );
-  return VERCEL_DATABASE_URL;
+  return SERVERLESS_DATABASE_URL;
 }
 
 export function getVercelTemplateDatabaseUrl(projectRoot = appRoot) {

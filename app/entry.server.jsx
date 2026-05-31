@@ -1,3 +1,4 @@
+import "./preload.server.js";
 import "./env.server.js";
 import { handleRequest as vercelHandleRequest } from "@vercel/react-router/entry.server";
 

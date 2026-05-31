@@ -6,8 +6,10 @@ import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { VERCEL_DATABASE_URL } from "../app/bootstrap-sqlite.server.js";
-import { getVercelTemplateDatabaseUrl } from "../app/bootstrap-sqlite.server.js";
+import {
+  SERVERLESS_DATABASE_URL,
+  getVercelTemplateDatabaseUrl,
+} from "../app/bootstrap-sqlite.server.js";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -68,8 +70,8 @@ function resolveDatabaseUrl(projectRoot) {
   }
 
   if (process.env.VERCEL) {
-    process.env.DATABASE_URL = VERCEL_DATABASE_URL;
-    return VERCEL_DATABASE_URL;
+    process.env.DATABASE_URL = SERVERLESS_DATABASE_URL;
+    return SERVERLESS_DATABASE_URL;
   }
 
   loadDatabaseUrlFromDotEnv();
@@ -79,9 +81,9 @@ function resolveDatabaseUrl(projectRoot) {
   }
 
   if (process.env.NODE_ENV === "production") {
-    console.warn(`DATABASE_URL is not set. Using fallback ${VERCEL_DATABASE_URL}.`);
-    process.env.DATABASE_URL = VERCEL_DATABASE_URL;
-    return VERCEL_DATABASE_URL;
+    console.warn(`DATABASE_URL is not set. Using fallback ${SERVERLESS_DATABASE_URL}.`);
+    process.env.DATABASE_URL = SERVERLESS_DATABASE_URL;
+    return SERVERLESS_DATABASE_URL;
   }
 
   return null;
