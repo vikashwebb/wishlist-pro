@@ -1,7 +1,20 @@
 import fs from "node:fs";
+import {
+  VERCEL_DATABASE_URL,
+  bootstrapVercelSqlite,
+} from "./bootstrap-sqlite.server.js";
 
-/** Writable SQLite path on Vercel serverless (ephemeral per instance). */
-export const VERCEL_DATABASE_URL = "file:/tmp/wishlist-pro.sqlite";
+export { VERCEL_DATABASE_URL };
+
+function usesLocalDevDatabaseUrl(url) {
+  if (!url) return false;
+  return (
+    url.includes(".data/") ||
+    url.includes("dev.sqlite") ||
+    url.startsWith("file:../") ||
+    url.startsWith("file:./")
+  );
+}
 
 /**
  * Force a valid DATABASE_URL before Prisma or migrate scripts run.
@@ -9,14 +22,18 @@ export const VERCEL_DATABASE_URL = "file:/tmp/wishlist-pro.sqlite";
  */
 export function ensureProductionDatabaseUrl() {
   if (process.env.VERCEL) {
-    process.env.DATABASE_URL = VERCEL_DATABASE_URL;
-    fs.mkdirSync("/tmp", { recursive: true });
-    return process.env.DATABASE_URL;
+    return bootstrapVercelSqlite();
   }
 
-  if (!process.env.DATABASE_URL?.trim() && process.env.NODE_ENV === "production") {
-    process.env.DATABASE_URL = VERCEL_DATABASE_URL;
+  if (
+    process.env.NODE_ENV === "production" &&
+    usesLocalDevDatabaseUrl(process.env.DATABASE_URL)
+  ) {
+    console.warn(
+      "wishlist.db.env replacing local DATABASE_URL with /tmp fallback for production",
+    );
     fs.mkdirSync("/tmp", { recursive: true });
+    process.env.DATABASE_URL = VERCEL_DATABASE_URL;
   }
 
   return process.env.DATABASE_URL;

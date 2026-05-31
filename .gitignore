@@ -13,6 +13,8 @@ node_modules
 /prisma/dev.sqlite-journal
 /prisma/dev.sqlite-wal
 /prisma/dev.sqlite-shm
+/prisma/vercel-template.sqlite
+/prisma/vercel-template.sqlite-journal
 /.data/
 database.sqlite
 

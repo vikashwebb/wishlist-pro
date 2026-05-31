@@ -1,12 +1,13 @@
 /**
  * Ensures SQLite parent dirs exist and runs Prisma migrations.
- * Safe for Vercel/production: uses process.env.DATABASE_URL only (does not overwrite it).
+ * Vercel build writes prisma/vercel-template.sqlite; runtime copies it to /tmp.
  */
 import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { VERCEL_DATABASE_URL } from "../app/env.server.js";
+import { VERCEL_DATABASE_URL } from "../app/bootstrap-sqlite.server.js";
+import { getVercelTemplateDatabaseUrl } from "../app/bootstrap-sqlite.server.js";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -59,7 +60,13 @@ function loadDatabaseUrlFromDotEnv() {
   }
 }
 
-function resolveDatabaseUrl() {
+function resolveDatabaseUrl(projectRoot) {
+  if (process.env.VERCEL_BUILD === "true") {
+    const url = getVercelTemplateDatabaseUrl(projectRoot);
+    process.env.DATABASE_URL = url;
+    return url;
+  }
+
   if (process.env.VERCEL) {
     process.env.DATABASE_URL = VERCEL_DATABASE_URL;
     return VERCEL_DATABASE_URL;
@@ -86,7 +93,7 @@ function resolveDatabaseUrl() {
  */
 export function prepareDatabase(options = {}) {
   const projectRoot = resolveProjectRoot();
-  const databaseUrl = resolveDatabaseUrl();
+  const databaseUrl = resolveDatabaseUrl(projectRoot);
 
   if (!databaseUrl) {
     throw new Error(
