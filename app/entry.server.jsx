@@ -10,6 +10,9 @@ export default async function handleRequest(
   reactRouterContext,
   loadContext,
 ) {
+  const { ensureDatabaseMigrated } = await import("./db-migrate.server.js");
+  await ensureDatabaseMigrated();
+
   const { addDocumentResponseHeaders } = await import("./shopify.server");
   await addDocumentResponseHeaders(request, responseHeaders);
 

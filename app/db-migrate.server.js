@@ -1,20 +1,13 @@
-import fs from "node:fs";
-import { prepareDatabase } from "../scripts/prepare-database.mjs";
 import { bootstrapVercelSqlite } from "./bootstrap-sqlite.server.js";
+import { ensureSqliteSchema } from "./ensure-sqlite-schema.server.js";
 
 const globalState = globalThis;
-const RUNTIME_DB_PATH = "/tmp/wishlist-pro.sqlite";
 
 if (!globalState.__wishlistDbMigratePromise) {
   globalState.__wishlistDbMigratePromise = Promise.resolve()
-    .then(() => {
+    .then(async () => {
       bootstrapVercelSqlite();
-
-      if (process.env.VERCEL && fs.existsSync(RUNTIME_DB_PATH)) {
-        return;
-      }
-
-      prepareDatabase({ skipGenerate: true });
+      await ensureSqliteSchema();
     })
     .catch((error) => {
       globalState.__wishlistDbMigratePromise = undefined;

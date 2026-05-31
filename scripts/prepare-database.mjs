@@ -106,7 +106,7 @@ export function prepareDatabase(options = {}) {
   const skipGenerate =
     options.skipGenerate ??
     (process.env.SKIP_PRISMA_GENERATE === "true" ||
-      Boolean(process.env.VERCEL));
+      (Boolean(process.env.VERCEL) && process.env.VERCEL_BUILD !== "true"));
 
   if (!skipGenerate) {
     execSync("npx prisma generate", {

@@ -54,8 +54,9 @@ export function bootstrapVercelSqlite() {
     return VERCEL_DATABASE_URL;
   }
 
+  fs.writeFileSync(RUNTIME_DB_PATH, Buffer.alloc(0));
   console.warn(
-    "wishlist.db.bootstrap missing template; runtime migrate will create /tmp database",
+    "wishlist.db.bootstrap created empty /tmp database; schema init will run on first request",
   );
   return VERCEL_DATABASE_URL;
 }

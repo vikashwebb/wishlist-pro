@@ -15,7 +15,7 @@ function shouldReusePrismaClient(client) {
 
 let prisma;
 
-if (process.env.NODE_ENV !== "production") {
+if (process.env.NODE_ENV !== "production" || process.env.VERCEL) {
   if (!shouldReusePrismaClient(global.prismaGlobal)) {
     global.prismaGlobal?.$disconnect?.().catch(() => {});
     global.prismaGlobal = createPrismaClient();
