@@ -110,8 +110,8 @@ describe("buildProductExportRowsFromCustomers", () => {
 
     expect(productOne?.customerCount).toBe(2);
     expect(productOne?.customers.map((entry) => entry.displayName)).toEqual([
-      "Jane",
-      "John",
+      "Customer #1",
+      "Customer #2",
     ]);
   });
 });

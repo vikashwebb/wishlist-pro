@@ -81,10 +81,14 @@ describe("GID helpers", () => {
 
 describe("isProtectedCustomerDataError", () => {
   it("detects Shopify protected customer data errors", () => {
-    const error = new Error(
+    const objectError = new Error(
       "This app is not approved to access the Customer object.",
     );
-    expect(isProtectedCustomerDataError(error)).toBe(true);
+    const displayNameError = new Error(
+      "This app is not approved to use the displayName field.",
+    );
+    expect(isProtectedCustomerDataError(objectError)).toBe(true);
+    expect(isProtectedCustomerDataError(displayNameError)).toBe(true);
     expect(isProtectedCustomerDataError(new Error("other"))).toBe(false);
   });
 });

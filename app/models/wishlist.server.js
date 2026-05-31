@@ -65,7 +65,13 @@ export function wishlistItemsEqual(left = [], right = []) {
 
 export function isProtectedCustomerDataError(error) {
   const message = error instanceof Error ? error.message : String(error);
-  return message.includes("not approved to access the Customer object");
+  return (
+    message.includes("not approved to access the Customer object") ||
+    message.includes("not approved to use the displayName field") ||
+    message.includes("not approved to use the email field") ||
+    message.includes("not approved to use the phone field") ||
+    message.includes("protected-customer-data")
+  );
 }
 
 export function mergeWishlistMetafields(primaryMetafield, legacyMetafield) {
@@ -115,7 +121,6 @@ export async function readWishlist(admin, customerId) {
       ) {
         customer(id: $customerId) {
           id
-          displayName
           metafield(namespace: $namespace, key: $key) {
             id
             namespace

@@ -316,9 +316,7 @@ export default function AnalyticsPage() {
                     <article key={customer.id} className={styles.customerRow}>
                       <div>
                         <p className={styles.rowTitle}>{customer.displayName}</p>
-                        <p className={styles.rowMeta}>
-                          {customer.email || "No email on file"}
-                        </p>
+                        <p className={styles.rowMeta}>{customer.id}</p>
                       </div>
                       <div className={styles.rowStat}>
                         <strong>{customer.itemCount}</strong>

@@ -1,5 +1,6 @@
 import { KEY, LEGACY_NAMESPACE, NAMESPACE } from "./wishlist";
 import { isProtectedCustomerDataError, normalizeWishlistItems } from "./wishlist.server";
+import { formatCustomerIdLabel } from "../utils/customer-label.js";
 import { logWishlistError } from "../utils/logger.server";
 
 const CUSTOMERS_PAGE_SIZE = 100;
@@ -36,8 +37,8 @@ export function buildWishlistAnalytics(customers = [], options = {}) {
 
     customerRows.push({
       id: customer.id,
-      displayName: customer.displayName || customer.email || customer.id,
-      email: customer.email || null,
+      displayName: formatCustomerIdLabel(customer.id),
+      email: null,
       itemCount: items.length,
       productIds: items,
       updatedAt,
@@ -223,8 +224,6 @@ async function fetchCustomersPage(admin, cursor) {
         customers(first: $first, after: $after) {
           nodes {
             id
-            displayName
-            email
             metafield(namespace: $namespace, key: $key) {
               value
               jsonValue

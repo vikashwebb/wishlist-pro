@@ -1,11 +1,9 @@
 /* eslint-disable react/prop-types */
 import { AppLink, isInternalAppPath } from "../app-link";
 import styles from "../../styles/app-index.module.css";
+import { formatCustomerLabel } from "../../utils/customer-label";
 
-export function formatCustomerLabel(customer) {
-  if (!customer) return "No customer selected";
-  return customer.displayName || customer.email || customer.id;
-}
+export { formatCustomerLabel };
 
 export function formatProductLabel(product) {
   if (!product) return "No product selected";

@@ -1,4 +1,5 @@
 import { resolveExportDateRange } from "../utils/wishlist-export-dates";
+import { formatCustomerIdLabel } from "../utils/customer-label.js";
 import { getWishlistAnalytics } from "./wishlist-analytics.server";
 
 function escapeCsvCell(value) {
@@ -100,8 +101,8 @@ export function buildProductExportRowsFromCustomers(customerRows = []) {
         current.customerIds.add(customer.id);
         current.customers.push({
           id: customer.id,
-          displayName: customer.displayName,
-          email: customer.email,
+          displayName: formatCustomerIdLabel(customer.id),
+          email: null,
         });
       }
 

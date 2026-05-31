@@ -3,7 +3,7 @@ import {
   hasOnlineStorePagesScope,
   provisionWishlistInfrastructure,
 } from "./shop-provision.server";
-import { getWishlistDiagnostics, readWishlist } from "./wishlist.server";
+import { getWishlistDiagnostics, isProtectedCustomerDataError, readWishlist } from "./wishlist.server";
 import { ensureWishlistPageBodyCurrent } from "./wishlist-page.server";
 
 async function getMainThemeId(admin, accessScopes) {
@@ -108,8 +108,6 @@ export async function loadWishlistDashboardBootstrap({ request }) {
           customers(first: 10) {
             nodes {
               id
-              displayName
-              email
             }
           }
           products(first: 10, sortKey: UPDATED_AT, reverse: true) {
@@ -178,10 +176,7 @@ export async function loadWishlistDashboardBootstrap({ request }) {
       initialWishlistPage,
     };
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    const customerAccessBlocked = message.includes(
-      "not approved to access the Customer object",
-    );
+    const customerAccessBlocked = isProtectedCustomerDataError(error);
 
     if (!customerAccessBlocked) {
       throw error;
