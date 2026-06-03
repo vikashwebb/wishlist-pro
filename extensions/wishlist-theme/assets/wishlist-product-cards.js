@@ -494,37 +494,124 @@
     return link.parentElement;
   }
 
+  function cardAlreadyHasHandle(card, handle) {
+    if (!card) return true;
+    return !!card.querySelector(
+      '[data-wishlist-card-handle="' + handle + '"]',
+    );
+  }
+
+  function mountCardWishlistButton(card, handle, config, labels, onToggle) {
+    if (!card || cardAlreadyHasHandle(card, handle)) return false;
+
+    if (window.getComputedStyle(card).position === "static") {
+      card.style.position = "relative";
+    }
+
+    var anchor = document.createElement("div");
+    anchor.className = "wishlist-pro-card-anchor";
+    anchor.setAttribute("data-wishlist-card-handle", handle);
+
+    var button = makeButton(labels, config);
+    setState(button, false, labels);
+
+    button.addEventListener("click", function (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      onToggle(handle, button);
+    });
+
+    anchor.appendChild(button);
+    card.appendChild(anchor);
+    return true;
+  }
+
+  function collectCardHandleEntries(config) {
+    var entries = [];
+    var seenHandles = new Set();
+
+    collectProductLinks(config).forEach(function (link) {
+      var handle = extractHandle(link.href);
+      if (!handle || seenHandles.has(handle)) return;
+
+      var card = findProductCard(link, config);
+      if (!card) return;
+
+      seenHandles.add(handle);
+      entries.push({ handle: handle, card: card });
+    });
+
+    document.querySelectorAll("[data-product-handle]").forEach(function (node) {
+      var handle = String(node.getAttribute("data-product-handle") || "").trim();
+      if (!handle || seenHandles.has(handle)) return;
+
+      var card = findProductCard(node, config);
+      if (!card) {
+        card = node.closest("[data-product-id]") || node;
+      }
+
+      seenHandles.add(handle);
+      entries.push({ handle: handle, card: card });
+    });
+
+    return entries;
+  }
+
+  function injectPageProduct(config, labels, onToggle) {
+    var pageProduct = config.pageProduct;
+    if (!pageProduct || !pageProduct.handle) return false;
+
+    var handle = String(pageProduct.handle).trim();
+    if (!handle || document.querySelector('[data-wishlist-card-handle="' + handle + '"]')) {
+      return false;
+    }
+
+    var mount = null;
+    splitSelectors(config.pdpMountSelector || "").forEach(function (selector) {
+      if (mount) return;
+      mount = document.querySelector(selector);
+    });
+
+    if (!mount) return false;
+
+    var wrapper = document.createElement("div");
+    wrapper.className = "wishlist-pro-inline wishlist-pro-pdp-from-cards";
+    wrapper.setAttribute("data-wishlist-card-handle", handle);
+
+    var button = makeButton(labels, config);
+    setState(button, false, labels);
+
+    button.addEventListener("click", function (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      onToggle(handle, button);
+    });
+
+    wrapper.appendChild(button);
+    mount.insertAdjacentElement("afterbegin", wrapper);
+    return true;
+  }
+
   function inject(config, labels, onToggle) {
     var createdHandle = false;
 
-    collectProductLinks(config).forEach(function (link) {
-        var handle = extractHandle(link.href);
-        if (!handle) return;
-
-        var card = findProductCard(link, config);
-
-        if (!card || card.querySelector("[data-wishlist-card-handle]")) return;
-        if (window.getComputedStyle(card).position === "static") {
-          card.style.position = "relative";
-        }
-
-        var anchor = document.createElement("div");
-        anchor.className = "wishlist-pro-card-anchor";
-        anchor.setAttribute("data-wishlist-card-handle", handle);
-
-        var button = makeButton(labels, config);
-        setState(button, false, labels);
-
-        button.addEventListener("click", function (event) {
-          event.preventDefault();
-          event.stopPropagation();
-          onToggle(handle, button);
-        });
-
-        anchor.appendChild(button);
-        card.appendChild(anchor);
+    collectCardHandleEntries(config).forEach(function (entry) {
+      if (
+        mountCardWishlistButton(
+          entry.card,
+          entry.handle,
+          config,
+          labels,
+          onToggle,
+        )
+      ) {
         createdHandle = true;
-      });
+      }
+    });
+
+    if (injectPageProduct(config, labels, onToggle)) {
+      createdHandle = true;
+    }
 
     return createdHandle;
   }

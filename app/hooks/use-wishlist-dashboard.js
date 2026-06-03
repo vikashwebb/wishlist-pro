@@ -16,6 +16,7 @@ export function useWishlistDashboard() {
     settings,
     shopDomain,
     mainThemeId,
+    themeEmbedStatus: initialThemeEmbedStatus,
     appApiKey,
     initialSelectedCustomerId,
     initialWishlistItems,
@@ -275,7 +276,16 @@ export function useWishlistDashboard() {
           `${appApiKey}/wishlist-product-embed`,
         )}`
       : null;
+  const productCardsEmbedEditorUrl =
+    themeEditorBaseUrl && appApiKey
+      ? `${themeEditorBaseUrl}?context=apps&template=index&activateAppId=${encodeURIComponent(
+          `${appApiKey}/wishlist-product-cards`,
+        )}`
+      : null;
   const hasThemeEditorLinks = Boolean(themeEditorBaseUrl && appApiKey);
+  const productCardsEmbedEnabled =
+    initialThemeEmbedStatus?.productCardsEnabled === true;
+  const themeEmbedDetectionAvailable = initialThemeEmbedStatus?.available === true;
 
   const diagnosticsCustomerId = diagnostics?.customerId ?? "";
   const diagnosticsMatchesSelection =
@@ -304,7 +314,7 @@ export function useWishlistDashboard() {
   const storefrontStepComplete =
     wishlistRequiresLogin === savedStorefrontRulesRef.current && !isSavingSettings;
   const pageStepComplete = !!wishlistPage;
-  const themeStepComplete = themePlacementConfirmed;
+  const themeStepComplete = productCardsEmbedEnabled || themePlacementConfirmed;
   const qaStepComplete =
     !!selectedCustomerId && !!selectedProductId && wishlistCount > 0;
   const testDataReady = customers.length > 0 && products.length > 0;
@@ -393,8 +403,8 @@ export function useWishlistDashboard() {
 
     shopify.toast.show(
       nextValue
-        ? "Theme placement marked complete"
-        : "Theme placement marked as incomplete",
+        ? "Storefront wishlist marked live"
+        : "Storefront wishlist marked incomplete",
     );
   };
 
@@ -412,10 +422,10 @@ export function useWishlistDashboard() {
   const primaryHeroAction = !isPro
     ? !storefrontStepComplete || !pageStepComplete
       ? { label: "Continue storefront setup", href: "/app/storefront" }
-      : !themeStepComplete && productPageButtonEditorUrl
+      : !themeStepComplete && productCardsEmbedEditorUrl
         ? {
-            label: "Open product theme editor",
-            href: productPageButtonEditorUrl,
+            label: "Enable wishlist on storefront",
+            href: productCardsEmbedEditorUrl,
             target: "_top",
             rel: "noreferrer",
           }
@@ -431,10 +441,10 @@ export function useWishlistDashboard() {
           label: "Create wishlist page",
           href: "/app/storefront",
         }
-      : !themeStepComplete && productPageButtonEditorUrl
+      : !themeStepComplete && productCardsEmbedEditorUrl
         ? {
-            label: "Open product theme editor",
-            href: productPageButtonEditorUrl,
+            label: "Enable wishlist on storefront",
+            href: productCardsEmbedEditorUrl,
             target: "_top",
             rel: "noreferrer",
           }
@@ -500,13 +510,23 @@ export function useWishlistDashboard() {
           : "critical",
     },
     {
-      label: "Theme placement",
-      value: themeStepComplete
-        ? "Confirmed"
-        : hasThemeEditorLinks
-          ? "Awaiting confirmation"
-          : "Theme access unavailable",
-      tone: themeStepComplete ? "success" : hasThemeEditorLinks ? "warning" : "neutral",
+      label: "Storefront wishlist embed",
+      value: productCardsEmbedEnabled
+        ? "Enabled"
+        : themeEmbedDetectionAvailable
+          ? "Not enabled"
+          : themeStepComplete
+            ? "Confirmed manually"
+            : hasThemeEditorLinks
+              ? "Enable in theme editor"
+              : "Theme access unavailable",
+      tone: productCardsEmbedEnabled
+        ? "success"
+        : themeStepComplete
+          ? "success"
+          : hasThemeEditorLinks
+            ? "warning"
+            : "neutral",
     },
     {
       label: "Merchant QA",
@@ -570,12 +590,14 @@ export function useWishlistDashboard() {
           : "Page write scope is missing.",
     },
     {
-      title: "Theme placement",
+      title: "Storefront wishlist",
       href: "/app/theme",
       complete: themeStepComplete,
-      detail: themeStepComplete
-        ? "Theme button placement confirmed."
-        : "Open Theme Editor and confirm once placed.",
+      detail: productCardsEmbedEnabled
+        ? "Wishlist product cards embed is enabled on your theme."
+        : themeStepComplete
+          ? "Storefront wishlist confirmed."
+          : "Enable Wishlist product cards in App embeds (homepage, collections, product).",
     },
     ...(isPro
       ? [
@@ -611,7 +633,8 @@ export function useWishlistDashboard() {
     {
       href: "/app/theme",
       title: "Theme",
-      description: "Place the wishlist button block or embed in your theme.",
+      description:
+        "Enable Wishlist product cards for homepage and grids; optional product block for custom placement.",
       complete: themeStepComplete,
     },
     {
@@ -657,6 +680,9 @@ export function useWishlistDashboard() {
     wishlistPagePreviewPath,
     productPageButtonEditorUrl,
     productPageEmbedEditorUrl,
+    productCardsEmbedEditorUrl,
+    productCardsEmbedEnabled,
+    themeEmbedDetectionAvailable,
     hasThemeEditorLinks,
     diagnosticsFresh,
     diagnosticsErrors,

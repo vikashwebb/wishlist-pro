@@ -363,58 +363,77 @@ function WishlistPageSection({ d }) {
 }
 
 function ThemePlacementSection({ d }) {
+  const embedStatusLabel = d.productCardsEmbedEnabled
+    ? "Enabled on theme"
+    : d.themeEmbedDetectionAvailable
+      ? "Not enabled yet"
+      : d.themePlacementConfirmed
+        ? "Confirmed manually"
+        : d.hasThemeEditorLinks
+          ? "Enable in theme editor"
+          : "Theme editor unavailable";
+
+  const embedStatusTone = d.productCardsEmbedEnabled
+    ? "success"
+    : d.themeStepComplete
+      ? "success"
+      : d.hasThemeEditorLinks
+        ? "warning"
+        : "neutral";
+
   return (
 <article id="theme-placement" className={styles.stepCard}>
                 <div className={styles.stepHeader}>
                   <div>
                     <span className={styles.stepIndex}>Step 4</span>
                     <h3 className={styles.stepTitle}>
-                      Place the wishlist button in your theme
+                      Enable storefront wishlist
                     </h3>
                   </div>
-                  <StatusPill
-                    tone={
-                      d.themeStepComplete
-                        ? "success"
-                        : d.hasThemeEditorLinks
-                          ? "warning"
-                          : "neutral"
-                    }
-                  >
-                    {d.themeStepComplete
-                      ? "Placement confirmed"
-                      : d.hasThemeEditorLinks
-                        ? "Merchant confirmation needed"
-                        : "Theme editor unavailable"}
-                  </StatusPill>
+                  <StatusPill tone={embedStatusTone}>{embedStatusLabel}</StatusPill>
                 </div>
                 <p className={styles.stepText}>
-                  Merchants should only see one clear deployment choice at a time:
-                  use the product app block for JSON themes, or enable the app
-                  embed for liquid themes that need a fallback.
+                  One app embed covers homepage featured products, collection
+                  grids, search results, and product pages. Shopify still requires
+                  you to turn it on once in the theme editor, then save.
                 </p>
+
+                {d.productCardsEmbedEnabled ? (
+                  <div className={`${styles.callout} ${styles.calloutSuccess}`}>
+                    Wishlist product cards is enabled on your live theme. Shoppers
+                    should see wishlist controls on product grids and the product
+                    page when products are linked or detected.
+                  </div>
+                ) : (
+                  <div className={`${styles.callout} ${styles.calloutInfo}`}>
+                    Click below to open App embeds with{" "}
+                    <strong>Wishlist product cards</strong> selected. Toggle it on
+                    and save the theme. Works even when you do not use separate
+                    product or collection pages in navigation.
+                  </div>
+                )}
 
                 <div className={styles.pathGrid}>
                   <article className={styles.pathCard}>
-                    <span className={styles.metricLabel}>Recommended</span>
-                    <h4 className={styles.pathTitle}>
-                      Product page wishlist button
-                    </h4>
+                    <span className={styles.metricLabel}>Required</span>
+                    <h4 className={styles.pathTitle}>Wishlist product cards</h4>
                     <p className={styles.pathText}>
-                      Best for Online Store 2.0 product templates that support
-                      sections and blocks.
+                      Homepage, collection, search, and product templates. This is
+                      the main setup for most stores.
                     </p>
                     <ActionButton
                       action={
-                        d.productPageButtonEditorUrl
+                        d.productCardsEmbedEditorUrl
                           ? {
-                              label: "Open product block settings",
-                              href: d.productPageButtonEditorUrl,
+                              label: d.productCardsEmbedEnabled
+                                ? "Review embed settings"
+                                : "Enable homepage & grid wishlist",
+                              href: d.productCardsEmbedEditorUrl,
                               target: "_top",
                               rel: "noreferrer",
                             }
                           : {
-                              label: "Open product block settings",
+                              label: "Enable homepage & grid wishlist",
                               disabled: true,
                             }
                       }
@@ -422,48 +441,68 @@ function ThemePlacementSection({ d }) {
                   </article>
 
                   <article className={styles.pathCard}>
-                    <span className={styles.metricLabel}>Fallback</span>
+                    <span className={styles.metricLabel}>Optional</span>
                     <h4 className={styles.pathTitle}>
-                      Product page wishlist button (auto-insert)
+                      Product page block or auto-insert
                     </h4>
                     <p className={styles.pathText}>
-                      Use this when liquid product templates do not support app
-                      blocks.
+                      Only if you need a fixed position next to Add to cart instead
+                      of the cards embed on the product page.
                     </p>
-                    <ActionButton
-                      action={
-                        d.productPageEmbedEditorUrl
-                          ? {
-                              label: "Open app embed settings",
-                              href: d.productPageEmbedEditorUrl,
-                              target: "_top",
-                              rel: "noreferrer",
-                            }
-                          : {
-                              label: "Open app embed settings",
-                              disabled: true,
-                            }
-                      }
-                      secondary
-                    />
+                    <div className={styles.buttonRow}>
+                      <ActionButton
+                        action={
+                          d.productPageButtonEditorUrl
+                            ? {
+                                label: "Product block",
+                                href: d.productPageButtonEditorUrl,
+                                target: "_top",
+                                rel: "noreferrer",
+                              }
+                            : {
+                                label: "Product block",
+                                disabled: true,
+                              }
+                        }
+                        secondary
+                      />
+                      <ActionButton
+                        action={
+                          d.productPageEmbedEditorUrl
+                            ? {
+                                label: "Product auto-insert",
+                                href: d.productPageEmbedEditorUrl,
+                                target: "_top",
+                                rel: "noreferrer",
+                              }
+                            : {
+                                label: "Product auto-insert",
+                                disabled: true,
+                              }
+                        }
+                        secondary
+                      />
+                    </div>
                   </article>
                 </div>
 
-                <div className={`${styles.callout} ${styles.calloutInfo}`}>
-                  Once the button is visible in the theme preview, confirm the
-                  step here so your activation score reflects the true merchant
-                  rollout state.
-                </div>
+                {!d.themeEmbedDetectionAvailable ? (
+                  <div className={`${styles.callout} ${styles.calloutInfo}`}>
+                    Theme file access is unavailable, so we cannot verify the embed
+                    automatically. After enabling it, confirm below.
+                  </div>
+                ) : null}
 
                 <div className={styles.buttonRow}>
                   <ActionButton
                     action={{
                       label: d.themePlacementConfirmed
-                        ? "Mark placement as not confirmed"
-                        : "Confirm theme placement",
+                        ? "Mark as not confirmed"
+                        : "Confirm storefront wishlist is live",
                       onClick: () =>
                         d.handleThemePlacementConfirmation(!d.themePlacementConfirmed),
                     }}
+                    secondary
                   />
                 </div>
               </article>

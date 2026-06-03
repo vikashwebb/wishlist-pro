@@ -103,12 +103,16 @@ export default function HomePage() {
                 </p>
               </article>
               <article className={styles.inlineMetric}>
-                <span className={styles.metricLabel}>Theme placement</span>
+                <span className={styles.metricLabel}>Storefront wishlist</span>
                 <strong className={styles.metricValue}>
-                  {d.themeStepComplete ? "Confirmed" : "Pending"}
+                  {d.productCardsEmbedEnabled
+                    ? "Embed on"
+                    : d.themeStepComplete
+                      ? "Confirmed"
+                      : "Pending"}
                 </strong>
                 <p className={styles.metricText}>
-                  Confirm in the Theme workspace after adding the block.
+                  Enable Wishlist product cards in Theme → App embeds.
                 </p>
               </article>
             </div>

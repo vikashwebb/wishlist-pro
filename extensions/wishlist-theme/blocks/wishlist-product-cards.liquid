@@ -17,6 +17,13 @@
     "addedLabel": {{ block.settings.added_label | json }},
     "productCardSelector": {{ block.settings.product_card_selector | json }},
     "productLinkSelector": {{ block.settings.product_link_selector | json }},
+    "pdpMountSelector": ".product-form, product-form, .product__info-wrapper, .product-info, .product__title, .product-single__meta",
+    {% if product %}
+    "pageProduct": {
+      "handle": {{ product.handle | json }},
+      "id": {{ product.admin_graphql_api_id | json }}
+    },
+    {% endif %}
     "buttonStyle": {{ block.settings.button_style | json }},
     "buttonAccentColor": {{ block.settings.button_accent_color | json }},
     "buttonTextColor": {{ block.settings.button_text_color | json }},
@@ -28,6 +35,7 @@
 {% schema %}
 {
   "name": "Wishlist product cards",
+  "description": "Wishlist on homepage, collections, search, and product pages. Enable once in App embeds.",
   "target": "body",
   "stylesheet": "wishlist.css",
   "javascript": "wishlist-product-cards.js",

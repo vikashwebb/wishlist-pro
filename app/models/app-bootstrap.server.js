@@ -5,6 +5,7 @@ import {
 } from "./shop-provision.server";
 import { getWishlistDiagnostics, isProtectedCustomerDataError, readWishlist } from "./wishlist.server";
 import { ensureWishlistPageBodyCurrent } from "./wishlist-page.server";
+import { getMainThemeEmbedStatus } from "./theme-embed-status.server";
 
 async function getMainThemeId(admin, accessScopes) {
   if (!accessScopes.includes("read_themes")) {
@@ -159,6 +160,12 @@ export async function loadWishlistDashboardBootstrap({ request }) {
       admin,
       initialSelectedCustomerId || undefined,
     );
+    const mainThemeId = await getMainThemeId(admin, accessScopes);
+    const themeEmbedStatus = await getMainThemeEmbedStatus(
+      admin,
+      mainThemeId,
+      accessScopes,
+    );
 
     return {
       accessScopes,
@@ -167,7 +174,8 @@ export async function loadWishlistDashboardBootstrap({ request }) {
       settings,
       isPro,
       shopDomain: session.shop,
-      mainThemeId: await getMainThemeId(admin, accessScopes),
+      mainThemeId,
+      themeEmbedStatus,
       appApiKey,
       customerAccessBlocked: false,
       initialSelectedCustomerId,
@@ -223,6 +231,12 @@ export async function loadWishlistDashboardBootstrap({ request }) {
 
     const initialDiagnosticsRaw = await getInitialDiagnostics(admin);
     const initialDiagnostics = markCustomerAccessBlocked(initialDiagnosticsRaw);
+    const mainThemeId = await getMainThemeId(admin, accessScopes);
+    const themeEmbedStatus = await getMainThemeEmbedStatus(
+      admin,
+      mainThemeId,
+      accessScopes,
+    );
 
     return {
       accessScopes,
@@ -231,7 +245,8 @@ export async function loadWishlistDashboardBootstrap({ request }) {
       settings,
       isPro,
       shopDomain: session.shop,
-      mainThemeId: await getMainThemeId(admin, accessScopes),
+      mainThemeId,
+      themeEmbedStatus,
       appApiKey,
       customerAccessBlocked: true,
       initialSelectedCustomerId: "",

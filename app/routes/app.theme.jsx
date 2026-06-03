@@ -17,10 +17,10 @@ export default function ThemePage() {
     <section className={styles.hero}>
       <div className={styles.heroCopy}>
         <p className={styles.eyebrow}>Theme</p>
-        <h1 className={styles.heroTitle}>Place the wishlist button</h1>
+        <h1 className={styles.heroTitle}>Enable storefront wishlist</h1>
         <p className={styles.heroText}>
-          Add the product app block or enable the app embed, then confirm placement
-          when the button is visible in your theme preview.
+          Turn on Wishlist product cards once in the theme editor. It covers your
+          homepage, collection grids, and product pages without a separate extension.
         </p>
       </div>
     </section>
@@ -39,8 +39,8 @@ export default function ThemePage() {
               <p className={styles.sectionEyebrow}>Theme editor</p>
               <h2 className={styles.sectionTitle}>Button placement</h2>
               <p className={styles.sectionText}>
-                Use the app block on Online Store 2.0 product templates, or the
-                embed fallback for legacy liquid templates.
+                Enable the product cards app embed first. Optional product block or
+                auto-insert embed is only for custom product-page placement.
               </p>
             </div>
             <ThemePlacementSection d={d} />
