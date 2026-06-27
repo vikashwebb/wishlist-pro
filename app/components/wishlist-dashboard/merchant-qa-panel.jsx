@@ -47,7 +47,7 @@ export function MerchantQaPanel({ d, variant = "full" }) {
             Test customer has saved wishlist items. You can re-test anytime in
             Setup &amp; QA.
           </p>
-          <AppLink className={styles.qaPanelLink} href="/app/setup#qa-lab">
+          <AppLink className={styles.qaPanelLink} href="/app/configure#health-qa">
             Open QA lab
           </AppLink>
         </div>
@@ -64,10 +64,10 @@ export function MerchantQaPanel({ d, variant = "full" }) {
             <p className={styles.qaPanelCompactTitle}>Run merchant QA testing</p>
             <p className={styles.qaPanelCompactText}>
               Validate add and remove flows with a real customer — included with
-              Wishlist Pro.
+              WishMe Pro.
             </p>
           </div>
-          <AppLink className={styles.linkButton} href="/app/setup#qa-lab">
+          <AppLink className={styles.linkButton} href="/app/configure#health-qa">
             Open QA lab
           </AppLink>
         </div>
@@ -79,7 +79,7 @@ export function MerchantQaPanel({ d, variant = "full" }) {
     <section className={styles.qaPanel} aria-label="Merchant QA testing">
       <div className={styles.qaPanelHeader}>
         <span className={styles.qaPanelBadge}>
-          {complete ? "QA complete" : "Wishlist Pro"}
+          {complete ? "QA complete" : "WishMe Pro"}
         </span>
         <h2 className={styles.qaPanelTitle}>Merchant QA testing</h2>
         <p className={styles.qaPanelText}>
@@ -106,7 +106,7 @@ export function MerchantQaPanel({ d, variant = "full" }) {
       </ol>
 
       <div className={styles.qaPanelActions}>
-        <AppLink className={styles.linkButton} href="/app/setup#qa-lab">
+        <AppLink className={styles.linkButton} href="/app/configure#health-qa">
           {complete ? "Review QA lab" : "Go to QA lab"}
         </AppLink>
         <ActionButton

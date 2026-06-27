@@ -20,14 +20,13 @@ export default function App() {
       <div className={styles.backdrop} />
       <div className={styles.shell}>
         <section className={styles.hero}>
-          <p className={styles.eyebrow}>Wishlist Pro</p>
+          <p className={styles.eyebrow}>WishMe</p>
           <h1 className={styles.heading}>
-            A cleaner wishlist experience for merchants and shoppers
+            Save what you love — bring shoppers back
           </h1>
           <p className={styles.text}>
-            Help customers save products they love, return with confidence, and
-            convert later with a storefront wishlist that feels native to the
-            brand.
+            Smart wishlists with guest saves, login sync, and Smart Alerts when
+            prices drop or favorites restock.
           </p>
 
           <div className={styles.featureGrid}>

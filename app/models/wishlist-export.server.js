@@ -158,7 +158,7 @@ export function buildWishlistExportCsv({
       : "all time";
 
   const lines = [
-    "# Wishlist Pro export",
+    "# WishMe export",
     `# Shop: ${shopDomain || "unknown"}`,
     `# Generated: ${new Date().toISOString()}`,
     `# Report: ${reportType}`,

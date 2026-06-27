@@ -1,4 +1,4 @@
-# Wishlist Pro — Pricing & billing
+# WishMe — Pricing & billing
 
 ## Current mode: all features free
 
@@ -17,8 +17,9 @@ While this flag is on:
 
 | Plan | Price | Includes |
 |------|--------|----------|
-| **Free** | $0 | Product/collection wishlist buttons, guest wishlist, wishlist page, theme styling, launch checklist |
-| **Pro** | **$5.99 USD / month** (7-day trial) | Merchant QA lab, health checks, login-only mode, analytics dashboard, CSV export |
+| **Free / Starter** | $0 | Product/collection wishlist, Smart Setup, theme styling |
+| **Pro** | **$5.99 USD / month** | Insights, Health & QA, login-only mode |
+| **Growth** | **~$9.99 USD / month** | Pro + Smart Alerts (all 3 types) |
 
 Billing uses Shopify’s [Billing API](https://shopify.dev/docs/apps/launch/billing). Charges appear on the merchant’s Shopify invoice.
 
@@ -71,7 +72,7 @@ To change price or trial, edit `PRO_PLAN_PRICE` in `app/billing.constants.js` an
 
 For a **public App Store** listing after paid launch:
 
-1. [partners.shopify.com](https://partners.shopify.com) → **Apps** → **Wishlist Pro**
+1. [partners.shopify.com](https://partners.shopify.com) → **Apps** → **WishMe**
 2. **Distribution** → **Shopify App Store**
 3. **Pricing** — align Free + Pro $5.99/mo with the Billing API
 
@@ -119,7 +120,7 @@ This usually means Shopify’s **login page was loaded inside the app iframe** (
 
 3. **`SHOPIFY_APP_HANDLE`** — If your app slug in the admin URL is not `wishlist-pro`, set this in `.env` to match Partner Dashboard → App setup → Handle.
 
-4. **Open the app from Shopify Admin** — Apps → Wishlist Pro (not only the tunnel URL in a new tab).
+4. **Open the app from Shopify Admin** — Apps → WishMe (not only the tunnel URL in a new tab).
 
 5. **Restart dev** after changing env: `shopify app dev`.
 

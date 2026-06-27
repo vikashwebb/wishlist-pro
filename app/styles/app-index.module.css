@@ -1114,6 +1114,7 @@ code {
 
 .qaPanelStepIndex {
   display: inline-flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
   width: 1.35rem;
@@ -1123,6 +1124,7 @@ code {
   color: #fff;
   font-size: 0.75rem;
   font-weight: 800;
+  line-height: 1;
 }
 
 .qaPanelStep strong {
@@ -1132,7 +1134,8 @@ code {
   font-size: 0.84rem;
 }
 
-.qaPanelStep span {
+/* Step detail only — not the numbered badge */
+.qaPanelStep > div span {
   color: rgb(15 23 42 / 0.62);
   font-size: 0.78rem;
   line-height: 1.45;
@@ -1323,4 +1326,30 @@ a.progressTitle {
 a.progressTitle:hover {
   color: #1d6b59;
   text-decoration: underline;
+}
+
+.configureTabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.configureTab {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.45rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid rgb(15 23 42 / 0.1);
+  background: #fff;
+  color: #0f172a;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.configureTabActive {
+  background: #0f172a;
+  border-color: #0f172a;
+  color: #fff;
 }

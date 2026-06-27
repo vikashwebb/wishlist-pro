@@ -36,7 +36,7 @@ The app now uses the scopes required for a customer-metafield wishlist:
 
 ```toml
 client_id = "YOUR_CLIENT_ID"
-name = "wishlist-pro"
+name = "WishMe"
 application_url = "https://example.com"
 embedded = true
 
@@ -45,7 +45,7 @@ automatically_update_urls_on_dev = true
 include_config_on_deploy = true
 
 [access_scopes]
-scopes = "read_customers,write_customers,read_products,write_app_proxy,write_online_store_pages,read_themes"
+scopes = "read_customers,write_customers,read_products,read_inventory,write_app_proxy,write_online_store_pages,read_themes"
 
 [auth]
 redirect_urls = ["https://example.com/auth/callback"]

@@ -4,6 +4,10 @@ import {
   LEGACY_NAMESPACE,
   NAMESPACE,
 } from "./wishlist";
+import {
+  extractProductIdsFromRecords,
+  normalizeWishlistItemRecords,
+} from "./wishlist-items.server.js";
 import { logWishlist, logWishlistError } from "../utils/logger.server";
 
 export { DEFINITION_NAME, KEY, LEGACY_NAMESPACE, NAMESPACE };
@@ -24,22 +28,7 @@ export function normalizeWishlistIntent(intent) {
 }
 
 export function normalizeWishlistItems(value) {
-  if (!value) return [];
-
-  if (Array.isArray(value)) {
-    return [...new Set(value.filter(Boolean))];
-  }
-
-  if (typeof value === "string") {
-    try {
-      const parsed = JSON.parse(value);
-      return Array.isArray(parsed) ? [...new Set(parsed.filter(Boolean))] : [];
-    } catch {
-      return [];
-    }
-  }
-
-  return [];
+  return extractProductIdsFromRecords(normalizeWishlistItemRecords(value));
 }
 
 export function toCustomerGid(customerId) {

@@ -41,7 +41,7 @@ function DataFoundationSection({ d }) {
                   </StatusPill>
                 </div>
                 <p className={styles.stepText}>
-                  Wishlist Pro creates the customer metafield definition automatically
+                  WishMe creates the customer metafield definition automatically
                   when you install or open the app. This step confirms scopes,
                   protected customer access, and that your QA customer can read and
                   write wishlist data.
@@ -215,8 +215,8 @@ function StorefrontRulesSection({ d }) {
 
                 {!d.isPro ? (
                   <div className={`${styles.callout} ${styles.calloutInfo}`}>
-                    Login-only mode is included with Wishlist Pro ($5.99/mo).{" "}
-                    <AppLink href="/app/pricing">View pricing</AppLink> to upgrade.
+                    Login-only mode is included with WishMe Pro ($5.99/mo).{" "}
+                    <AppLink href="/app/plan">View plan</AppLink> to upgrade.
                   </div>
                 ) : null}
 

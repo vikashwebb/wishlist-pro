@@ -1,4 +1,4 @@
-# Wishlist Pro — Project & App Store Kit
+# WishMe — Project & App Store Kit
 
 Use this document for **marketing copy**, **App Store listing**, **promo graphics**, **screenshot planning**, and **pitch decks**. Update placeholders marked `[YOUR_…]` before publishing.
 
@@ -8,13 +8,14 @@ Use this document for **marketing copy**, **App Store listing**, **promo graphic
 
 | Field | Value |
 |--------|--------|
-| **App name** | Wishlist Pro |
+| **App name** | WishMe |
+| **Subtitle (listing)** | AI-powered wishlist with smart recovery, price drop & restock alerts |
 | **Category** | Store design · Customer engagement · Conversion |
 | **Platform** | Shopify (Online Store 2.0 + theme extension) |
-| **Merchant promise** | Let shoppers save products for later—with fast guest wishlists that sync when they log in. |
-| **Shopper promise** | Tap to save on product pages, collections, and a dedicated wishlist page. |
-| **Data model** | Customer metafield `wishlist.items` (JSON product list)—not a heavy external wishlist database. |
-| **Architecture** | Lightweight theme extension + small app backend (OAuth, app proxy sync, admin setup). |
+| **Merchant promise** | Turn saved products into sales—guest wishlists, Smart Alerts, and Shopify Email recovery. |
+| **Shopper promise** | Tap to save on product pages, collections, and a dedicated wishlist page; get alerts when prices drop or items restock. |
+| **Data model** | Customer metafield `wishlist.items` (JSON product list with save-time price)—not a heavy external wishlist database. |
+| **Architecture** | Lightweight theme extension + small app backend (OAuth, app proxy sync, Smart Alerts webhooks). |
 
 ---
 
@@ -22,7 +23,7 @@ Use this document for **marketing copy**, **App Store listing**, **promo graphic
 
 ### One-line pitch
 
-**Wishlist Pro** helps Shopify merchants add a fast, theme-native wishlist—guest saves in the browser, automatic sync to the customer account after login.
+**WishMe** helps Shopify merchants add a fast, theme-native wishlist with **Smart Alerts**—guest saves, login sync, and Shopify Email recovery when shoppers do not buy.
 
 ### Short taglines (pick one for hero / banner)
 
@@ -38,7 +39,7 @@ Turn browsing into intent: let guests save favorites instantly, then merge their
 
 ### Positioning vs alternatives
 
-| Theme | Wishlist Pro |
+| Theme | WishMe |
 |--------|----------------|
 | **Speed** | Most logic runs in the theme extension; sync is a single lightweight API call after login. |
 | **Simplicity** | No complex merchant catalog to learn—setup checklist + theme blocks. |
@@ -76,11 +77,12 @@ Use these as App Store bullets, website features, and screenshot captions.
 
 ### Admin app
 
-- **Command center home** — Launch progress % and workspace navigation.
-- **Setup & QA** — Metafield health check, protected customer access status, merchant test lab (add/remove on test customer).
-- **Storefront workspace** — Guest vs login rules; create/update wishlist page.
-- **Theme workspace** — Deep links to Theme Editor for block/embed placement.
-- **Analytics** — Adoption donut, 14-day activity trend, wishlist size distribution, top products & customers.
+- **Home** — Wishlist command center with launch progress and health overview.
+- **Smart Setup** — Storefront rules, theme embed/block placement, Health & QA (Pro).
+- **Smart Alerts** — Smart Recovery, Smart Price Alerts, Smart Restock Alerts (Growth tier; Shopify Email tags/segments).
+- **Insights** — Adoption donut, 14-day activity trend, wishlist size distribution, top products & customers.
+- **Plan** — Starter (free), Pro (Insights + Health & QA), Growth (all Smart Alerts).
+- **Help** — FAQ, contact, developer API docs.
 
 ### Technical trust (for FAQ / footer — keep simple)
 
@@ -120,21 +122,26 @@ Use these as App Store bullets, website features, and screenshot captions.
 
 ### App name
 
-`Wishlist Pro`
+`WishMe`
 
 ### Subtitle (≤ 62 characters — adjust to fit)
 
-`Fast guest wishlists that sync when shoppers log in`
+`AI wishlist with smart recovery, price & restock alerts`
 
 ### Short description (promo card / search snippet)
 
-Let customers save products from product pages and collections. Guests save instantly; logged-in shoppers keep their list in Shopify. Easy theme blocks, wishlist page, and setup checklist.
+Let customers save products from product pages and collections. Smart Alerts watch wishlists, prices, and inventory—then trigger Shopify Email at the right time. Guests save instantly; logged-in shoppers keep their list in Shopify.
 
 ### Long description (listing body — edit tone as needed)
 
 **Help shoppers save what they love—and come back to buy.**
 
-Wishlist Pro adds a modern wishlist to your Shopify storefront without custom theme development. Shoppers can save products from the product page, product cards, and a dedicated wishlist page you control.
+WishMe adds a modern wishlist to your Shopify storefront without custom theme development. Shoppers can save products from the product page, product cards, and a dedicated wishlist page you control.
+
+**Smart Alerts turn saves into sales**
+- **Smart Recovery** — Remind shoppers who saved but did not buy (Shopify Email tags).
+- **Smart Price Alerts** — Notify wishlisters when a saved product price drops.
+- **Smart Restock Alerts** — Alert shoppers when out-of-stock favorites are back.
 
 **Built for speed**
 Most interactions happen in your theme extension for instant feedback. When a guest creates an account or signs in, their saved items sync to their customer profile automatically.
@@ -145,7 +152,7 @@ Most interactions happen in your theme extension for instant feedback. When a gu
 - Use the **app block** on Online Store 2.0 themes, or the **app embed** fallback for older product templates.
 
 **Merchant-friendly setup**
-- Guided workspaces: Setup, Storefront, Theme, Analytics.
+- Guided **Smart Setup**: Storefront, Theme, Health & QA.
 - One-click wishlist page publishing.
 - Health checks for metafields and customer data access.
 - Built-in QA lab to test add/remove before go-live.
@@ -156,11 +163,11 @@ Wishlist items are stored as customer metafields (`wishlist.items`), so your cus
 **Perfect for**
 Fashion, lifestyle, gifts, beauty, and any store where customers browse before they buy.
 
-Install Wishlist Pro, add the theme blocks, publish your wishlist page, and start turning browsers into return visitors.
+Install WishMe, add the theme blocks, enable Smart Alerts, and start turning browsers into return visitors.
 
 ### Keywords / search terms (ASO)
 
-`wishlist`, `save for later`, `favorites`, `heart button`, `guest wishlist`, `customer wishlist`, `product save`, `shopify wishlist`, `wish list`, `retention`
+`wishlist`, `save for later`, `AI wishlist`, `smart recovery`, `price drop alerts`, `back in stock`, `wishlist automation`, `customer intent`, `guest wishlist`, `shopify wishlist`, `retention`
 
 ### Support & legal placeholders
 
@@ -280,7 +287,7 @@ Capture on a **clean dev store** with 6–12 products, good photography, and at 
 
 | # | Headline | Subtext |
 |---|----------|---------|
-| 1 | Wishlist Pro | Fast saves. Smart sync. |
+| 1 | WishMe | Save what you love. Smart sync. |
 | 2 | Add to Wishlist | On every product page |
 | 3 | Save from collections | Hearts on product cards |
 | 4 | Their wishlist page | All saved products in one place |
@@ -293,7 +300,7 @@ Capture on a **clean dev store** with 6–12 products, good photography, and at 
 
 ## 10. Feature comparison table (for landing page)
 
-| Capability | Wishlist Pro |
+| Capability | WishMe |
 |------------|:------------:|
 | Product page button | ✅ |
 | Collection/card saves | ✅ |
@@ -312,7 +319,7 @@ Capture on a **clean dev store** with 6–12 products, good photography, and at 
 ## 11. Merchant setup (for “Install in 5 minutes” graphic)
 
 ```text
-1. Install Wishlist Pro
+1. Install WishMe
 2. Approve customer data access (Partner Dashboard)
 3. Publish wishlist page (Storefront workspace)
 4. Enable theme app embeds + add product block (Theme workspace)
@@ -360,15 +367,15 @@ Wishlist actions are optimized for the theme extension; sync runs once per login
 
 ### Tweet / X (280 chars)
 
-Wishlist Pro for @Shopify: let guests save products instantly, sync when they log in, and give every customer a real wishlist page. Theme blocks + analytics. `[YOUR_URL]`
+WishMe for @Shopify: let guests save products instantly, sync when they log in, and trigger Smart Alerts when prices drop or items restock. Theme blocks + Insights. `[YOUR_URL]`
 
 ### LinkedIn (short)
 
-We built Wishlist Pro to solve a simple problem: shoppers want to save products, but many aren’t ready to buy. Merchants get theme-native buttons, guest-to-login sync, and Shopify-native customer storage—without a heavy custom build.
+We built WishMe to solve a simple problem: shoppers want to save products, but many aren’t ready to buy. Merchants get theme-native buttons, guest-to-login sync, Smart Alerts, and Shopify-native customer storage—without a heavy custom build.
 
 ### Instagram caption
 
-Save it for later 💚 Wishlist Pro brings fast guest wishlists + login sync to your Shopify store. Link in bio.
+Save it for later 💚 WishMe brings fast guest wishlists, login sync, and Smart Alerts to your Shopify store. Link in bio.
 
 ---
 
@@ -381,7 +388,7 @@ Save it for later 💚 Wishlist Pro brings fast guest wishlists + login sync to 
 | 10–15 | Browse collection, save another | “Keep browsing.” |
 | 15–20 | Login modal | “Sign in when you’re ready.” |
 | 20–25 | Wishlist page full of products | “Everything’s still here.” |
-| 25–30 | Logo + App Store CTA | “Wishlist Pro for Shopify.” |
+| 25–30 | Logo + App Store CTA | “WishMe for Shopify.” |
 
 ---
 
@@ -421,4 +428,4 @@ Promo video URL:        [OPTIONAL]
 
 ---
 
-*Last updated for Wishlist Pro codebase: theme extension + admin workspaces (Home, Setup & QA, Storefront, Theme, Analytics).*
+*Last updated for WishMe: theme extension + admin workspaces (Home, Smart Setup, Smart Alerts, Insights, Plan, Help).*

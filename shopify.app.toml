@@ -1,7 +1,7 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "ff8daa11716d4200164ee8824032e194"
-name = "wishlist-pro"
+name = "WishMe"
 # Production App URL — must match Partner Dashboard + SHOPIFY_APP_URL on Vercel.
 # CLI overwrites this with your tunnel during `shopify app dev` when automatically_update_urls_on_dev = true.
 application_url = "https://wishlist-pro-new.vercel.app"
@@ -34,9 +34,17 @@ api_version = "2026-04"
   compliance_topics = [ "shop/redact" ]
   uri = "/webhooks/shop/redact"
 
+  [[webhooks.subscriptions]]
+  topics = [ "products/update" ]
+  uri = "/webhooks/products/inventory"
+
+  [[webhooks.subscriptions]]
+  topics = [ "inventory_levels/update" ]
+  uri = "/webhooks/products/inventory"
+
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
-scopes = "read_customers,write_customers,read_products,write_app_proxy,write_online_store_pages,read_themes"
+scopes = "read_customers,write_customers,read_products,read_inventory,write_app_proxy,write_online_store_pages,read_themes"
 
 [auth]
 redirect_urls = [ "https://wishlist-pro-new.vercel.app/auth/callback" ]

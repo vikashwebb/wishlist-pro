@@ -7,6 +7,10 @@ import {
   toProductGid,
   writeWishlist,
 } from "../models/wishlist.server";
+import {
+  mergeWishlistItemsOnToggle,
+  wishlistItemsIncludeProduct,
+} from "../models/wishlist-items.server.js";
 import { authenticateAppProxy } from "../utils/app-proxy.server";
 
 export const action = async ({ request }) => {
@@ -45,12 +49,28 @@ export const action = async ({ request }) => {
     }
 
     const wishlist = await readWishlist(context.admin, customerId);
-    const isSaved = wishlist.items.includes(resolvedProductId);
+    const isSaved = wishlistItemsIncludeProduct(wishlist.items, resolvedProductId);
     const shouldAdd =
       intent === "add" ? true : intent === "remove" ? false : !isSaved;
-    const nextItems = shouldAdd
-      ? [...new Set([...wishlist.items, resolvedProductId])]
-      : wishlist.items.filter((item) => item !== resolvedProductId);
+
+    let priceAtSave = null;
+    if (shouldAdd) {
+      const productDetails = await resolveProduct(context.admin, {
+        productId: resolvedProductId,
+        handle: resolvedHandle,
+      });
+      priceAtSave = productDetails.priceAmount;
+    }
+
+    const nextItems = mergeWishlistItemsOnToggle(
+      wishlist.items,
+      resolvedProductId,
+      shouldAdd,
+      {
+        handle: resolvedHandle,
+        priceAtSave,
+      },
+    );
     const result = await writeWishlist(context.admin, customerId, nextItems);
 
     return json({

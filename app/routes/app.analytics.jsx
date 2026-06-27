@@ -12,6 +12,10 @@ import {
   VerticalBarChart,
 } from "../components/analytics-charts";
 import styles from "../styles/app-analytics.module.css";
+import { shouldRevalidateSameAppPage } from "../utils/app-route-revalidation";
+
+const ANALYTICS_CACHE_TTL_MS = 30_000;
+const analyticsCache = new Map();
 
 function formatPercent(value) {
   return `${value}%`;
@@ -48,11 +52,22 @@ export const loader = async ({ request }) => {
   );
   const { hasProSubscription } = await import("../billing.server");
   const { admin, session, billing } = await authenticate.admin(request);
-  const settings = await getShopSettings(session.shop);
-  const isPro = await hasProSubscription(billing, session.shop);
+  const cacheKey = session.shop;
+  const cached = analyticsCache.get(cacheKey);
+
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.data;
+  }
+
+  const [settings, isPro] = await Promise.all([
+    getShopSettings(session.shop),
+    hasProSubscription(billing, session.shop),
+  ]);
+
+  let data;
 
   if (!isPro) {
-    return {
+    data = {
       isPro: false,
       shopDomain: session.shop,
       settings,
@@ -61,17 +76,27 @@ export const loader = async ({ request }) => {
       analytics: null,
       error: null,
     };
+  } else {
+    const report = await loadWishlistAnalyticsReport(admin);
+    data = {
+      isPro: true,
+      shopDomain: session.shop,
+      settings,
+      ...report,
+    };
   }
 
-  const report = await loadWishlistAnalyticsReport(admin);
+  analyticsCache.set(cacheKey, {
+    data,
+    expiresAt: Date.now() + ANALYTICS_CACHE_TTL_MS,
+  });
 
-  return {
-    isPro: true,
-    shopDomain: session.shop,
-    settings,
-    ...report,
-  };
+  return data;
 };
+
+export function shouldRevalidate(args) {
+  return shouldRevalidateSameAppPage(args);
+}
 
 export default function AnalyticsPage() {
   const {
@@ -86,7 +111,7 @@ export default function AnalyticsPage() {
 
   if (!available) {
     return (
-      <s-page heading="Wishlist analytics">
+      <s-page heading="Insights">
         <div className={styles.page}>
           <section className={styles.hero}>
             <p className={styles.eyebrow}>Store intelligence</p>
@@ -113,7 +138,7 @@ export default function AnalyticsPage() {
                   → your app → <strong>API access requests</strong> → approve
                   customer data.
                 </li>
-                <li>Uninstall Wishlist Pro on the store, then install again.</li>
+                <li>Uninstall WishMe on the store, then install again.</li>
                 <li>
                   Save a wishlist on the storefront (guest login sync or Setup QA lab),
                   then refresh this page.
@@ -125,7 +150,7 @@ export default function AnalyticsPage() {
                 and test a wishlist save on the storefront.
               </p>
             )}
-            <AppLink className={styles.linkButton} href="/app/setup">
+            <AppLink className={styles.linkButton} href="/app/configure#health-qa">
               Open Setup &amp; QA
             </AppLink>
           </article>
@@ -136,13 +161,13 @@ export default function AnalyticsPage() {
 
   if (!isPro || !analytics) {
     return (
-      <s-page heading="Wishlist analytics">
+      <s-page heading="Insights">
         <div className={styles.page}>
           <section className={styles.hero}>
             <div className={styles.heroTopRow}>
               <div>
                 <p className={styles.eyebrow}>Store intelligence</p>
-                <span className={styles.heroBadge}>Wishlist Pro</span>
+                <span className={styles.heroBadge}>WishMe</span>
                 <h1 className={styles.heroTitle}>Understand what shoppers are saving</h1>
                 <p className={styles.heroText}>
                   Live wishlist insights from customer metafields. Upgrade to Pro to
@@ -173,7 +198,7 @@ export default function AnalyticsPage() {
   const wishlistPagePath = `/pages/${settings.wishlistPageHandle || "wishlist"}`;
 
   return (
-    <s-page heading="Wishlist analytics">
+    <s-page heading="Insights">
       <div className={styles.page}>
         <section className={styles.hero}>
           <div className={styles.heroTopRow}>

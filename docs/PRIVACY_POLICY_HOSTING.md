@@ -26,14 +26,14 @@ Copy into Notion, Google Docs, or an `index.html` page. Set **Last updated** whe
 
 ---
 
-**Privacy Policy — Wishlist Pro**  
+**Privacy Policy — WishMe**  
 *Last updated: May 30, 2026*
 
-Wishlist Pro (“we”, “our”, or “the app”) is a Shopify application that helps merchants offer wishlist functionality on their storefront. This policy explains what information the app processes and how that information is used.
+WishMe (“we”, “our”, or “the app”) is a Shopify application that helps merchants offer wishlist functionality on their storefront. This policy explains what information the app processes and how that information is used.
 
 ### Information we process
 
-When you install Wishlist Pro, we process information needed to operate the app, including:
+When you install WishMe, we process information needed to operate the app, including:
 
 - Your shop domain and staff session data required to authenticate with Shopify
 - App configuration you set in the admin, such as guest or login-only wishlist mode and wishlist page settings
@@ -66,7 +66,7 @@ We use service providers needed to host and operate the app, such as cloud hosti
 
 ### Data retention
 
-We retain app data while Wishlist Pro is installed on your store. When you uninstall the app, we delete app-specific data in line with our retention practices and Shopify’s requirements. Customer wishlist metafields on Shopify remain under your control as the merchant.
+We retain app data while WishMe is installed on your store. When you uninstall the app, we delete app-specific data in line with our retention practices and Shopify’s requirements. Customer wishlist metafields on Shopify remain under your control as the merchant.
 
 ### Your choices
 

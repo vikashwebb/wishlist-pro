@@ -410,18 +410,18 @@ export function useWishlistDashboard() {
 
   const nextSetupHref =
     isPro && !customerDataStepComplete
-      ? "/app/setup"
+      ? "/app/configure"
       : !storefrontStepComplete || !pageStepComplete
-        ? "/app/storefront"
+        ? "/app/configure#storefront"
         : !themeStepComplete
-          ? "/app/theme"
+          ? "/app/configure#theme"
           : isPro && !qaStepComplete
-            ? "/app/setup#qa-lab"
+            ? "/app/configure#health-qa"
             : "/app/analytics";
 
   const primaryHeroAction = !isPro
     ? !storefrontStepComplete || !pageStepComplete
-      ? { label: "Continue storefront setup", href: "/app/storefront" }
+      ? { label: "Continue storefront setup", href: "/app/configure#storefront" }
       : !themeStepComplete && productCardsEmbedEditorUrl
         ? {
             label: "Enable wishlist on storefront",
@@ -429,7 +429,7 @@ export function useWishlistDashboard() {
             target: "_top",
             rel: "noreferrer",
           }
-        : { label: "Unlock QA lab & health checks", href: "/app/pricing" }
+        : { label: "Unlock QA lab & health checks", href: "/app/plan" }
     : !diagnosticsFresh || customerAccessBlocked
     ? {
         label: "Run live system check",
@@ -439,7 +439,7 @@ export function useWishlistDashboard() {
     : !pageStepComplete && hasWriteOnlineStorePagesScope
       ? {
           label: "Create wishlist page",
-          href: "/app/storefront",
+          href: "/app/configure#storefront",
         }
       : !themeStepComplete && productCardsEmbedEditorUrl
         ? {
@@ -449,7 +449,7 @@ export function useWishlistDashboard() {
             rel: "noreferrer",
           }
         : !qaStepComplete
-          ? { label: "Open merchant QA lab", href: "/app/setup#qa-lab" }
+          ? { label: "Open merchant QA lab", href: "/app/configure#health-qa" }
           : wishlistPageUrl
             ? {
                 label: "Open live wishlist page",
@@ -557,7 +557,7 @@ export function useWishlistDashboard() {
       ? [
           {
             title: "Data foundation",
-            href: "/app/setup",
+            href: "/app/configure",
             complete: customerDataStepComplete,
             detail: customerDataStepComplete
               ? "Metafield definition is ready and customer access works."
@@ -571,7 +571,7 @@ export function useWishlistDashboard() {
       : []),
     {
       title: "Storefront rules",
-      href: "/app/storefront",
+      href: "/app/configure#storefront",
       complete: storefrontStepComplete,
       detail: storefrontStepComplete
         ? wishlistRequiresLogin
@@ -581,7 +581,7 @@ export function useWishlistDashboard() {
     },
     {
       title: "Wishlist page",
-      href: "/app/storefront",
+      href: "/app/configure#storefront",
       complete: pageStepComplete,
       detail: pageStepComplete
         ? `Live at /pages/${wishlistPage?.handle} (created automatically).`
@@ -591,7 +591,7 @@ export function useWishlistDashboard() {
     },
     {
       title: "Storefront wishlist",
-      href: "/app/theme",
+      href: "/app/configure#theme",
       complete: themeStepComplete,
       detail: productCardsEmbedEnabled
         ? "Wishlist product cards embed is enabled on your theme."
@@ -603,7 +603,7 @@ export function useWishlistDashboard() {
       ? [
           {
             title: "Merchant QA",
-            href: "/app/setup#qa-lab",
+            href: "/app/configure#health-qa",
             complete: qaStepComplete,
             detail: qaStepComplete
               ? "A wishlist item is saved for the active test customer."
@@ -615,35 +615,38 @@ export function useWishlistDashboard() {
 
   const setupPages = [
     {
-      href: "/app/setup",
-      title: "Setup & QA",
+      href: "/app/configure",
+      title: "Smart Setup",
       description: isPro
-        ? "Verify metafields, scopes, and run the merchant QA lab."
-        : "Pro: live health checks and merchant QA lab (preview on this page).",
+        ? "Storefront rules, theme embed, health checks, and QA lab."
+        : "Launch WishMe on your storefront in one workspace.",
       complete: isPro
-        ? customerDataStepComplete && qaStepComplete
-        : storefrontStepComplete && pageStepComplete,
+        ? customerDataStepComplete &&
+          storefrontStepComplete &&
+          pageStepComplete &&
+          themeStepComplete &&
+          qaStepComplete
+        : storefrontStepComplete && pageStepComplete && themeStepComplete,
     },
     {
-      href: "/app/storefront",
-      title: "Storefront",
-      description: "Choose guest vs login rules and publish the wishlist page.",
-      complete: storefrontStepComplete && pageStepComplete,
-    },
-    {
-      href: "/app/theme",
-      title: "Theme",
-      description:
-        "Enable Wishlist product cards for homepage and grids; optional product block for custom placement.",
-      complete: themeStepComplete,
+      href: "/app/automations",
+      title: "Smart Alerts",
+      description: "Smart Recovery, price drop, and restock alerts for Shopify Email.",
+      complete: false,
     },
     {
       href: "/app/analytics",
-      title: "Analytics",
+      title: "Insights",
       description: isPro
         ? "See top products, engaged customers, and adoption metrics."
-        : "Pro: charts, exports, and adoption metrics (preview on Analytics).",
+        : "Pro: charts, exports, and adoption metrics.",
       complete: isPro && progressPercent === 100,
+    },
+    {
+      href: "/app/plan",
+      title: "Plan",
+      description: "Starter, Pro, and Growth plans for WishMe.",
+      complete: isPro,
     },
   ];
 

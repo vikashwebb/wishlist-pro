@@ -31,10 +31,10 @@ export function hasDemoProAccess(shop) {
 }
 
 export const PRO_QA_HEALTH_MESSAGE =
-  "Merchant QA lab and health checks require Wishlist Pro. Upgrade on the Pricing page.";
+  "Merchant QA lab and health checks require WishMe Pro. Upgrade on the Plan page.";
 
 export const PRO_ANALYTICS_MESSAGE =
-  "Analytics and CSV export require Wishlist Pro. Upgrade on the Pricing page.";
+  "Analytics and CSV export require WishMe Pro. Upgrade on the Plan page.";
 
 export async function assertProAnalyticsAccess(billing, shop) {
   const isPro = await hasProSubscription(billing, shop);
@@ -53,9 +53,13 @@ export async function assertProQaHealthAccess(billing, shop) {
 }
 
 const BILLING_EXEMPT_PATHS = [
+  "/app/plan",
   "/app/pricing",
   "/app/billing",
   "/app/analytics",
+  "/app/configure",
+  "/app/automations",
+  "/app/help",
 ];
 
 function isBillingExemptPath(pathname) {
@@ -109,7 +113,7 @@ export async function enforceAppBillingOnLoad(request, { billing, session }) {
 
   const { redirect } = await import("react-router");
   const search = url.searchParams.toString();
-  throw redirect(search ? `/app/pricing?${search}` : "/app/pricing");
+  throw redirect(search ? `/app/plan?${search}` : "/app/plan");
 }
 
 export async function hasProSubscription(billing, shop) {

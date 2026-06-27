@@ -11,6 +11,7 @@
     },
     "routeIdToServerBundleId": {
       "routes/webhooks.customers.data_request": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/webhooks.products.inventory": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "routes/webhooks.app.scopes_update": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "routes/webhooks.customers.redact": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "routes/webhooks.app.uninstalled": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
@@ -29,15 +30,20 @@
       "routes/app.api.analytics-export": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "routes/app.api.wishlist-check": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "routes/app.api.wishlist-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/app.api.automations": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "routes/app.api.settings": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "routes/app.api.wishlist": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/app.automations": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "routes/app.storefront": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "routes/app.analytics": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/app.configure": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "routes/app.billing": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "routes/app.pricing": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "routes/app._index": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "routes/app.setup": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
-      "routes/app.theme": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0"
+      "routes/app.theme": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/app.help": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/app.plan": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0"
     },
     "routes": {
       "root": {
@@ -51,6 +57,15 @@
         "parentId": "root",
         "file": "app/routes/webhooks.customers.data_request.jsx",
         "path": "webhooks/customers/data_request",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/webhooks.products.inventory": {
+        "id": "routes/webhooks.products.inventory",
+        "parentId": "root",
+        "file": "app/routes/webhooks.products.inventory.jsx",
+        "path": "webhooks/products/inventory",
         "config": {
           "runtime": "nodejs"
         }
@@ -212,6 +227,15 @@
           "runtime": "nodejs"
         }
       },
+      "routes/app.api.automations": {
+        "id": "routes/app.api.automations",
+        "parentId": "routes/app",
+        "file": "app/routes/app.api.automations.jsx",
+        "path": "api/automations",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
       "routes/app.api.settings": {
         "id": "routes/app.api.settings",
         "parentId": "routes/app",
@@ -230,6 +254,15 @@
           "runtime": "nodejs"
         }
       },
+      "routes/app.automations": {
+        "id": "routes/app.automations",
+        "parentId": "routes/app",
+        "file": "app/routes/app.automations.jsx",
+        "path": "automations",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
       "routes/app.storefront": {
         "id": "routes/app.storefront",
         "parentId": "routes/app",
@@ -244,6 +277,15 @@
         "parentId": "routes/app",
         "file": "app/routes/app.analytics.jsx",
         "path": "analytics",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/app.configure": {
+        "id": "routes/app.configure",
+        "parentId": "routes/app",
+        "file": "app/routes/app.configure.jsx",
+        "path": "configure",
         "config": {
           "runtime": "nodejs"
         }
@@ -292,6 +334,24 @@
         "config": {
           "runtime": "nodejs"
         }
+      },
+      "routes/app.help": {
+        "id": "routes/app.help",
+        "parentId": "routes/app",
+        "file": "app/routes/app.help.jsx",
+        "path": "help",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/app.plan": {
+        "id": "routes/app.plan",
+        "parentId": "routes/app",
+        "file": "app/routes/app.plan.jsx",
+        "path": "plan",
+        "config": {
+          "runtime": "nodejs"
+        }
       }
     }
   },
@@ -319,6 +379,12 @@
         "parentId": "root",
         "file": "routes/webhooks.customers.data_request.jsx",
         "path": "webhooks/customers/data_request"
+      },
+      "routes/webhooks.products.inventory": {
+        "id": "routes/webhooks.products.inventory",
+        "parentId": "root",
+        "file": "routes/webhooks.products.inventory.jsx",
+        "path": "webhooks/products/inventory"
       },
       "routes/webhooks.app.scopes_update": {
         "id": "routes/webhooks.app.scopes_update",
@@ -434,6 +500,12 @@
         "file": "routes/app.api.wishlist-page.jsx",
         "path": "api/wishlist-page"
       },
+      "routes/app.api.automations": {
+        "id": "routes/app.api.automations",
+        "parentId": "routes/app",
+        "file": "routes/app.api.automations.jsx",
+        "path": "api/automations"
+      },
       "routes/app.api.settings": {
         "id": "routes/app.api.settings",
         "parentId": "routes/app",
@@ -446,6 +518,12 @@
         "file": "routes/app.api.wishlist.jsx",
         "path": "api/wishlist"
       },
+      "routes/app.automations": {
+        "id": "routes/app.automations",
+        "parentId": "routes/app",
+        "file": "routes/app.automations.jsx",
+        "path": "automations"
+      },
       "routes/app.storefront": {
         "id": "routes/app.storefront",
         "parentId": "routes/app",
@@ -457,6 +535,12 @@
         "parentId": "routes/app",
         "file": "routes/app.analytics.jsx",
         "path": "analytics"
+      },
+      "routes/app.configure": {
+        "id": "routes/app.configure",
+        "parentId": "routes/app",
+        "file": "routes/app.configure.jsx",
+        "path": "configure"
       },
       "routes/app.billing": {
         "id": "routes/app.billing",
@@ -487,6 +571,18 @@
         "parentId": "routes/app",
         "file": "routes/app.theme.jsx",
         "path": "theme"
+      },
+      "routes/app.help": {
+        "id": "routes/app.help",
+        "parentId": "routes/app",
+        "file": "routes/app.help.jsx",
+        "path": "help"
+      },
+      "routes/app.plan": {
+        "id": "routes/app.plan",
+        "parentId": "routes/app",
+        "file": "routes/app.plan.jsx",
+        "path": "plan"
       }
     },
     "routeDiscovery": {
@@ -506,6 +602,11 @@
             "id": "routes/webhooks.customers.data_request",
             "file": "routes/webhooks.customers.data_request.jsx",
             "path": "webhooks/customers/data_request"
+          },
+          {
+            "id": "routes/webhooks.products.inventory",
+            "file": "routes/webhooks.products.inventory.jsx",
+            "path": "webhooks/products/inventory"
           },
           {
             "id": "routes/webhooks.app.scopes_update",
@@ -605,6 +706,11 @@
                 "path": "api/wishlist-page"
               },
               {
+                "id": "routes/app.api.automations",
+                "file": "routes/app.api.automations.jsx",
+                "path": "api/automations"
+              },
+              {
                 "id": "routes/app.api.settings",
                 "file": "routes/app.api.settings.jsx",
                 "path": "api/settings"
@@ -615,6 +721,11 @@
                 "path": "api/wishlist"
               },
               {
+                "id": "routes/app.automations",
+                "file": "routes/app.automations.jsx",
+                "path": "automations"
+              },
+              {
                 "id": "routes/app.storefront",
                 "file": "routes/app.storefront.jsx",
                 "path": "storefront"
@@ -623,6 +734,11 @@
                 "id": "routes/app.analytics",
                 "file": "routes/app.analytics.jsx",
                 "path": "analytics"
+              },
+              {
+                "id": "routes/app.configure",
+                "file": "routes/app.configure.jsx",
+                "path": "configure"
               },
               {
                 "id": "routes/app.billing",
@@ -648,6 +764,16 @@
                 "id": "routes/app.theme",
                 "file": "routes/app.theme.jsx",
                 "path": "theme"
+              },
+              {
+                "id": "routes/app.help",
+                "file": "routes/app.help.jsx",
+                "path": "help"
+              },
+              {
+                "id": "routes/app.plan",
+                "file": "routes/app.plan.jsx",
+                "path": "plan"
               }
             ]
           }

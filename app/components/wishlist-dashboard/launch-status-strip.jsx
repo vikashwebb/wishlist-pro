@@ -69,7 +69,7 @@ export function LaunchStatusStrip({ d }) {
         {d.isPro ? (
           <ActionButton action={runCheckAction} secondary />
         ) : (
-          <AppLink className={styles.linkButton} href="/app/pricing">
+          <AppLink className={styles.linkButton} href="/app/plan">
             Unlock Pro checks
           </AppLink>
         )}

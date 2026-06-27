@@ -1,8 +1,8 @@
-# Wishlist Pro Guide
+# WishMe Guide
 
 ## Overview
 
-Wishlist Pro is a Shopify embedded app plus theme extension that lets merchants
+**WishMe** is a Shopify embedded app plus theme extension that lets merchants
 offer a wishlist experience on the storefront.
 
 The project includes:
@@ -14,7 +14,7 @@ The project includes:
 
 ## What The App Does
 
-Wishlist Pro helps merchants:
+WishMe helps merchants:
 
 - Let shoppers save products for later
 - Control whether guests can use wishlist or only logged-in customers
@@ -48,9 +48,20 @@ Files:
 - [`app/routes/_index/route.jsx`](/Users/dinesh/Documents/shopfiy-apps/wishlist-pro/app/routes/_index/route.jsx)
 - [`app/routes/_index/styles.module.css`](/Users/dinesh/Documents/shopfiy-apps/wishlist-pro/app/routes/_index/styles.module.css)
 
-### Embedded admin dashboard
+## Admin navigation (WishMe)
 
-The embedded dashboard is the main merchant workspace.
+| Nav | Route | Purpose |
+|-----|-------|---------|
+| Home | `/app` | Launch checklist |
+| Smart Setup | `/app/configure` | Storefront, theme, health & QA tabs |
+| Smart Alerts | `/app/automations` | Recovery, price drop, restock |
+| Insights | `/app/analytics` | Analytics & export |
+| Plan | `/app/plan` | Starter / Pro / Growth |
+| Help | `/app/help` | FAQ, contact, API details |
+
+Legacy routes redirect: `/app/storefront`, `/app/theme`, `/app/setup`, `/app/pricing`.
+
+---
 
 It includes:
 
@@ -118,7 +129,7 @@ How to add it in Shopify:
 
 How to add it from the app for JSON themes:
 
-1. Open the embedded Wishlist Pro dashboard.
+1. Open the embedded WishMe dashboard.
 2. Go to the product page wishlist button section.
 3. Click `Open product block settings`.
 4. Shopify opens the product template in Theme Editor and pre-adds the app
@@ -127,7 +138,7 @@ How to add it from the app for JSON themes:
 
 If the theme uses a liquid product template:
 
-1. Open the embedded Wishlist Pro dashboard.
+1. Open the embedded WishMe dashboard.
 2. Go to the product page wishlist button section.
 3. Click `Open app embed settings`.
 4. Shopify opens `Theme settings` > `App embeds`.

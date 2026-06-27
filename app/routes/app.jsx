@@ -1,6 +1,8 @@
 import { Outlet, useLoaderData, useRouteError } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { AppProvider } from "@shopify/shopify-app-react-router/react";
+import { AppNavigationShell } from "../components/app-navigation-shell";
+import { shouldRevalidateAppLayout } from "../utils/app-route-revalidation";
 
 export const loader = async ({ request }) => {
   const { authenticateAppAdmin } = await import("../shopify.server");
@@ -21,6 +23,10 @@ export const loader = async ({ request }) => {
   return { apiKey: process.env.SHOPIFY_API_KEY || "" };
 };
 
+export function shouldRevalidate(args) {
+  return shouldRevalidateAppLayout(args);
+}
+
 export default function App() {
   const { apiKey } = useLoaderData();
 
@@ -28,13 +34,13 @@ export default function App() {
     <AppProvider embedded apiKey={apiKey}>
       <s-app-nav>
         <s-link href="/app">Home</s-link>
-        <s-link href="/app/setup">Setup</s-link>
-        <s-link href="/app/storefront">Storefront</s-link>
-        <s-link href="/app/theme">Theme</s-link>
-        <s-link href="/app/analytics">Analytics</s-link>
-        <s-link href="/app/pricing">Pricing</s-link>
+        <s-link href="/app/configure">Smart Setup</s-link>
+        <s-link href="/app/automations">Smart Alerts</s-link>
+        <s-link href="/app/analytics">Insights</s-link>
+        <s-link href="/app/plan">Plan</s-link>
+        <s-link href="/app/help">Help</s-link>
       </s-app-nav>
-      <Outlet />
+      <AppNavigationShell />
     </AppProvider>
   );
 }

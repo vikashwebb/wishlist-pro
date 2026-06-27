@@ -12,6 +12,8 @@ import {
 } from "../components/wishlist-dashboard/shared";
 import { useWishlistDashboard } from "../hooks/use-wishlist-dashboard";
 
+import { shouldRevalidateBootstrapPage } from "../utils/app-route-revalidation";
+
 export const loader = async (args) => {
   try {
     return await loadWishlistDashboardBootstrap(args);
@@ -25,19 +27,23 @@ export const loader = async (args) => {
   }
 };
 
+export function shouldRevalidate(args) {
+  return shouldRevalidateBootstrapPage(args);
+}
+
 export default function HomePage() {
   const d = useWishlistDashboard();
 
   const intro = (
     <section className={styles.hero}>
       <div className={styles.heroCopy}>
-        <p className={styles.eyebrow}>Wishlist Pro</p>
+        <p className={styles.eyebrow}>WishMe</p>
         <h1 className={styles.heroTitle}>
-          Your wishlist command center
+          Your WishMe command center
         </h1>
         <p className={styles.heroText}>
-          Configure storefront behavior, publish the wishlist page, place theme
-          blocks, validate with QA, and review analytics — each in its own workspace.
+          Smart Setup, Smart Alerts, Insights, and launch progress — everything
+          to turn saved products into sales.
         </p>
 
         <HeroLaunchStatus
@@ -53,7 +59,7 @@ export default function HomePage() {
   );
 
   return (
-    <s-page heading="Wishlist Pro">
+    <s-page heading="WishMe">
       <DashboardLayout
         d={d}
         rail="full"

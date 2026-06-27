@@ -124,7 +124,7 @@ describe("admin wishlist API", () => {
   it("requires Pro for wishlist mutations", async () => {
     assertProQaHealthAccess.mockResolvedValueOnce({
       allowed: false,
-      message: "Merchant QA lab and health checks require Wishlist Pro.",
+      message: "Merchant QA lab and health checks require WishMe Pro.",
     });
 
     const formData = new FormData();

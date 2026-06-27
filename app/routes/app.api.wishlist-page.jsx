@@ -26,6 +26,11 @@ export const action = async ({ request }) => {
       handle: settings.wishlistPageHandle,
       previousHandle: currentSettings.wishlistPageHandle,
     });
+    const { invalidateWishlistBootstrapCache } = await import(
+      "../models/app-bootstrap.server"
+    );
+    invalidateWishlistBootstrapCache(session.shop);
+
     return json({
       ok: true,
       mode: result.mode,

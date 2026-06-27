@@ -19,7 +19,7 @@ export const action = async ({ request }) => {
       return json(
         {
           error:
-            "Login-only wishlist is a Pro feature. Upgrade on the Analytics page to enable it.",
+            "Login-only wishlist is a Pro feature. Upgrade on the Plan page to enable it.",
           code: "PRO_REQUIRED",
         },
         { status: 402 },
@@ -29,6 +29,11 @@ export const action = async ({ request }) => {
     const settings = await updateShopSettings(session.shop, {
       wishlistRequiresLogin,
     });
+
+    const { invalidateWishlistBootstrapCache } = await import(
+      "../models/app-bootstrap.server"
+    );
+    invalidateWishlistBootstrapCache(session.shop);
 
     return json({ ok: true, settings });
   } catch (error) {

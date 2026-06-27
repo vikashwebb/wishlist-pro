@@ -11,7 +11,7 @@ export const loader = async ({ request }) => {
     const { redirect } = await import("react-router");
     const url = new URL(request.url);
     const search = url.searchParams.toString();
-    throw redirect(search ? `/app/pricing?${search}` : "/app/pricing");
+    throw redirect(search ? `/app/plan?${search}` : "/app/plan");
   }
 
   const { authenticate } = await import("../shopify.server");
@@ -23,7 +23,7 @@ export const loader = async ({ request }) => {
   return billing.request({
     plan: PRO_PLAN,
     isTest: isBillingTestMode(),
-    returnUrl: proUpgradeReturnUrl(session.shop, "/app/pricing"),
+    returnUrl: proUpgradeReturnUrl(session.shop, "/app/plan"),
   });
 };
 

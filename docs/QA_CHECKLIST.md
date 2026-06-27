@@ -1,4 +1,4 @@
-# Wishlist Pro — Full feature test checklist
+# WishMe — Full feature test checklist
 
 Use this before shipping or after any big change.  
 **Best order:** local dev store first → then Vercel (if you deploy there).
@@ -12,6 +12,12 @@ From project root:
 ```bash
 npm install
 npm run setup
+npm run test:predeploy
+```
+
+Or run steps separately:
+
+```bash
 npm run test
 npm run typecheck
 ```
@@ -44,44 +50,41 @@ Local only: run `npm run setup` so `.data/dev.sqlite` exists.
 
 | # | Test | Pass? |
 |---|------|-------|
-| 2.1 | Open app from **Shopify Admin → Apps → Wishlist Pro** (not only the raw Vercel URL) | ☐ |
+| 2.1 | Open app from **Shopify Admin → Apps → WishMe** (not only the raw Vercel URL) | ☐ |
 | 2.2 | Home dashboard loads (command center, progress %) | ☐ |
-| 2.3 | Nav works: Home, Setup, Storefront, Theme, Analytics | ☐ |
+| 2.3 | Nav works: Home, Smart Setup, Smart Alerts, Insights, Plan, Help | ☐ |
 
 ---
 
-## 3. Setup & QA workspace (`/app/setup`)
+## 3. Smart Setup (`/app/configure`)
 
 | # | Test | Pass? |
 |---|------|-------|
-| 3.1 | **Data health** — metafield check runs (green or clear error message) | ☐ |
-| 3.2 | **Protected customer access** — status shown correctly | ☐ |
-| 3.3 | **QA lab** — pick customer + product, **Add to wishlist** | ☐ |
-| 3.4 | QA lab — product appears in snapshot / list | ☐ |
-| 3.5 | QA lab — **Remove from wishlist** works | ☐ |
-| 3.6 | Run **live system check** / diagnostics — no unexpected errors | ☐ |
+| 3.1 | **Storefront** tab — metafield check runs (Pro) | ☐ |
+| 3.2 | **Storefront** tab — save rules, wishlist page status | ☐ |
+| 3.3 | **Theme** tab — embed deep link + enabled detection | ☐ |
+| 3.4 | **Health & QA** tab — QA lab add/remove (Pro) | ☐ |
 
 ---
 
-## 4. Storefront workspace (`/app/storefront`)
+## 4. Smart Alerts (`/app/automations`)
 
 | # | Test | Pass? |
 |---|------|-------|
-| 4.1 | **Guest wishlist** enabled — save rules without login checkbox | ☐ |
-| 4.2 | Save storefront rules — toast “Storefront rules saved” | ☐ |
-| 4.3 | **Publish wishlist page** — creates/updates `/pages/wishlist` (or your handle) | ☐ |
-| 4.4 | Open wishlist page link from app — page loads on storefront | ☐ |
-| 4.5 | **Login-only mode** (Pro) — checkbox shows “Pro”; blocked on Free plan | ☐ |
-| 4.6 | With Pro active — enable login-only, save, confirm on storefront (guest cannot save) | ☐ |
+| 4.1 | Toggle Smart Recovery / Price / Restock settings save | ☐ |
+| 4.2 | Stats show pending/tagged counts (Pro) | ☐ |
+| 4.3 | Open Shopify Email link works | ☐ |
 
 ---
 
-## 5. Theme workspace (`/app/theme`)
+## 5. Legacy redirects
 
 | # | Test | Pass? |
 |---|------|-------|
-| 5.1 | Links open **Theme Editor** (product block, embed, cards) | ☐ |
-| 5.2 | Confirm placement checklist can be marked complete | ☐ |
+| 5.1 | `/app/storefront` → Smart Setup `#storefront` | ☐ |
+| 5.2 | `/app/theme` → Smart Setup `#theme` | ☐ |
+| 5.3 | `/app/setup` → Smart Setup `#health-qa` | ☐ |
+| 5.4 | `/app/pricing` → `/app/plan` | ☐ |
 
 ---
 

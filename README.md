@@ -1,7 +1,6 @@
-# Wishlist Pro
+# WishMe
 
-Wishlist Pro is a Shopify embedded app and theme extension that gives merchants
-an easy way to add wishlist functionality to their storefront.
+**WishMe** is the merchant-facing brand for this Shopify embedded app and theme extension (repo: `wishlist-pro`). It gives merchants an easy way to add wishlist functionality to their storefront.
 
 It includes:
 
