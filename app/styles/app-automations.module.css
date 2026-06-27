@@ -122,6 +122,70 @@
   line-height: 1.5;
 }
 
+.comingSoonShell {
+  position: relative;
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.comingSoonBlur {
+  filter: blur(5px);
+  opacity: 0.72;
+  pointer-events: none;
+  user-select: none;
+  transform: scale(1.01);
+}
+
+.comingSoonOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  background: rgb(255 255 255 / 0.35);
+  backdrop-filter: blur(2px);
+}
+
+.comingSoonCard {
+  display: grid;
+  gap: 0.5rem;
+  max-width: 24rem;
+  padding: 1.1rem 1.25rem;
+  border: 1px solid rgb(15 23 42 / 0.1);
+  border-radius: 16px;
+  background: rgb(255 255 255 / 0.92);
+  box-shadow: 0 16px 40px rgb(15 23 42 / 0.12);
+  text-align: center;
+}
+
+.comingSoonBadge {
+  display: inline-flex;
+  justify-content: center;
+  margin: 0 auto;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #1d6b59 0%, #175646 100%);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.comingSoonTitle {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.comingSoonText {
+  margin: 0;
+  color: rgb(15 23 42 / 0.72);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
 @media (max-width: 960px) {
   .statsGrid,
   .cardGrid {

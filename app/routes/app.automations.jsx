@@ -10,6 +10,8 @@ import automationsStyles from "../styles/app-automations.module.css";
 import gateStyles from "../styles/pro-feature-gate.module.css";
 import { shouldRevalidateSameAppPage } from "../utils/app-route-revalidation";
 
+const SMART_ALERTS_COMING_SOON = true;
+
 const ALERT_CARDS = [
   {
     id: "smartRecoveryEnabled",
@@ -57,6 +59,42 @@ export function shouldRevalidate(args) {
   return shouldRevalidateSameAppPage(args);
 }
 
+function AlertPreviewCards() {
+  return (
+    <div className={automationsStyles.cardGrid}>
+      {ALERT_CARDS.map((card) => (
+        <article key={card.id} className={automationsStyles.alertCard}>
+          <div className={automationsStyles.alertHeader}>
+            <h2 className={automationsStyles.alertTitle}>{card.title}</h2>
+            <StatusPill tone="neutral">Off</StatusPill>
+          </div>
+          <p className={automationsStyles.alertText}>{card.description}</p>
+        </article>
+      ))}
+    </div>
+  );
+}
+
+function SmartAlertsComingSoon() {
+  return (
+    <section className={automationsStyles.comingSoonShell} aria-label="Smart Alerts coming soon">
+      <div className={automationsStyles.comingSoonBlur}>
+        <AlertPreviewCards />
+      </div>
+      <div className={automationsStyles.comingSoonOverlay}>
+        <div className={automationsStyles.comingSoonCard}>
+          <span className={automationsStyles.comingSoonBadge}>Coming soon</span>
+          <h2 className={automationsStyles.comingSoonTitle}>Smart Alerts are on the way</h2>
+          <p className={automationsStyles.comingSoonText}>
+            Smart Recovery, Smart Price Alerts, and Smart Restock Alerts will tag
+            customers for Shopify Email when shoppers should come back.
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default function AutomationsPage() {
   const { isPro, allFeaturesFree, settings, stats, shopDomain } = useLoaderData();
   const fetcher = useFetcher();
@@ -64,7 +102,7 @@ export default function AutomationsPage() {
   const isSaving = fetcher.state !== "idle";
 
   useEffect(() => {
-    if (fetcher.data?.ok) {
+    if (!SMART_ALERTS_COMING_SOON && fetcher.data?.ok) {
       shopify.toast.show("Smart Alerts settings saved");
     }
   }, [fetcher.data, shopify]);
@@ -87,7 +125,9 @@ export default function AutomationsPage() {
           </div>
         </section>
 
-        {!isPro && !allFeaturesFree ? (
+        {SMART_ALERTS_COMING_SOON ? (
+          <SmartAlertsComingSoon />
+        ) : !isPro && !allFeaturesFree ? (
           <ProFeatureGate
             isPro={false}
             title="Smart Alerts require Growth or Pro"
