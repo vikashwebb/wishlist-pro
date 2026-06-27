@@ -77,7 +77,7 @@
   }
 
   function emptyState() {
-    return { itemsByProductId: {}, statusByHandle: {} };
+    return { itemsByProductId: {}, statusByHandle: {}, productsByHandle: {} };
   }
 
   function readStoredState(storageKey) {
@@ -88,6 +88,7 @@
       return {
         itemsByProductId: parsed.itemsByProductId || {},
         statusByHandle: parsed.statusByHandle || {},
+        productsByHandle: parsed.productsByHandle || {},
       };
     } catch {
       return emptyState();
@@ -305,24 +306,30 @@
       });
   }
 
-  function buildOfflineProducts(handles, productIds) {
+  function buildOfflineProducts(handles, productIds, productsByHandle) {
+    var cache = productsByHandle || {};
     var products = [];
     var seen = new Set();
 
     (handles || []).forEach(function (handle) {
       if (!handle || seen.has(handle)) return;
       seen.add(handle);
+      var cached = cache[handle] || {};
       products.push({
-        id: handle,
+        id: cached.id || handle,
         handle: handle,
-        title: humanizeHandle(handle),
+        title: cached.title || humanizeHandle(handle),
         url: "/products/" + handle,
-        image: null,
-        imageAlt: "",
-        priceAmount: null,
-        currencyCode: null,
-        compareAtPriceAmount: null,
-        discountPercentage: null,
+        image: cached.image || null,
+        imageAlt: cached.imageAlt || cached.title || humanizeHandle(handle),
+        priceAmount:
+          typeof cached.priceAmount === "number" ? cached.priceAmount : null,
+        currencyCode: cached.currencyCode || null,
+        compareAtPriceAmount:
+          typeof cached.compareAtPriceAmount === "number"
+            ? cached.compareAtPriceAmount
+            : null,
+        discountPercentage: cached.discountPercentage || null,
       });
     });
 
@@ -346,6 +353,126 @@
     return products;
   }
 
+  function activeCurrencyCode() {
+    if (window.Shopify && window.Shopify.currency && window.Shopify.currency.active) {
+      return window.Shopify.currency.active;
+    }
+
+    return null;
+  }
+
+  function fetchStorefrontProduct(handle) {
+    return window
+      .fetch("/products/" + encodeURIComponent(handle) + ".js", {
+        credentials: "same-origin",
+      })
+      .then(function (response) {
+        if (!response.ok) {
+          throw new Error("Product not found");
+        }
+
+        return response.json();
+      });
+  }
+
+  function storefrontProductToCard(storefrontProduct, existing) {
+    var priceAmount =
+      typeof storefrontProduct.price === "number"
+        ? storefrontProduct.price / 100
+        : existing.priceAmount;
+    var compareAtPriceAmount =
+      typeof storefrontProduct.compare_at_price === "number" &&
+      storefrontProduct.compare_at_price > 0
+        ? storefrontProduct.compare_at_price / 100
+        : existing.compareAtPriceAmount;
+    var discountPercentage =
+      compareAtPriceAmount &&
+      priceAmount &&
+      compareAtPriceAmount > priceAmount
+        ? Math.round(
+            ((compareAtPriceAmount - priceAmount) / compareAtPriceAmount) * 100,
+          )
+        : existing.discountPercentage;
+
+    return {
+      id: existing.id || String(storefrontProduct.id),
+      handle: storefrontProduct.handle || existing.handle,
+      title: storefrontProduct.title || existing.title,
+      url: "/products/" + (storefrontProduct.handle || existing.handle),
+      image:
+        storefrontProduct.featured_image ||
+        (storefrontProduct.images && storefrontProduct.images[0]) ||
+        existing.image,
+      imageAlt: storefrontProduct.title || existing.imageAlt || existing.title,
+      priceAmount: priceAmount,
+      compareAtPriceAmount: compareAtPriceAmount,
+      currencyCode: activeCurrencyCode() || existing.currencyCode,
+      discountPercentage: discountPercentage,
+    };
+  }
+
+  function enrichProductsFromStorefront(products) {
+    var pending = (products || []).filter(function (product) {
+      return product.handle && !product.image;
+    });
+
+    if (!pending.length) {
+      return Promise.resolve(products || []);
+    }
+
+    return Promise.all(
+      pending.map(function (product) {
+        return fetchStorefrontProduct(product.handle)
+          .then(function (storefrontProduct) {
+            return storefrontProductToCard(storefrontProduct, product);
+          })
+          .catch(function () {
+            return product;
+          });
+      }),
+    ).then(function (enrichedPending) {
+      var enrichedByHandle = {};
+
+      enrichedPending.forEach(function (product) {
+        if (product.handle) {
+          enrichedByHandle[product.handle] = product;
+        }
+      });
+
+      return (products || []).map(function (product) {
+        return enrichedByHandle[product.handle] || product;
+      });
+    });
+  }
+
+  function cacheProductsInState(storageKey, products) {
+    if (!storageKey || !products || !products.length) return;
+
+    var state = readStoredState(storageKey);
+    state.productsByHandle = state.productsByHandle || {};
+    var changed = false;
+
+    products.forEach(function (product) {
+      if (!product.handle || !product.image) return;
+
+      state.productsByHandle[product.handle] = {
+        id: product.id,
+        title: product.title,
+        image: product.image,
+        imageAlt: product.imageAlt,
+        priceAmount: product.priceAmount,
+        compareAtPriceAmount: product.compareAtPriceAmount,
+        currencyCode: product.currencyCode,
+        discountPercentage: product.discountPercentage,
+      };
+      changed = true;
+    });
+
+    if (changed) {
+      writeStoredState(storageKey, state);
+    }
+  }
+
   function fetchItemsWithOfflineFallback(config, options, getLocalPayload) {
     return fetchItems(config, options).catch(function (error) {
       if (!isProxySessionError(error)) {
@@ -365,6 +492,7 @@
         products: buildOfflineProducts(
           localPayload.handles,
           localPayload.productIds,
+          localPayload.productsByHandle,
         ),
         offlineMode: true,
       };
@@ -558,6 +686,7 @@
       return {
         productIds: activeKeys(state.itemsByProductId),
         handles: activeKeys(state.statusByHandle),
+        productsByHandle: state.productsByHandle || {},
       };
     }
 
@@ -566,6 +695,7 @@
       return {
         productIds: activeKeys(state.itemsByProductId),
         handles: activeKeys(state.statusByHandle),
+        productsByHandle: state.productsByHandle || {},
       };
     }
 
@@ -573,6 +703,9 @@
       var state = readGuestState();
       delete state.itemsByProductId[productId];
       delete state.statusByHandle[handle];
+      if (state.productsByHandle) {
+        delete state.productsByHandle[handle];
+      }
 
       if (
         !hasEntries(state.itemsByProductId) &&
@@ -590,6 +723,9 @@
       var state = readCustomerState(config.customerId);
       delete state.itemsByProductId[productId];
       delete state.statusByHandle[handle];
+      if (state.productsByHandle) {
+        delete state.productsByHandle[handle];
+      }
 
       if (
         !hasEntries(state.itemsByProductId) &&
@@ -600,6 +736,23 @@
       }
 
       writeStoredState(storageKey, state);
+    }
+
+    function renderProducts(products, cacheStorageKey) {
+      return enrichProductsFromStorefront(products || [])
+        .then(function (enriched) {
+          if (cacheStorageKey) {
+            cacheProductsInState(cacheStorageKey, enriched);
+          }
+
+          showProducts(enriched);
+          setStatus("");
+        })
+        .catch(function (error) {
+          console.error("wishlist.page.enrich.error", error);
+          showProducts(products || []);
+          setStatus("");
+        });
     }
 
     function loadWishlist() {
@@ -694,8 +847,10 @@
               fallbackPayload,
               getCustomerFallbackPayload,
             ).then(function (localPayload) {
-              showProducts(localPayload.products || []);
-              setStatus("");
+              return renderProducts(
+                localPayload.products || [],
+                key(config.customerId),
+              );
             });
           }
 
@@ -705,8 +860,11 @@
             localOnly = false;
           }
 
-          showProducts(payload.products || []);
-          setStatus("");
+          var cacheStorageKey = config.customerId
+            ? key(config.customerId)
+            : guestKey();
+
+          return renderProducts(payload.products || [], cacheStorageKey);
         })
         .catch(function (error) {
           console.error("wishlist.page.load.error", error);

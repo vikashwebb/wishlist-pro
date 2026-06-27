@@ -21,7 +21,9 @@
     {% if product %}
     "pageProduct": {
       "handle": {{ product.handle | json }},
-      "id": {{ product.admin_graphql_api_id | json }}
+      "id": {{ product.admin_graphql_api_id | json }},
+      "title": {{ product.title | json }},
+      "image": {{ product.featured_image | image_url: width: 800 | json }}
     },
     {% endif %}
     "buttonStyle": {{ block.settings.button_style | json }},

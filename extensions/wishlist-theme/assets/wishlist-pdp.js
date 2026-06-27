@@ -92,7 +92,12 @@
   }
 
   function emptyState() {
-    return { itemsByProductId: {}, statusByHandle: {}, localOnly: true };
+    return {
+      itemsByProductId: {},
+      statusByHandle: {},
+      productsByHandle: {},
+      localOnly: true,
+    };
   }
 
   function key(customerId) {
@@ -109,6 +114,7 @@
       return {
         itemsByProductId: parsed.itemsByProductId || {},
         statusByHandle: parsed.statusByHandle || {},
+        productsByHandle: parsed.productsByHandle || {},
         localOnly: true,
       };
     } catch {
@@ -181,15 +187,33 @@
     writeState(customerId, state);
   }
 
-  function setGuestState(productId, productHandle, active) {
+  function buildProductPreview(config) {
+    if (!config.productHandle) return null;
+
+    return {
+      id: config.productId,
+      title: config.productTitle || config.productHandle,
+      image: config.productImage || null,
+      imageAlt: config.productTitle || config.productHandle,
+    };
+  }
+
+  function setGuestState(productId, productHandle, active, preview) {
     var state = readGuestState();
 
     if (active) {
       state.itemsByProductId[productId] = true;
       state.statusByHandle[productHandle] = true;
+      if (preview && productHandle) {
+        state.productsByHandle = state.productsByHandle || {};
+        state.productsByHandle[productHandle] = preview;
+      }
     } else {
       delete state.itemsByProductId[productId];
       delete state.statusByHandle[productHandle];
+      if (state.productsByHandle) {
+        delete state.productsByHandle[productHandle];
+      }
     }
 
     if (
@@ -224,6 +248,11 @@
       {},
       guestState.statusByHandle,
       customerState.statusByHandle,
+    );
+    customerState.productsByHandle = Object.assign(
+      {},
+      guestState.productsByHandle || {},
+      customerState.productsByHandle || {},
     );
     writeState(customerId, customerState);
   }
@@ -672,7 +701,12 @@
           }
 
           var nextActive = button.getAttribute("aria-pressed") !== "true";
-          setGuestState(config.productId, config.productHandle, nextActive);
+          setGuestState(
+            config.productId,
+            config.productHandle,
+            nextActive,
+            nextActive ? buildProductPreview(config) : null,
+          );
           setState(button, nextActive, labels);
         });
         return;

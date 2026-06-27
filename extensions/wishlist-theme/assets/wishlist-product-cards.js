@@ -92,7 +92,12 @@
   }
 
   function emptyState() {
-    return { itemsByProductId: {}, statusByHandle: {}, localOnly: true };
+    return {
+      itemsByProductId: {},
+      statusByHandle: {},
+      productsByHandle: {},
+      localOnly: true,
+    };
   }
 
   function readConfig() {
@@ -120,6 +125,7 @@
       return {
         itemsByProductId: parsed.itemsByProductId || {},
         statusByHandle: parsed.statusByHandle || {},
+        productsByHandle: parsed.productsByHandle || {},
         localOnly: true,
       };
     } catch {
@@ -191,13 +197,68 @@
     writeState(customerId, state);
   }
 
-  function setGuestHandleState(handle, active) {
+  function humanizeHandle(handle) {
+    return String(handle || "")
+      .replace(/-/g, " ")
+      .replace(/\b\w/g, function (char) {
+        return char.toUpperCase();
+      });
+  }
+
+  function previewFromCard(handle, button) {
+    var card = null;
+    var anchor = button && button.closest(".wishlist-pro-card-anchor");
+
+    if (anchor) {
+      card = anchor.parentElement;
+    } else {
+      var marker = document.querySelector(
+        '[data-wishlist-card-handle="' + handle + '"]',
+      );
+      card = marker ? marker.parentElement : null;
+    }
+    var imageNode = card ? card.querySelector("img") : null;
+    var titleNode = card
+      ? card.querySelector(".card__heading, .product-card__title, .card-information__text, h3, h2")
+      : null;
+
+    if (
+      config.pageProduct &&
+      config.pageProduct.handle === handle &&
+      config.pageProduct.image
+    ) {
+      return {
+        title: config.pageProduct.title || humanizeHandle(handle),
+        image: config.pageProduct.image,
+        imageAlt: config.pageProduct.title || humanizeHandle(handle),
+      };
+    }
+
+    return {
+      title:
+        (titleNode && titleNode.textContent.trim()) || humanizeHandle(handle),
+      image: imageNode ? imageNode.currentSrc || imageNode.src : null,
+      imageAlt:
+        (imageNode && imageNode.alt) ||
+        (titleNode && titleNode.textContent.trim()) ||
+        humanizeHandle(handle),
+    };
+  }
+
+  function setGuestHandleState(handle, active, preview) {
     var state = readGuestState();
 
     if (active) {
       state.statusByHandle[handle] = true;
+      if (preview) {
+        state.productsByHandle = state.productsByHandle || {};
+        state.productsByHandle[handle] = preview;
+      }
     } else {
       delete state.statusByHandle[handle];
+      if (state.productsByHandle) {
+        delete state.productsByHandle[handle];
+      }
     }
 
     if (
@@ -232,6 +293,11 @@
       {},
       guestState.statusByHandle,
       customerState.statusByHandle,
+    );
+    customerState.productsByHandle = Object.assign(
+      {},
+      guestState.productsByHandle || {},
+      customerState.productsByHandle || {},
     );
     writeState(customerId, customerState);
   }
@@ -788,7 +854,11 @@
       }
 
       var nextGuestActive = button.getAttribute("aria-pressed") !== "true";
-      setGuestHandleState(handle, nextGuestActive);
+      setGuestHandleState(
+        handle,
+        nextGuestActive,
+        nextGuestActive ? previewFromCard(handle, button) : null,
+      );
       setState(button, nextGuestActive, labels);
       return;
     }

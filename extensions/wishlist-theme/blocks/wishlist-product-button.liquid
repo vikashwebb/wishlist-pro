@@ -13,6 +13,8 @@
   data-wishlist-config='{
     "productId": {{ product.admin_graphql_api_id | json }},
     "productHandle": {{ product.handle | json }},
+    "productTitle": {{ product.title | json }},
+    "productImage": {{ product.featured_image | image_url: width: 800 | json }},
     "customerId": {{ customer_id | json }},
     "configUrl": {{ "/apps/wishlist-proxy/wishlist/config" | json }},
     "statusUrl": {{ "/apps/wishlist-proxy/wishlist/status" | json }},
