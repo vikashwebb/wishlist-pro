@@ -289,6 +289,88 @@
       .then(readJson);
   }
 
+  function isProxySessionError(error) {
+    var message = (error && error.message) || "";
+    return (
+      message.indexOf("App proxy session not found") !== -1 ||
+      message.indexOf("Re-open the app in Admin") !== -1
+    );
+  }
+
+  function humanizeHandle(handle) {
+    return String(handle || "")
+      .replace(/-/g, " ")
+      .replace(/\b\w/g, function (char) {
+        return char.toUpperCase();
+      });
+  }
+
+  function buildOfflineProducts(handles, productIds) {
+    var products = [];
+    var seen = new Set();
+
+    (handles || []).forEach(function (handle) {
+      if (!handle || seen.has(handle)) return;
+      seen.add(handle);
+      products.push({
+        id: handle,
+        handle: handle,
+        title: humanizeHandle(handle),
+        url: "/products/" + handle,
+        image: null,
+        imageAlt: "",
+        priceAmount: null,
+        currencyCode: null,
+        compareAtPriceAmount: null,
+        discountPercentage: null,
+      });
+    });
+
+    (productIds || []).forEach(function (productId) {
+      if (!productId || seen.has(productId)) return;
+      seen.add(productId);
+      products.push({
+        id: productId,
+        handle: "",
+        title: "Saved product",
+        url: "/collections/all",
+        image: null,
+        imageAlt: "",
+        priceAmount: null,
+        currencyCode: null,
+        compareAtPriceAmount: null,
+        discountPercentage: null,
+      });
+    });
+
+    return products;
+  }
+
+  function fetchItemsWithOfflineFallback(config, options, getLocalPayload) {
+    return fetchItems(config, options).catch(function (error) {
+      if (!isProxySessionError(error)) {
+        throw error;
+      }
+
+      var localPayload = getLocalPayload();
+      if (
+        !localPayload.productIds.length &&
+        !localPayload.handles.length
+      ) {
+        throw error;
+      }
+
+      return {
+        ok: true,
+        products: buildOfflineProducts(
+          localPayload.handles,
+          localPayload.productIds,
+        ),
+        offlineMode: true,
+      };
+    });
+  }
+
   function formatMoney(amount, currencyCode) {
     if (typeof amount !== "number" || !currencyCode) {
       return "";
@@ -548,12 +630,18 @@
               return null;
             }
 
-            return fetchItems(config, guestPayload);
+            return fetchItemsWithOfflineFallback(
+              config,
+              guestPayload,
+              getGuestPayload,
+            );
           }
 
-          var itemsPromise = fetchItems(config, {
-            customerId: config.customerId,
-          });
+          var itemsPromise = fetchItemsWithOfflineFallback(
+            config,
+            { customerId: config.customerId },
+            getCustomerFallbackPayload,
+          );
 
           if (!isGuestSyncPending(config.customerId)) {
             return itemsPromise;
@@ -570,7 +658,11 @@
             var syncPayload = results[1];
 
             if (syncPayload && syncPayload.synced) {
-              return fetchItems(config, { customerId: config.customerId });
+              return fetchItemsWithOfflineFallback(
+                config,
+                { customerId: config.customerId },
+                getCustomerFallbackPayload,
+              );
             }
 
             return itemsPayload;
@@ -597,20 +689,34 @@
               return;
             }
 
-            return fetchItems(config, fallbackPayload).then(
-              function (localPayload) {
-                showProducts(localPayload.products || []);
-                setStatus("");
-              },
-            );
+            return fetchItemsWithOfflineFallback(
+              config,
+              fallbackPayload,
+              getCustomerFallbackPayload,
+            ).then(function (localPayload) {
+              showProducts(localPayload.products || []);
+              setStatus("");
+            });
           }
 
-          localOnly = false;
+          if (payload.offlineMode) {
+            localOnly = true;
+          } else {
+            localOnly = false;
+          }
+
           showProducts(payload.products || []);
           setStatus("");
         })
         .catch(function (error) {
           console.error("wishlist.page.load.error", error);
+          if (isProxySessionError(error)) {
+            setStatus(
+              "Wishlist is temporarily unavailable. Please try again shortly.",
+            );
+            return;
+          }
+
           setStatus(
             error && error.message
               ? error.message
